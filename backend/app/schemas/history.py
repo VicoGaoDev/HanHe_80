@@ -24,6 +24,7 @@ class HistoryItem(BaseModel):
     username: str = ""
     avatar_url: str = ""
     model: str = ""
+    source: str = "web"
     mode: str = "generate"
     prompt: str = ""
     reference_images: list[str] = []
@@ -60,6 +61,7 @@ class UserHistoryCardItem(BaseModel):
     image_size_bytes: int = 0
     is_soft_deleted: bool = False
     model: str = ""
+    source: str = "web"
     mode: str = "generate"
     prompt: str = ""
     reference_images: list[str] = []

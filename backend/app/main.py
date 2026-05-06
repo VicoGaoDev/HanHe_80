@@ -116,6 +116,8 @@ def _ensure_schema_compat():
     with engine.begin() as conn:
         if "model" not in task_columns:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN model VARCHAR(50) DEFAULT ''"))
+        if "source" not in task_columns:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN source VARCHAR(20) DEFAULT 'web'"))
         if "resolution" not in task_columns:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN resolution VARCHAR(10) DEFAULT '4K'"))
         if "custom_size" not in task_columns:
@@ -514,7 +516,7 @@ def _ensure_task_credit_cost_column():
         return
 
     task_columns = {col["name"] for col in inspector.get_columns("tasks")}
-    if "credit_cost" in task_columns and "custom_size" in task_columns and "enqueued_at" in task_columns:
+    if "credit_cost" in task_columns and "custom_size" in task_columns and "enqueued_at" in task_columns and "source" in task_columns:
         return
 
     with engine.begin() as conn:
@@ -524,6 +526,8 @@ def _ensure_task_credit_cost_column():
             conn.execute(text("ALTER TABLE tasks ADD COLUMN custom_size VARCHAR(50) DEFAULT ''"))
         if "enqueued_at" not in task_columns:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN enqueued_at DATETIME"))
+        if "source" not in task_columns:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN source VARCHAR(20) DEFAULT 'web'"))
 
 
 def _ensure_scene_binding_required_columns():

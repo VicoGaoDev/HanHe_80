@@ -8,6 +8,7 @@ export interface CreateTaskResponse {
 
 export function createTask(data: {
   model?: string;
+  source?: "web" | "app";
   prompt: string;
   num_images: number;
   size: string;
@@ -18,7 +19,10 @@ export function createTask(data: {
   source_image?: string;
   mask_image?: string;
 }): Promise<CreateTaskResponse> {
-  return client.post("/tasks", data);
+  return client.post("/tasks", {
+    ...data,
+    source: data.source || "web",
+  });
 }
 
 export function getTask(taskId: string): Promise<TaskResult> {

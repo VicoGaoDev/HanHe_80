@@ -29,6 +29,7 @@ import type {
   HistoryFilter,
   HistoryItem,
   TaskMode,
+  TaskSource,
 } from "@/types";
 
 const analyticsLoading = ref(false);
@@ -51,12 +52,14 @@ const ready = ref(false);
 const filters = reactive<{
   status: string | undefined;
   user_id: string | undefined;
+  source: TaskSource | undefined;
   model: string | undefined;
   mode: TaskMode | undefined;
   dateRange: [Dayjs, Dayjs] | null;
 }>({
   status: undefined,
   user_id: undefined,
+  source: undefined,
   model: undefined,
   mode: undefined,
   dateRange: null,
@@ -65,6 +68,7 @@ const filters = reactive<{
 const columns = [
   { title: "ID", dataIndex: "task_id", width: 70 },
   { title: "用户", dataIndex: "username", width: 150 },
+  { title: "来源", dataIndex: "source", width: 90 },
   { title: "类型", dataIndex: "mode", width: 100 },
   { title: "模型", dataIndex: "model", width: 120 },
   { title: "消耗积分", dataIndex: "credit_cost", width: 110 },
@@ -90,6 +94,7 @@ const activeFilterSummary = computed(() => {
     const user = users.value.find((item) => item.id === filters.user_id);
     if (user) chips.push(`用户：${user.username}`);
   }
+  if (filters.source) chips.push(`来源：${sourceLabel(filters.source)}`);
   if (filters.mode) chips.push(`类型：${modeLabel(filters.mode)}`);
   if (filters.model) chips.push(`模型：${modelLabel(filters.model)}`);
   if (filters.status) chips.push(`状态：${statusLabel(filters.status)}`);
@@ -141,6 +146,7 @@ const filterSignature = computed(() => JSON.stringify({
   preset: preset.value,
   status: filters.status || null,
   user_id: filters.user_id || null,
+  source: filters.source || null,
   model: filters.model || null,
   mode: filters.mode || null,
   start: filters.dateRange?.[0]?.valueOf() || null,
@@ -187,6 +193,7 @@ function buildAnalyticsQuery(): AdminAnalyticsQuery {
     granularity: granularity.value,
     status: filters.status,
     user_id: filters.user_id,
+    source: filters.source,
     model: filters.model,
     mode: filters.mode,
     start_date: filters.dateRange?.[0].startOf("day").toISOString(),
@@ -198,6 +205,7 @@ function buildHistoryFilter(): HistoryFilter {
   return {
     status: filters.status,
     user_id: filters.user_id,
+    source: filters.source,
     model: filters.model,
     mode: filters.mode,
     start_date: filters.dateRange?.[0].startOf("day").toISOString(),
@@ -272,6 +280,7 @@ async function loadPageData() {
 function handleReset() {
   filters.status = undefined;
   filters.user_id = undefined;
+  filters.source = undefined;
   filters.model = undefined;
   filters.mode = undefined;
   preset.value = defaultPresetByGranularity(granularity.value);
@@ -300,8 +309,9 @@ function handleBucketClick(payload: { start?: string | null; end?: string | null
   preset.value = "custom";
 }
 
-function handleBreakdownFilter(payload: { type: "status" | "mode" | "model" | "user"; value: string }) {
+function handleBreakdownFilter(payload: { type: "status" | "source" | "mode" | "model" | "user"; value: string }) {
   if (payload.type === "status") filters.status = payload.value;
+  if (payload.type === "source") filters.source = payload.value as TaskSource;
   if (payload.type === "mode") filters.mode = payload.value as TaskMode;
   if (payload.type === "model") filters.model = payload.value;
   if (payload.type === "user") {
@@ -318,6 +328,11 @@ function modeLabel(value: string) {
   if (value === "inpaint") return "局部重绘";
   if (value === "promptReverse") return "提示词反推";
   return "生图";
+}
+
+function sourceLabel(value: string) {
+  if (value === "app") return "App";
+  return "Web";
 }
 
 function modelLabel(value: string) {
@@ -481,6 +496,9 @@ watch(filterSignature, async () => {
             </template>
             <template v-else-if="column.dataIndex === 'mode'">
               {{ modeLabel(record.mode) }}
+            </template>
+            <template v-else-if="column.dataIndex === 'source'">
+              {{ sourceLabel(record.source) }}
             </template>
             <template v-else-if="column.dataIndex === 'prompt'">
               {{ record.prompt || "-" }}

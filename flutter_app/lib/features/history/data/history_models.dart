@@ -32,6 +32,7 @@ class UserHistoryCardItem {
     this.itemType = 'task',
     required this.prompt,
     required this.model,
+    this.source = 'web',
     this.mode = 'generate',
     required this.status,
     required this.size,
@@ -53,6 +54,7 @@ class UserHistoryCardItem {
   final String itemType;
   final String prompt;
   final String model;
+  final String source;
   final String mode;
   final String status;
   final String size;
@@ -75,6 +77,7 @@ class UserHistoryCardItem {
       itemType: json['item_type'] as String? ?? 'task',
       prompt: json['prompt'] as String? ?? '',
       model: json['model'] as String? ?? '',
+      source: json['source'] as String? ?? 'web',
       mode: json['mode'] as String? ?? 'generate',
       status: json['status'] as String? ?? '',
       size: json['size'] as String? ?? '',

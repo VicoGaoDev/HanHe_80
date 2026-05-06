@@ -11,6 +11,7 @@ class Task(Base):
     business_id = Column(String(32), unique=True, nullable=False, index=True, default=generate_business_id)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     model = Column(String(50), default="")
+    source = Column(String(20), nullable=False, default="web", server_default="web")
     mode = Column(String(20), default="generate")
     prompt = Column(Text, default="")
     num_images = Column(Integer, default=4)

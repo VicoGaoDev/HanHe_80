@@ -17,7 +17,7 @@ import { getGenerationModels } from "@/api/config";
 import { fetchHistory } from "@/api/history";
 import { deleteImage, getDisplayImageUrl, getDownloadUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
 import { deletePromptHistory } from "@/api/auth";
-import type { GenerationModelOption, ImageResult, UserHistoryCard } from "@/types";
+import type { GenerationModelOption, ImageResult, TaskSource, UserHistoryCard } from "@/types";
 
 const router = useRouter();
 const items = ref<UserHistoryCard[]>([]);
@@ -27,6 +27,7 @@ const pageSize = ref(20);
 const loading = ref(false);
 const loadingMore = ref(false);
 const typeFilter = ref<"generate" | "inpaint" | "promptReverse" | undefined>(undefined);
+const sourceFilter = ref<TaskSource | undefined>(undefined);
 const modelFilter = ref<string | undefined>(undefined);
 const statusFilter = ref<"pending" | "processing" | "success" | "failed" | undefined>(undefined);
 const promptFilter = ref("");
@@ -58,6 +59,7 @@ const modelOptions = computed(() => {
 const activeFilterCount = computed(() => {
   let count = 0;
   if (typeFilter.value) count += 1;
+  if (sourceFilter.value) count += 1;
   if (modelFilter.value) count += 1;
   if (statusFilter.value) count += 1;
   if (promptFilter.value.trim()) count += 1;
@@ -110,6 +112,7 @@ function syncHistoryPolling() {
 function getHistoryQuery() {
   return {
     mode: typeFilter.value,
+    source: sourceFilter.value,
     model: modelFilter.value,
     prompt: promptFilter.value,
     status: statusFilter.value,
@@ -243,6 +246,7 @@ function formatImageSize(size?: number) {
 function detailMetaList(item: UserHistoryCard) {
   return [
     `状态：${statusLabel(item.status)}`,
+    `来源：${sourceLabel(item.source)}`,
     `类型：${modeLabel(item.mode)}`,
     `模型：${getModelLabel(item.model)}`,
     `比例：${item.size || "-"}`,
@@ -254,8 +258,13 @@ function detailMetaList(item: UserHistoryCard) {
   ].filter(Boolean);
 }
 
+function sourceLabel(source: TaskSource) {
+  return source === "app" ? "App" : "Web";
+}
+
 function resetFilters() {
   typeFilter.value = undefined;
+  sourceFilter.value = undefined;
   modelFilter.value = undefined;
   statusFilter.value = undefined;
   promptFilter.value = "";
@@ -265,6 +274,7 @@ function resetFilters() {
 watch(
   [
     typeFilter,
+    sourceFilter,
     modelFilter,
     statusFilter,
     promptFilter,
@@ -578,6 +588,10 @@ function handleReedit(item: UserHistoryCard) {
         <a-select-option value="generate">生图</a-select-option>
         <a-select-option value="inpaint">局部重绘</a-select-option>
         <a-select-option value="promptReverse">提示词反推</a-select-option>
+      </a-select>
+      <a-select v-model:value="sourceFilter" placeholder="全部来源" style="width: 140px" allow-clear>
+        <a-select-option value="web">Web</a-select-option>
+        <a-select-option value="app">App</a-select-option>
       </a-select>
       <a-select v-model:value="modelFilter" placeholder="全部模型" style="width: 170px" allow-clear>
         <a-select-option v-for="option in modelOptions" :key="option.value" :value="option.value">

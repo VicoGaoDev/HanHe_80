@@ -73,6 +73,7 @@ def create(
         db,
         user_id=user.id,
         model=task_model,
+        source=body.source,
         mode=body.mode,
         prompt=body.prompt,
         num_images=body.num_images,

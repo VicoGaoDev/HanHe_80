@@ -33,10 +33,12 @@ export interface ImageResult {
 }
 
 export type TaskMode = "generate" | "inpaint" | "promptReverse";
+export type TaskSource = "web" | "app";
 
 export interface TaskResult {
   id: string;
   model: string;
+  source: TaskSource;
   prompt: string;
   num_images: number;
   size: string;
@@ -58,6 +60,7 @@ export interface HistoryItem {
   username?: string;
   avatar_url?: string;
   model: string;
+  source: TaskSource;
   mode: TaskMode;
   prompt: string;
   reference_images: string[];
@@ -76,6 +79,7 @@ export interface HistoryItem {
 
 export interface HistoryFilter {
   mode?: TaskMode;
+  source?: TaskSource;
   model?: string;
   prompt?: string;
   status?: string;
@@ -104,6 +108,7 @@ export interface UserHistoryCard {
   image_size_bytes?: number;
   is_soft_deleted?: boolean;
   model: string;
+  source: TaskSource;
   mode: TaskMode;
   prompt: string;
   reference_images: string[];
@@ -194,6 +199,7 @@ export interface AdminAnalyticsQuery {
   start_date?: string;
   end_date?: string;
   user_id?: string;
+  source?: TaskSource;
   model?: string;
   mode?: TaskMode;
   status?: string;
@@ -248,6 +254,7 @@ export interface AdminAnalyticsBreakdownItem {
 export interface AdminAnalyticsBreakdown {
   range_label: string;
   status_breakdown: AdminAnalyticsBreakdownItem[];
+  source_breakdown: AdminAnalyticsBreakdownItem[];
   mode_breakdown: AdminAnalyticsBreakdownItem[];
   model_breakdown: AdminAnalyticsBreakdownItem[];
   top_users_by_tasks: AdminAnalyticsBreakdownItem[];

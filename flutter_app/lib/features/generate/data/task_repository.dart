@@ -25,6 +25,7 @@ class TaskRepository {
         data: {
           'mode': 'generate',
           'model': model,
+          'source': 'app',
           'prompt': prompt,
           'num_images': numImages,
           'size': size,

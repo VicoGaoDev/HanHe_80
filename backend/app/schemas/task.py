@@ -1,3 +1,4 @@
+from typing import Literal
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -5,6 +6,7 @@ from datetime import datetime
 class TaskCreate(BaseModel):
     mode: str = "generate"
     model: str = ""
+    source: Literal["web", "app"] = "web"
     prompt: str
     num_images: int = Field(default=4, ge=1, le=8)
     size: str = "3:4"
@@ -37,6 +39,7 @@ class TaskOut(BaseModel):
     id: str
     mode: str = "generate"
     model: str = ""
+    source: Literal["web", "app"] = "web"
     prompt: str = ""
     num_images: int = 4
     size: str

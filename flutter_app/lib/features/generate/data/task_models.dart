@@ -32,6 +32,7 @@ class TaskResult {
     required this.id,
     required this.mode,
     required this.model,
+    required this.source,
     required this.prompt,
     required this.numImages,
     required this.size,
@@ -47,6 +48,7 @@ class TaskResult {
   final String id;
   final String mode;
   final String model;
+  final String source;
   final String prompt;
   final int numImages;
   final String size;
@@ -65,6 +67,7 @@ class TaskResult {
       id: json['id'] as String? ?? '',
       mode: json['mode'] as String? ?? 'generate',
       model: json['model'] as String? ?? '',
+      source: json['source'] as String? ?? 'web',
       prompt: json['prompt'] as String? ?? '',
       numImages: json['num_images'] as int? ?? 1,
       size: json['size'] as String? ?? '',

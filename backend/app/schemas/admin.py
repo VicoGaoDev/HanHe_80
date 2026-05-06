@@ -116,6 +116,7 @@ class AnalyticsBreakdownItemOut(BaseModel):
 class AnalyticsBreakdownOut(BaseModel):
     range_label: str
     status_breakdown: list[AnalyticsBreakdownItemOut]
+    source_breakdown: list[AnalyticsBreakdownItemOut]
     mode_breakdown: list[AnalyticsBreakdownItemOut]
     model_breakdown: list[AnalyticsBreakdownItemOut]
     top_users_by_tasks: list[AnalyticsBreakdownItemOut]

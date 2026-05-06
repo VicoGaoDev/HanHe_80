@@ -57,6 +57,7 @@ def create_tasks(
     db: Session,
     user_id: int,
     model: str,
+    source: str,
     mode: str,
     prompt: str,
     num_images: int,
@@ -152,6 +153,7 @@ def create_tasks(
 
         normalized_prompt = prompt.strip()
         normalized_model = model.strip()
+        normalized_source = (source or "web").strip().lower() or "web"
         normalized_custom_size = custom_size.strip()
         normalized_source_image = source_image.strip()
         normalized_mask_image = mask_image.strip()
@@ -161,6 +163,7 @@ def create_tasks(
             task = Task(
                 user_id=user_id,
                 model=normalized_model,
+                source=normalized_source,
                 mode=mode,
                 prompt=normalized_prompt,
                 num_images=1,

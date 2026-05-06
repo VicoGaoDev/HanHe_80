@@ -60,6 +60,7 @@ def get_user_history(
     page: int = 1,
     page_size: int = 20,
     mode: str | None = None,
+    source: str | None = None,
     model: str | None = None,
     prompt: str | None = None,
     status: str | None = None,
@@ -84,6 +85,10 @@ def get_user_history(
     if mode:
         image_query = image_query.filter(Task.mode == mode)
         if mode != PROMPT_REVERSE_MODE:
+            prompt_reverse_query = prompt_reverse_query.filter(PromptHistory.id.is_(None))
+    if source:
+        image_query = image_query.filter(Task.source == source)
+        if source != "web":
             prompt_reverse_query = prompt_reverse_query.filter(PromptHistory.id.is_(None))
     if model:
         image_query = image_query.filter(Task.model == model)
@@ -137,6 +142,7 @@ def get_user_history(
             "image_size_bytes": image_payload["image_size_bytes"],
             "is_soft_deleted": False,
             "model": task.model or "",
+            "source": task.source or "web",
             "mode": task.mode or "generate",
             "prompt": task.prompt or "",
             "reference_images": [asset["image_url"] for asset in reference_assets],
@@ -171,6 +177,7 @@ def get_user_history(
             "image_size_bytes": 0,
             "is_soft_deleted": False,
             "model": PROMPT_REVERSE_MODEL,
+            "source": "web",
             "mode": PROMPT_REVERSE_MODE,
             "prompt": row.prompt or "",
             "reference_images": [],
@@ -222,6 +229,7 @@ def get_all_history(
     page_size: int = 20,
     status: Optional[str] = None,
     user_id: Optional[int] = None,
+    source: Optional[str] = None,
     model: Optional[str] = None,
     mode: Optional[str] = None,
     start_date: Optional[datetime] = None,
@@ -251,6 +259,10 @@ def get_all_history(
     if user_id:
         task_query = task_query.filter(Task.user_id == user_id)
         reverse_query = reverse_query.filter(CreditLog.user_id == user_id)
+    if source:
+        task_query = task_query.filter(Task.source == source)
+        if source != "web":
+            reverse_query = reverse_query.filter(CreditLog.id.is_(None))
     if model:
         task_query = task_query.filter(Task.model == model)
         if model != PROMPT_REVERSE_MODEL:
@@ -294,6 +306,7 @@ def get_all_history(
             "username": user_cache[task.user_id]["username"],
             "avatar_url": user_cache[task.user_id]["avatar_url"],
             "model": task.model or "",
+            "source": task.source or "web",
             "mode": task.mode or "generate",
             "prompt": task.prompt or "",
             "reference_images": _parse_refs(task.reference_images),
@@ -330,6 +343,7 @@ def get_all_history(
             "username": user_cache[log.user_id]["username"],
             "avatar_url": user_cache[log.user_id]["avatar_url"],
             "model": PROMPT_REVERSE_MODEL,
+            "source": "web",
             "mode": PROMPT_REVERSE_MODE,
             "prompt": "",
             "reference_images": [],

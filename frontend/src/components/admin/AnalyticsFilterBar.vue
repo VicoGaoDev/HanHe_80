@@ -2,11 +2,12 @@
 import { computed } from "vue";
 import type { PropType } from "vue";
 import type { Dayjs } from "dayjs";
-import type { AdminAnalyticsGranularity, AdminUser, TaskMode } from "@/types";
+import type { AdminAnalyticsGranularity, AdminUser, TaskMode, TaskSource } from "@/types";
 
 type FilterState = {
   status?: string;
   user_id?: string;
+  source?: TaskSource;
   model?: string;
   mode?: TaskMode;
   dateRange: [Dayjs, Dayjs] | null;
@@ -126,6 +127,16 @@ const presetOptions = computed(() => {
         <a-select-option value="processing">处理中</a-select-option>
         <a-select-option value="success">成功</a-select-option>
         <a-select-option value="failed">失败</a-select-option>
+      </a-select>
+
+      <a-select
+        v-model:value="filters.source"
+        placeholder="全部来源"
+        allow-clear
+        class="analytics-filter-select"
+      >
+        <a-select-option value="web">Web</a-select-option>
+        <a-select-option value="app">App</a-select-option>
       </a-select>
 
       <a-select

@@ -16,13 +16,14 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  (e: "filter-click", payload: { type: "status" | "mode" | "model" | "user"; value: string }): void;
+  (e: "filter-click", payload: { type: "status" | "source" | "mode" | "model" | "user"; value: string }): void;
 }>();
 
 const hasBreakdownData = computed(() => {
   if (!props.data) return false;
   return [
     ...props.data.status_breakdown,
+    ...props.data.source_breakdown,
     ...props.data.mode_breakdown,
     ...props.data.model_breakdown,
     ...props.data.top_users_by_tasks,
@@ -44,6 +45,10 @@ function modeLabel(value: string) {
   if (value === "inpaint") return "局部重绘";
   if (value === "promptReverse") return "提示词反推";
   return "生图";
+}
+
+function sourceLabel(value: string) {
+  return value === "app" ? "App" : "Web";
 }
 
 const statusPieOption = computed(() => ({
@@ -83,6 +88,28 @@ const modePieOption = computed(() => ({
       radius: ["42%", "68%"],
       data: (props.data?.mode_breakdown || []).map((item) => ({
         name: modeLabel(item.name),
+        value: item.count,
+        rawValue: item.name,
+      })),
+    },
+  ],
+}));
+
+const sourcePieOption = computed(() => ({
+  color: ["#1890ff", "#722ed1"],
+  tooltip: {
+    trigger: "item",
+    backgroundColor: "rgba(76, 52, 26, 0.92)",
+    borderWidth: 0,
+    textStyle: { color: "#fffdf8" },
+  },
+  legend: { bottom: 0 },
+  series: [
+    {
+      type: "pie",
+      radius: ["42%", "68%"],
+      data: (props.data?.source_breakdown || []).map((item) => ({
+        name: sourceLabel(item.name),
         value: item.count,
         rawValue: item.name,
       })),
@@ -162,6 +189,11 @@ function handleModeClick(params: { data?: unknown }) {
   if (rawValue) emit("filter-click", { type: "mode", value: rawValue });
 }
 
+function handleSourceClick(params: { data?: unknown }) {
+  const rawValue = getRawValue(params.data);
+  if (rawValue) emit("filter-click", { type: "source", value: rawValue });
+}
+
 function handleModelClick(params: { dataIndex?: number }) {
   const item = props.data?.model_breakdown[params.dataIndex || 0];
   if (item) emit("filter-click", { type: "model", value: item.name });
@@ -194,6 +226,16 @@ function handleUserCreditClick(params: { dataIndex?: number }) {
       <div class="breakdown-card warm-card motion-card-lift motion-fade-up" style="--motion-delay: 260ms">
         <div class="breakdown-head">
           <div>
+            <div class="breakdown-title">来源分布（Web/App）</div>
+            <div class="breakdown-desc">区分不同端的任务占比和消耗情况。</div>
+          </div>
+          <div class="breakdown-badge">饼图</div>
+        </div>
+        <VChart class="breakdown-chart" :option="sourcePieOption" autoresize @click="handleSourceClick" />
+      </div>
+      <div class="breakdown-card warm-card motion-card-lift motion-fade-up" style="--motion-delay: 300ms">
+        <div class="breakdown-head">
+          <div>
             <div class="breakdown-title">任务类型占比</div>
             <div class="breakdown-desc">区分生图、局部重绘和提示词反推的占用比例。</div>
           </div>
@@ -201,7 +243,7 @@ function handleUserCreditClick(params: { dataIndex?: number }) {
         </div>
         <VChart class="breakdown-chart" :option="modePieOption" autoresize @click="handleModeClick" />
       </div>
-      <div class="breakdown-card warm-card motion-card-lift motion-fade-up" style="--motion-delay: 300ms">
+      <div class="breakdown-card warm-card motion-card-lift motion-fade-up" style="--motion-delay: 340ms">
         <div class="breakdown-head">
           <div>
             <div class="breakdown-title">模型使用 Top</div>
@@ -211,7 +253,7 @@ function handleUserCreditClick(params: { dataIndex?: number }) {
         </div>
         <VChart class="breakdown-chart" :option="modelBarOption" autoresize @click="handleModelClick" />
       </div>
-      <div class="breakdown-card warm-card motion-card-lift motion-fade-up" style="--motion-delay: 340ms">
+      <div class="breakdown-card warm-card motion-card-lift motion-fade-up" style="--motion-delay: 380ms">
         <div class="breakdown-head">
           <div>
             <div class="breakdown-title">用户生成次数 Top</div>
@@ -221,7 +263,7 @@ function handleUserCreditClick(params: { dataIndex?: number }) {
         </div>
         <VChart class="breakdown-chart" :option="userTaskOption" autoresize @click="handleUserTaskClick" />
       </div>
-      <div class="breakdown-card warm-card breakdown-card-wide motion-card-lift motion-fade-up" style="--motion-delay: 380ms">
+      <div class="breakdown-card warm-card breakdown-card-wide motion-card-lift motion-fade-up" style="--motion-delay: 420ms">
         <div class="breakdown-head">
           <div>
             <div class="breakdown-title">用户消耗积分 Top</div>

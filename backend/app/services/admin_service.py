@@ -33,6 +33,7 @@ def _get_first_admin_id(db: Session) -> int | None:
 class AnalyticsRecord:
     user_id: int
     status: str
+    source: str
     model: str
     mode: str
     credit_cost: int
@@ -499,6 +500,7 @@ def _task_query(
     end_date: datetime,
     status_filter: str | None = None,
     user_id: int | None = None,
+    source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
 ):
@@ -512,6 +514,8 @@ def _task_query(
         query = query.filter(Task.status == status_filter)
     if user_id:
         query = query.filter(Task.user_id == user_id)
+    if source:
+        query = query.filter(Task.source == source)
     if model:
         query = query.filter(Task.model == model)
     if mode:
@@ -526,6 +530,7 @@ def _prompt_reverse_query(
     end_date: datetime,
     status_filter: str | None = None,
     user_id: int | None = None,
+    source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
 ):
@@ -534,6 +539,8 @@ def _prompt_reverse_query(
     if mode and mode != PROMPT_REVERSE_MODE:
         return None
     if model and model != PROMPT_REVERSE_MODEL:
+        return None
+    if source and source != "web":
         return None
 
     query = db.query(CreditLog).join(User, User.id == CreditLog.user_id).filter(
@@ -573,6 +580,7 @@ def _build_analytics_records(
     end_date: datetime,
     status_filter: str | None = None,
     user_id: int | None = None,
+    source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
 ) -> list[AnalyticsRecord]:
@@ -580,6 +588,7 @@ def _build_analytics_records(
         AnalyticsRecord(
             user_id=task.user_id,
             status=task.status or "pending",
+            source=task.source or "web",
             model=task.model or "未设置",
             mode=task.mode or "generate",
             credit_cost=int(task.credit_cost or 0),
@@ -591,6 +600,7 @@ def _build_analytics_records(
             end_date=end_date,
             status_filter=status_filter,
             user_id=user_id,
+            source=source,
             model=model,
             mode=mode,
         ).all()
@@ -602,6 +612,7 @@ def _build_analytics_records(
         end_date=end_date,
         status_filter=status_filter,
         user_id=user_id,
+        source=source,
         model=model,
         mode=mode,
     )
@@ -611,6 +622,7 @@ def _build_analytics_records(
             AnalyticsRecord(
                 user_id=log.user_id,
                 status="success",
+                source="web",
                 model=PROMPT_REVERSE_MODEL,
                 mode=PROMPT_REVERSE_MODE,
                 credit_cost=max(0, int(-(log.amount or 0))),
@@ -687,6 +699,7 @@ def get_analytics_summary(
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     user_id: int | None = None,
+    source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
@@ -700,6 +713,7 @@ def get_analytics_summary(
         end_date=current_end,
         status_filter=status_filter,
         user_id=user_id,
+        source=source,
         model=model,
         mode=mode,
     )
@@ -709,6 +723,7 @@ def get_analytics_summary(
         end_date=previous_end,
         status_filter=status_filter,
         user_id=user_id,
+        source=source,
         model=model,
         mode=mode,
     )
@@ -740,6 +755,7 @@ def get_analytics_timeseries(
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     user_id: int | None = None,
+    source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
@@ -755,6 +771,7 @@ def get_analytics_timeseries(
         end_date=current_end,
         status_filter=status_filter,
         user_id=user_id,
+        source=source,
         model=model,
         mode=mode,
     )
@@ -764,6 +781,7 @@ def get_analytics_timeseries(
         end_date=previous_end,
         status_filter=status_filter,
         user_id=user_id,
+        source=source,
         model=model,
         mode=mode,
     )
@@ -807,6 +825,7 @@ def get_analytics_breakdown(
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     user_id: int | None = None,
+    source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
@@ -818,6 +837,7 @@ def get_analytics_breakdown(
         end_date=current_end,
         status_filter=status_filter,
         user_id=user_id,
+        source=source,
         model=model,
         mode=mode,
     )
@@ -829,6 +849,7 @@ def get_analytics_breakdown(
     } if relevant_user_ids else {}
 
     status_breakdown: dict[str, dict[str, int]] = defaultdict(lambda: {"count": 0, "credit_cost": 0})
+    source_breakdown: dict[str, dict[str, int]] = defaultdict(lambda: {"count": 0, "credit_cost": 0})
     mode_breakdown: dict[str, dict[str, int]] = defaultdict(lambda: {"count": 0, "credit_cost": 0})
     model_breakdown: dict[str, dict[str, int]] = defaultdict(lambda: {"count": 0, "credit_cost": 0})
     user_task_breakdown: dict[str, dict[str, int]] = defaultdict(lambda: {"count": 0, "credit_cost": 0})
@@ -841,6 +862,10 @@ def get_analytics_breakdown(
 
         status_breakdown[status_key]["count"] += 1
         status_breakdown[status_key]["credit_cost"] += task_cost
+
+        source_key = record.source or "web"
+        source_breakdown[source_key]["count"] += 1
+        source_breakdown[source_key]["credit_cost"] += task_cost
 
         mode_breakdown[mode_key]["count"] += 1
         mode_breakdown[mode_key]["credit_cost"] += task_cost
@@ -864,6 +889,7 @@ def get_analytics_breakdown(
     return {
         "range_label": _format_range_label(current_start, current_end),
         "status_breakdown": _sorted_breakdown(status_breakdown),
+        "source_breakdown": _sorted_breakdown(source_breakdown),
         "mode_breakdown": _sorted_breakdown(mode_breakdown),
         "model_breakdown": _sorted_breakdown(model_breakdown, limit=8),
         "top_users_by_tasks": top_users_by_tasks,

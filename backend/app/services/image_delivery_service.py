@@ -123,6 +123,7 @@ def serialize_task(task: Task, *, cos_config: CosRuntimeConfig | None = None) ->
         "id": task_external_id(task),
         "mode": task.mode or "generate",
         "model": task.model or "",
+        "source": (task.source or "web"),
         "prompt": task.prompt or "",
         "num_images": task.num_images,
         "size": task.size,

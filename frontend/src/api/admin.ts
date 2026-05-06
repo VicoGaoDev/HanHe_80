@@ -28,6 +28,7 @@ function buildAnalyticsParams(query: AdminAnalyticsQuery): Record<string, unknow
   if (query.start_date) params.start_date = query.start_date;
   if (query.end_date) params.end_date = query.end_date;
   if (query.user_id) params.user_id = query.user_id;
+  if (query.source) params.source = query.source;
   if (query.model) params.model = query.model;
   if (query.mode) params.mode = query.mode;
   if (query.status) params.status = query.status;
@@ -92,6 +93,7 @@ export function getAdminHistory(
   const params: Record<string, unknown> = { page, page_size: pageSize };
   if (filter?.status) params.status = filter.status;
   if (filter?.user_id) params.user_id = filter.user_id;
+  if (filter?.source) params.source = filter.source;
   if (filter?.model) params.model = filter.model;
   if (filter?.mode) params.mode = filter.mode;
   if (filter?.start_date) params.start_date = filter.start_date;
