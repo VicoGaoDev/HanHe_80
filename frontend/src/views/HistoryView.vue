@@ -12,11 +12,12 @@ import {
   LoadingOutlined,
   MessageOutlined,
   PictureOutlined,
+  PushpinOutlined,
   ReloadOutlined,
 } from "@ant-design/icons-vue";
 import { useRouter } from "vue-router";
 import { getGenerationModels } from "@/api/config";
-import { fetchHistory } from "@/api/history";
+import { fetchHistory, toggleHistoryPin } from "@/api/history";
 import { deleteImage, getDisplayImageUrl, getDownloadUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
 import { deletePromptHistory } from "@/api/auth";
 import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
@@ -50,6 +51,7 @@ const previewVisible = ref(false);
 const previewSrc = ref("");
 const feedbackDialogOpen = ref(false);
 const feedbackTarget = ref<UserHistoryCard | null>(null);
+const pinningKeys = ref<string[]>([]);
 
 const modelOptions = computed(() => {
   const options = generationModels.value.map((item) => ({
@@ -387,6 +389,29 @@ function getHistoryItemKey(item: UserHistoryCard) {
   return `${item.mode}-${item.created_at}`;
 }
 
+function getHistoryPinPayload(item: UserHistoryCard) {
+  if (item.item_type === "task") {
+    if (typeof item.image_id !== "number") return null;
+    return {
+      item_type: "task" as const,
+      image_id: item.image_id,
+    };
+  }
+  if (!item.history_id) return null;
+  return {
+    item_type: "prompt_history" as const,
+    history_id: item.history_id,
+  };
+}
+
+function isPinning(item: UserHistoryCard) {
+  return pinningKeys.value.includes(String(getHistoryItemKey(item)));
+}
+
+function canPinHistoryItem(item: UserHistoryCard) {
+  return item.status !== "failed";
+}
+
 function clearSelection() {
   selectedImageIds.value = [];
 }
@@ -468,6 +493,32 @@ async function handleDelete(item: UserHistoryCard) {
       await loadHistory();
     },
   });
+}
+
+async function handleTogglePin(item: UserHistoryCard) {
+  if (!canPinHistoryItem(item)) {
+    message.warning("失败任务不支持置顶");
+    return;
+  }
+  const payload = getHistoryPinPayload(item);
+  if (!payload) {
+    message.warning("当前记录暂不支持置顶");
+    return;
+  }
+
+  const pinKey = String(getHistoryItemKey(item));
+  if (pinningKeys.value.includes(pinKey)) return;
+
+  pinningKeys.value = [...pinningKeys.value, pinKey];
+  try {
+    const result = await toggleHistoryPin(payload);
+    message.success(result.is_pinned ? "已置顶到顶部" : "已取消置顶");
+    await loadHistory(true);
+  } catch {
+    message.error(item.is_pinned ? "取消置顶失败" : "置顶失败，请重试");
+  } finally {
+    pinningKeys.value = pinningKeys.value.filter((key) => key !== pinKey);
+  }
 }
 
 async function handleBatchDownload() {
@@ -734,19 +785,52 @@ function handleReedit(item: UserHistoryCard) {
               <ClockCircleOutlined v-else />
             </div>
 
-            <a-tooltip v-if="item.task_id" title="反馈">
+            <a-tooltip v-if="canPinHistoryItem(item) && item.is_pinned" title="取消置顶">
               <a-button
                 shape="circle"
                 type="text"
-                class="history-feedback-btn history-overlay-btn"
-                :class="{ 'history-overlay-btn-failed': item.status === 'failed' }"
-                @click.stop="openFeedbackDialog(item)"
+                class="history-overlay-btn history-overlay-btn-active history-overlay-btn-persistent"
+                :loading="isPinning(item)"
+                @click.stop="handleTogglePin(item)"
               >
-                <template #icon><MessageOutlined /></template>
+                <template #icon><PushpinOutlined /></template>
               </a-button>
             </a-tooltip>
 
-            <div class="history-overlay-actions">
+            <div
+              class="history-overlay-actions history-overlay-actions-top"
+              :class="{ 'history-overlay-actions-with-persistent-pin': canPinHistoryItem(item) && item.is_pinned }"
+            >
+              <a-tooltip v-if="item.task_id" title="反馈">
+                <a-button
+                  shape="circle"
+                  type="text"
+                  class="history-overlay-btn"
+                  :class="{ 'history-overlay-btn-failed': item.status === 'failed' }"
+                  @click.stop="openFeedbackDialog(item)"
+                >
+                  <template #icon><MessageOutlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip v-if="canPinHistoryItem(item) && !item.is_pinned" title="置顶到顶部">
+                <a-button
+                  shape="circle"
+                  type="text"
+                  class="history-overlay-btn"
+                  :loading="isPinning(item)"
+                  @click.stop="handleTogglePin(item)"
+                >
+                  <template #icon><PushpinOutlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="删除">
+                <a-button shape="circle" type="text" class="history-overlay-btn history-overlay-btn-danger" @click.stop="handleDelete(item)">
+                  <template #icon><DeleteOutlined /></template>
+                </a-button>
+              </a-tooltip>
+            </div>
+
+            <div class="history-overlay-actions history-overlay-actions-bottom">
               <a-tooltip v-if="canHistoryViewOriginal(item)" title="查看原图">
                 <a-button shape="circle" type="text" class="history-overlay-btn" @click.stop="handleViewOriginal(item)">
                   <template #icon><EyeOutlined /></template>
@@ -766,11 +850,6 @@ function handleReedit(item: UserHistoryCard) {
                   @click.stop="typeof item.image_id === 'number' && download(item.image_id, item.image_url)"
                 >
                   <template #icon><DownloadOutlined /></template>
-                </a-button>
-              </a-tooltip>
-              <a-tooltip title="删除">
-                <a-button shape="circle" type="text" class="history-overlay-btn history-overlay-btn-danger" @click.stop="handleDelete(item)">
-                  <template #icon><DeleteOutlined /></template>
                 </a-button>
               </a-tooltip>
             </div>
@@ -960,20 +1039,26 @@ function handleReedit(item: UserHistoryCard) {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 6px;
   animation: history-fade-up var(--motion-duration-reveal) var(--motion-ease-enter) 0.04s both;
 }
 
 .history-topbar-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  font-size: 18px;
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  font-size: 17px;
 }
 
 .history-topbar-title {
-  font-size: 20px;
+  font-size: 19px;
+  line-height: 1.3;
+}
+
+.history-topbar .warm-page-desc {
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .history-topbar-meta {
@@ -987,7 +1072,7 @@ function handleReedit(item: UserHistoryCard) {
 
 .history-filter-bar {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
   align-items: center;
   margin-bottom: 18px;
@@ -1000,8 +1085,9 @@ function handleReedit(item: UserHistoryCard) {
 }
 
 .history-filter-btn {
-  height: 36px;
-  border-radius: 12px;
+  height: 34px;
+  border-radius: 11px;
+  font-size: 13px;
   font-weight: 600;
   box-shadow: none;
   transition:
@@ -1044,7 +1130,7 @@ function handleReedit(item: UserHistoryCard) {
 }
 
 .batch-mode-btn {
-  width: 34px;
+  width: 32px;
   border-radius: 10px;
   padding: 0 !important;
   border-color: #efc784 !important;
@@ -1078,7 +1164,7 @@ function handleReedit(item: UserHistoryCard) {
 }
 
 .empty-state {
-  padding: 80px 0;
+  padding: 72px 0;
   text-align: center;
   animation: history-fade-up var(--motion-duration-reveal) var(--motion-ease-enter) 0.2s both;
 }
@@ -1088,8 +1174,8 @@ function handleReedit(item: UserHistoryCard) {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
-  padding: 12px 14px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
   transform-origin: top center;
 }
 
@@ -1111,6 +1197,8 @@ function handleReedit(item: UserHistoryCard) {
 .history-batch-btn {
   min-width: 64px;
   border-radius: 10px;
+  height: 30px;
+  font-size: 12px;
   font-weight: 600;
   box-shadow: none;
   transition:
@@ -1185,8 +1273,8 @@ function handleReedit(item: UserHistoryCard) {
 
 .history-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .history-grid .result-card.warm-card {
@@ -1216,17 +1304,17 @@ function handleReedit(item: UserHistoryCard) {
   }
 
   &:hover .result-card-media:not(.result-card-media-failed) {
-    box-shadow: 0 18px 30px rgba(236, 185, 88, 0.16);
-    border-color: #efc784;
+    box-shadow: 0 16px 28px rgba(236, 185, 88, 0.14);
+    border-color: #e7bf7b;
   }
 
   &:hover .result-card-media.result-card-media-failed {
-    box-shadow: 0 20px 34px rgba(214, 87, 75, 0.22);
+    box-shadow: 0 16px 28px rgba(214, 87, 75, 0.18);
     border-color: rgba(214, 87, 75, 0.48);
   }
 
   &:hover .result-card-media img {
-    transform: scale(1.04);
+    transform: scale(1.02);
   }
 
   &:hover .result-card-model {
@@ -1240,7 +1328,7 @@ function handleReedit(item: UserHistoryCard) {
   left: 12px;
   z-index: 3;
   padding: 5px 7px;
-  border-radius: 16px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(241, 221, 183, 0.92);
   box-shadow: 0 6px 16px rgba(76, 52, 26, 0.08);
@@ -1248,15 +1336,17 @@ function handleReedit(item: UserHistoryCard) {
 }
 
 .result-card-media {
-  --media-radius: 18px;
+  --media-radius: 16px;
   width: 100%;
   aspect-ratio: 1 / 1;
   box-sizing: border-box;
   border-radius: var(--media-radius);
   overflow: hidden;
-  border: 1px dashed #cfba92;
-  background: #fffaf0;
-  box-shadow: 0 12px 28px rgba(236, 185, 88, 0.08);
+  border: 1px dashed #ead9b9;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 250, 240, 0.98) 58%, rgba(250, 238, 214, 0.96) 100%),
+    linear-gradient(180deg, #fffdf8, #fff4df);
+  box-shadow: 0 12px 24px rgba(236, 185, 88, 0.08);
   cursor: pointer;
   position: relative;
   transition:
@@ -1267,9 +1357,12 @@ function handleReedit(item: UserHistoryCard) {
   img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
+    box-sizing: border-box;
     display: block;
     border-radius: calc(var(--media-radius) - 1px);
+    background: transparent;
     transition: transform var(--motion-duration-emphasis) var(--motion-ease-enter);
   }
 
@@ -1278,7 +1371,7 @@ function handleReedit(item: UserHistoryCard) {
     border-color: rgba(201, 73, 60, 0.72);
     border-width: 1px;
     background: linear-gradient(180deg, #fff0ed, #ffe1db);
-    box-shadow: 0 16px 30px rgba(214, 87, 75, 0.16);
+    box-shadow: 0 14px 26px rgba(214, 87, 75, 0.16);
   }
 }
 
@@ -1306,11 +1399,43 @@ function handleReedit(item: UserHistoryCard) {
 
 .history-overlay-actions {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
   display: flex;
   gap: 8px;
   z-index: 2;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-soft),
+    transform var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.history-overlay-actions-top {
+  top: 12px;
+  right: 12px;
+}
+
+.history-overlay-actions-bottom {
+  right: 12px;
+  bottom: 12px;
+}
+
+.history-overlay-actions-with-persistent-pin {
+  right: 50px;
+}
+
+.result-card:hover .history-overlay-actions,
+.result-card:focus-within .history-overlay-actions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.history-overlay-btn-persistent {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
 }
 
 .history-feedback-btn {
@@ -1321,12 +1446,12 @@ function handleReedit(item: UserHistoryCard) {
 }
 
 .history-overlay-btn {
-  width: 36px !important;
-  height: 36px !important;
-  min-width: 36px !important;
-  max-width: 36px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   padding: 0 !important;
   line-height: 0 !important;
   border-radius: 50% !important;
@@ -1334,29 +1459,31 @@ function handleReedit(item: UserHistoryCard) {
   align-items: center !important;
   justify-content: center !important;
   flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  background: transparent !important;
-  color: rgba(255, 255, 255, 0.96) !important;
-  box-shadow: none;
-  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 240, 214, 0.18) !important;
+  background: rgba(76, 52, 26, 0.58) !important;
+  color: #fff7ea !important;
+  box-shadow: 0 10px 20px rgba(34, 22, 10, 0.22);
+  backdrop-filter: blur(10px);
   transition:
     transform var(--motion-duration-press) var(--motion-ease-soft),
     background var(--motion-duration-fast) var(--motion-ease-soft),
+    border-color var(--motion-duration-fast) var(--motion-ease-soft),
     color var(--motion-duration-fast) var(--motion-ease-soft),
     box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
 
   :deep(.anticon),
   :deep(.ant-btn-icon) {
     line-height: 0;
+    font-size: 14px;
   }
 
   &:hover,
   &:focus {
-    background: rgba(255, 255, 255, 0.94) !important;
-    border-color: rgba(255, 255, 255, 0.94) !important;
-    color: #684825 !important;
+    background: rgba(76, 52, 26, 0.78) !important;
+    border-color: rgba(255, 240, 214, 0.26) !important;
+    color: #fffdfa !important;
     transform: translateY(-1px);
-    box-shadow: 0 14px 22px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 14px 26px rgba(34, 22, 10, 0.28);
   }
 
   &:active {
@@ -1364,40 +1491,56 @@ function handleReedit(item: UserHistoryCard) {
   }
 
   &[disabled] {
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    background: transparent !important;
-    color: rgba(255, 255, 255, 0.48) !important;
+    border-color: rgba(255, 240, 214, 0.08) !important;
+    background: rgba(56, 40, 24, 0.34) !important;
+    color: rgba(255, 247, 234, 0.45) !important;
     box-shadow: none;
     opacity: 1;
   }
 }
 
 .history-overlay-btn-danger {
-  border-color: rgba(201, 73, 60, 0.42) !important;
-  background: rgba(201, 73, 60, 0.18) !important;
-  color: #c9493c !important;
+  border-color: rgba(255, 214, 209, 0.18) !important;
+  background: rgba(180, 58, 43, 0.88) !important;
+  color: #fff5f2 !important;
+  box-shadow: 0 12px 24px rgba(140, 40, 28, 0.28);
 
   &:hover,
   &:focus {
-    background: rgba(201, 73, 60, 0.94) !important;
-    border-color: rgba(201, 73, 60, 0.94) !important;
+    background: rgba(201, 73, 60, 0.98) !important;
+    border-color: rgba(255, 224, 220, 0.24) !important;
     color: #fff7f5 !important;
-    box-shadow: 0 14px 26px rgba(201, 73, 60, 0.3);
+    box-shadow: 0 16px 28px rgba(140, 40, 28, 0.36);
+  }
+}
+
+.history-overlay-btn-active {
+  border-color: rgba(255, 214, 76, 0.98) !important;
+  background: linear-gradient(180deg, rgba(255, 212, 59, 0.96), rgba(245, 176, 0, 0.96)) !important;
+  color: #6b4200 !important;
+  box-shadow: 0 14px 28px rgba(255, 196, 0, 0.38);
+
+  &:hover,
+  &:focus {
+    background: linear-gradient(180deg, rgba(255, 228, 118, 0.98), rgba(255, 194, 36, 0.98)) !important;
+    border-color: rgba(255, 228, 118, 0.98) !important;
+    color: #5a3500 !important;
+    box-shadow: 0 16px 30px rgba(255, 196, 0, 0.42);
   }
 }
 
 .history-feedback-btn.history-overlay-btn-failed {
-  border-color: rgba(201, 73, 60, 0.42) !important;
-  background: rgba(201, 73, 60, 0.18) !important;
-  color: #c9493c !important;
-  box-shadow: 0 10px 22px rgba(201, 73, 60, 0.2);
+  border-color: rgba(255, 214, 209, 0.18) !important;
+  background: rgba(180, 58, 43, 0.88) !important;
+  color: #fff5f2 !important;
+  box-shadow: 0 10px 22px rgba(140, 40, 28, 0.24);
 
   &:hover,
   &:focus {
-    background: rgba(201, 73, 60, 0.94) !important;
-    border-color: rgba(201, 73, 60, 0.94) !important;
+    background: rgba(201, 73, 60, 0.98) !important;
+    border-color: rgba(255, 224, 220, 0.24) !important;
     color: #fff7f5 !important;
-    box-shadow: 0 14px 26px rgba(201, 73, 60, 0.3);
+    box-shadow: 0 14px 26px rgba(140, 40, 28, 0.34);
   }
 }
 
@@ -1485,7 +1628,7 @@ function handleReedit(item: UserHistoryCard) {
 
 .detail-prompt {
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fff8ee;
   border: 1px solid #f2e3c6;
   color: #4c341a;
@@ -1506,9 +1649,9 @@ function handleReedit(item: UserHistoryCard) {
 .detail-thumb {
   width: 84px;
   height: 84px;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #f1ddb7;
+  border: 1px solid #ead9b9;
   background: #fff8ee;
   cursor: pointer;
   transition:
@@ -1526,7 +1669,7 @@ function handleReedit(item: UserHistoryCard) {
   &:hover {
     transform: translateY(-2px);
     border-color: #e7bf7b;
-    box-shadow: 0 16px 26px rgba(236, 185, 88, 0.14);
+    box-shadow: 0 16px 24px rgba(236, 185, 88, 0.12);
   }
 }
 
@@ -1544,9 +1687,9 @@ function handleReedit(item: UserHistoryCard) {
 
 .detail-result-card {
   height: clamp(220px, 36vh, 340px);
-  border-radius: 18px;
+  border-radius: 20px;
   overflow: hidden;
-  border: 1px solid #f1ddb7;
+  border: 1px solid #ead9b9;
   background: #fff8ee;
   cursor: pointer;
   transition:
@@ -1574,7 +1717,7 @@ function handleReedit(item: UserHistoryCard) {
   &:not(.pending):hover {
     transform: translateY(-3px);
     border-color: #e7bf7b;
-    box-shadow: 0 18px 30px rgba(236, 185, 88, 0.14);
+    box-shadow: 0 16px 28px rgba(236, 185, 88, 0.14);
   }
 
   &:not(.pending):hover img {
@@ -1597,7 +1740,7 @@ function handleReedit(item: UserHistoryCard) {
   flex-wrap: wrap;
   gap: 0;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fffaf2;
   border: 1px solid #f2e3c6;
   color: #8f7558;
@@ -1616,7 +1759,7 @@ function handleReedit(item: UserHistoryCard) {
 }
 
 .history-load-more-tip {
-  margin-top: 18px;
+  margin-top: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1732,6 +1875,24 @@ function handleReedit(item: UserHistoryCard) {
 
   .detail-result-grid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 1680px) {
+  .history-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1440px) {
+  .history-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .history-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 </style>

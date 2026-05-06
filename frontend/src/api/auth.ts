@@ -24,6 +24,10 @@ export function getMe(): Promise<UserInfo> {
   return client.get("/auth/me");
 }
 
+export function updateProfile(payload: { username: string }): Promise<UserInfo> {
+  return client.put("/auth/profile", payload);
+}
+
 export function uploadAvatar(file: File): Promise<UserInfo> {
   const formData = new FormData();
   formData.append("file", file);

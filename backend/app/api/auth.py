@@ -10,9 +10,9 @@ from app.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.config import settings
-from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest, UserBrief, ChangePasswordRequest
+from app.schemas.auth import LoginRequest, LoginResponse, RegisterRequest, UserBrief, ChangePasswordRequest, UpdateProfileRequest
 from app.services.business_id_service import get_user_by_business_id, user_external_id
-from app.services.auth_service import authenticate_user, change_password, register_user
+from app.services.auth_service import authenticate_user, change_password, register_user, update_username
 from app.models.prompt_history import PromptHistory
 from app.services.admin_service import get_credit_logs
 
@@ -24,7 +24,7 @@ AVATAR_MAX_SIZE = 1 * 1024 * 1024  # 1 MB
 
 def _user_brief(user: User) -> UserBrief:
     return UserBrief(
-        id=user_external_id(user), username=user.username, email=user.email, role=user.role,
+        id=user_external_id(user), business_id=user.business_id, username=user.username, email=user.email, role=user.role,
         avatar_url=user.avatar_url or "", credits=user.credits,
     )
 
@@ -98,6 +98,26 @@ def change_pwd(
 
 @router.get("/me", response_model=UserBrief)
 def get_me(user: User = Depends(get_current_user)):
+    return _user_brief(user)
+
+
+@router.put("/profile", response_model=UserBrief)
+def update_profile(
+    body: UpdateProfileRequest,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = update_username(db, user, body.username)
+    audit_logger.info(
+        "profile updated",
+        extra={
+            "event": "auth.profile.updated",
+            "client_ip": request.client.host if request.client else "",
+            "user_agent": request.headers.get("user-agent", ""),
+            "user_id": user_external_id(user),
+        },
+    )
     return _user_brief(user)
 
 

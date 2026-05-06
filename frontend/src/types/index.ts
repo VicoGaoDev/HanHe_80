@@ -1,5 +1,6 @@
 export interface UserInfo {
   id: string;
+  business_id: string;
   username: string;
   email?: string | null;
   role: "user" | "admin" | "superadmin";
@@ -86,6 +87,7 @@ export interface HistoryFilter {
   user_id?: string;
   start_date?: string;
   end_date?: string;
+  respect_pins?: boolean;
 }
 
 export interface HistoryResponse {
@@ -100,6 +102,8 @@ export interface UserHistoryCard {
   display_id?: string;
   task_id?: string | null;
   image_id?: number | null;
+  is_pinned: boolean;
+  pinned_at?: string | null;
   image_url: string;
   preview_url?: string;
   thumb_url?: string;
@@ -130,6 +134,17 @@ export interface UserHistoryCard {
 export interface UserHistoryResponse {
   total: number;
   items: UserHistoryCard[];
+}
+
+export interface HistoryPinTogglePayload {
+  item_type: "task" | "prompt_history";
+  image_id?: number | null;
+  history_id?: number | null;
+}
+
+export interface HistoryPinToggleResponse {
+  is_pinned: boolean;
+  pinned_at?: string | null;
 }
 
 export type FeedbackStatus = "pending" | "processing" | "completed";

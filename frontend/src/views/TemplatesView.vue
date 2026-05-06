@@ -308,28 +308,34 @@ watch(loadMoreAnchor, (target) => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 6px;
   animation: templates-fade-up var(--motion-duration-reveal) var(--motion-ease-enter) 0.04s both;
 }
 
 .templates-topbar-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  font-size: 18px;
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  font-size: 17px;
 }
 
 .templates-topbar-title {
-  font-size: 20px;
+  font-size: 19px;
+  line-height: 1.3;
+}
+
+.templates-topbar .warm-page-desc {
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .tag-filter {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  padding: 4px 0 8px;
+  padding: 2px 0 6px;
   animation: templates-fade-up var(--motion-duration-reveal-soft) var(--motion-ease-enter) 0.12s both;
 }
 
@@ -374,14 +380,14 @@ watch(loadMoreAnchor, (target) => {
   width: 100%;
   box-sizing: border-box;
   grid-template-columns: repeat(var(--masonry-columns), minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
   align-items: start;
 }
 
 .masonry-column {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -390,7 +396,7 @@ watch(loadMoreAnchor, (target) => {
   width: 100%;
   overflow: hidden;
   border-radius: 16px;
-  border: 1px solid #f0dfbe;
+  border: 1px solid #ead9b9;
   background: #fff8ec;
   cursor: pointer;
   transition:
@@ -400,8 +406,8 @@ watch(loadMoreAnchor, (target) => {
 
   &:hover {
     transform: translateY(-6px);
-    border-color: #f0c46d;
-    box-shadow: 0 22px 40px rgba(236, 185, 88, 0.2);
+    border-color: #e7bf7b;
+    box-shadow: 0 18px 32px rgba(236, 185, 88, 0.16);
   }
 
   &:active {
@@ -589,9 +595,9 @@ watch(loadMoreAnchor, (target) => {
 
 .detail-prompt {
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fff8ee;
-  border: 1px solid #f2e3c6;
+  border: 1px solid #f1ddb7;
   color: #4c341a;
   line-height: 1.7;
   white-space: pre-wrap;
@@ -610,9 +616,9 @@ watch(loadMoreAnchor, (target) => {
 .detail-thumb {
   width: 84px;
   height: 84px;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #f1ddb7;
+  border: 1px solid #ead9b9;
   background: #fff8ee;
   cursor: pointer;
   transition:
@@ -630,7 +636,7 @@ watch(loadMoreAnchor, (target) => {
   &:hover {
     transform: translateY(-2px);
     border-color: #e7bf7b;
-    box-shadow: 0 16px 26px rgba(236, 185, 88, 0.14);
+    box-shadow: 0 16px 24px rgba(236, 185, 88, 0.12);
   }
 }
 
@@ -642,9 +648,9 @@ watch(loadMoreAnchor, (target) => {
 
 .detail-result-card {
   height: clamp(220px, 36vh, 340px);
-  border-radius: 18px;
+  border-radius: 20px;
   overflow: hidden;
-  border: 1px solid #f1ddb7;
+  border: 1px solid #ead9b9;
   background: #fff8ee;
   cursor: zoom-in;
   transition:
@@ -668,7 +674,7 @@ watch(loadMoreAnchor, (target) => {
   &:not(.empty):hover {
     transform: translateY(-3px);
     border-color: #e7bf7b;
-    box-shadow: 0 18px 30px rgba(236, 185, 88, 0.14);
+    box-shadow: 0 16px 28px rgba(236, 185, 88, 0.14);
   }
 
   &:not(.empty):hover img {
@@ -689,9 +695,9 @@ watch(loadMoreAnchor, (target) => {
   flex-wrap: wrap;
   gap: 0;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fffaf2;
-  border: 1px solid #f2e3c6;
+  border: 1px solid #f1ddb7;
   color: #8f7558;
   font-size: 13px;
   line-height: 1.8;
@@ -704,7 +710,7 @@ watch(loadMoreAnchor, (target) => {
 }
 
 .empty-state {
-  padding: 80px 0;
+  padding: 72px 0;
   animation: templates-fade-up var(--motion-duration-reveal) var(--motion-ease-enter) 0.2s both;
 }
 
@@ -714,7 +720,7 @@ watch(loadMoreAnchor, (target) => {
   justify-content: center;
   gap: 10px;
   min-height: 48px;
-  margin: 18px 0 4px;
+  margin: 14px 0 4px;
   color: #8d7457;
   font-size: 13px;
 }
@@ -729,6 +735,11 @@ watch(loadMoreAnchor, (target) => {
 }
 
 :deep(.warm-primary-btn) {
+  height: 36px;
+  padding-inline: 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
   transition:
     transform var(--motion-duration-press) var(--motion-ease-soft),
     box-shadow var(--motion-duration-base) var(--motion-ease-soft),

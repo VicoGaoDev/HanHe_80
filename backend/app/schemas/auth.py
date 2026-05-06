@@ -13,6 +13,7 @@ class LoginResponse(BaseModel):
 
 class UserBrief(BaseModel):
     id: str
+    business_id: str
     username: str
     email: str | None = None
     role: str
@@ -31,3 +32,7 @@ class RegisterRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
+
+
+class UpdateProfileRequest(BaseModel):
+    username: str

@@ -29,6 +29,12 @@ const router = createRouter({
           component: () => import("@/views/HistoryView.vue"),
         },
         {
+          path: "profile",
+          name: "Profile",
+          meta: { requiresAuth: true },
+          component: () => import("@/views/ProfileView.vue"),
+        },
+        {
           path: "credit-logs",
           name: "CreditLogs",
           meta: { requiresAuth: true },

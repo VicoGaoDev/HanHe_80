@@ -6,9 +6,7 @@ import { message } from "ant-design-vue";
 import {
   login as apiLogin,
   register as apiRegister,
-  changePassword,
   getMe,
-  uploadAvatar,
   getContactConfig,
   getAnnouncementConfig,
 } from "@/api/auth";
@@ -25,7 +23,6 @@ import {
   CloudUploadOutlined,
   LogoutOutlined,
   LockOutlined,
-  UploadOutlined,
   DownOutlined,
   UserOutlined,
   UserAddOutlined,
@@ -48,18 +45,19 @@ const routeOrder = new Map<string, number>([
   ["/templates", 1],
   ["/generate", 2],
   ["/history", 3],
-  ["/settings", 4],
-  ["/credit-logs", 5],
-  ["/feedbacks", 6],
-  ["/feedbacks/:feedbackId", 7],
-  ["/admin/templates", 8],
-  ["/admin/users", 9],
-  ["/admin/dashboard", 10],
-  ["/admin/feedbacks", 11],
-  ["/admin/feedbacks/:feedbackId", 12],
-  ["/admin/api-key", 13],
-  ["/admin/cos-config", 14],
-  ["/admin/external-api-configs", 15],
+  ["/profile", 4],
+  ["/settings", 5],
+  ["/credit-logs", 6],
+  ["/feedbacks", 7],
+  ["/feedbacks/:feedbackId", 8],
+  ["/admin/templates", 9],
+  ["/admin/users", 10],
+  ["/admin/dashboard", 11],
+  ["/admin/feedbacks", 12],
+  ["/admin/feedbacks/:feedbackId", 13],
+  ["/admin/api-key", 14],
+  ["/admin/cos-config", 15],
+  ["/admin/external-api-configs", 16],
 ]);
 
 const currentTheme = ref<AppThemeName>(getCurrentTheme());
@@ -90,10 +88,9 @@ const adminMenuItems = computed(() =>
 );
 
 const userMenuItems = [
+  { key: "profile", label: "个人主页", icon: UserOutlined, danger: false },
   { key: "my-feedback", label: "我的反馈", icon: MessageOutlined, danger: false },
   { key: "settings", label: "设置", icon: SettingOutlined, danger: false },
-  { key: "avatar", label: "上传头像", icon: UploadOutlined, danger: false },
-  { key: "password", label: "修改密码", icon: LockOutlined, danger: false },
   { key: "credits", label: "积分记录", icon: ThunderboltOutlined, danger: false },
   { key: "logout", label: "退出登录", icon: LogoutOutlined, danger: true },
 ];
@@ -110,7 +107,7 @@ const selectedKeys = computed(() => {
   if (p === "/") return [];
   if (p === "/templates") return ["templates"];
   if (p === "/history") return ["history"];
-  if (p === "/settings" || p === "/credit-logs" || p.startsWith("/feedbacks")) return [];
+  if (p === "/profile" || p === "/settings" || p === "/credit-logs" || p.startsWith("/feedbacks")) return [];
   return ["generate"];
 });
 
@@ -150,10 +147,9 @@ function handleAdminMenu({ key }: { key: string }) {
 
 function handleUserMenu({ key }: { key: string }) {
   mobileDrawerOpen.value = false;
-  if (key === "my-feedback") router.push("/feedbacks");
+  if (key === "profile") router.push("/profile");
+  else if (key === "my-feedback") router.push("/feedbacks");
   else if (key === "settings") router.push("/settings");
-  else if (key === "avatar") avatarVisible.value = true;
-  else if (key === "password") pwdVisible.value = true;
   else if (key === "credits") router.push("/credit-logs");
   else if (key === "logout") {
     auth.logout();
@@ -277,12 +273,6 @@ async function handleRegisterSubmit() {
   }
 }
 
-const pwdVisible = ref(false);
-const pwdForm = ref({ oldPassword: "", newPassword: "", confirmPassword: "" });
-const pwdLoading = ref(false);
-const avatarVisible = ref(false);
-const avatarUploading = ref(false);
-const avatarInput = ref<HTMLInputElement | null>(null);
 const creditsContactVisible = ref(false);
 const contactQrImage = ref("");
 const announcementVisible = ref(false);
@@ -389,62 +379,6 @@ watch(
   }
 );
 
-async function handleChangePwd() {
-  if (!pwdForm.value.oldPassword || !pwdForm.value.newPassword) {
-    message.warning("请填写完整");
-    return;
-  }
-  if (pwdForm.value.newPassword !== pwdForm.value.confirmPassword) {
-    message.warning("两次密码不一致");
-    return;
-  }
-  pwdLoading.value = true;
-  try {
-    await changePassword(pwdForm.value.oldPassword, pwdForm.value.newPassword);
-    message.success("密码修改成功");
-    pwdVisible.value = false;
-    pwdForm.value = { oldPassword: "", newPassword: "", confirmPassword: "" };
-  } catch (err: any) {
-    message.error(err.response?.data?.detail || "修改失败");
-  } finally {
-    pwdLoading.value = false;
-  }
-}
-
-function triggerAvatarSelect() {
-  avatarInput.value?.click();
-}
-
-async function handleAvatarChange(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
-
-  if (file.size > 1024 * 1024) {
-    message.warning("头像图片不能超过 1MB");
-    input.value = "";
-    return;
-  }
-
-  if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
-    message.warning("仅支持 JPG/PNG/WEBP/GIF 格式");
-    input.value = "";
-    return;
-  }
-
-  avatarUploading.value = true;
-  try {
-    const user = await uploadAvatar(file);
-    auth.updateUser(user);
-    avatarVisible.value = false;
-    message.success("头像上传成功");
-  } catch (err: any) {
-    message.error(err.response?.data?.detail || "头像上传失败");
-  } finally {
-    avatarUploading.value = false;
-    input.value = "";
-  }
-}
 </script>
 
 <template>
@@ -699,59 +633,6 @@ async function handleAvatarChange(e: Event) {
       </div>
     </a-modal>
 
-    <a-modal
-      v-model:open="avatarVisible"
-      title="上传头像"
-      :footer="null"
-      :width="420"
-      centered
-    >
-      <div class="avatar-modal">
-        <a-avatar :size="92" class="avatar-modal-preview" :src="avatarUrl || undefined">
-          {{ avatarFallback }}
-        </a-avatar>
-        <div class="avatar-modal-text">支持 JPG / PNG / WEBP / GIF，图片最大 1MB</div>
-        <input
-          ref="avatarInput"
-          type="file"
-          accept="image/png,image/jpeg,image/webp,image/gif"
-          hidden
-          @change="handleAvatarChange"
-        />
-        <a-button
-          type="primary"
-          class="warm-primary-btn avatar-upload-btn"
-          :loading="avatarUploading"
-          @click="triggerAvatarSelect"
-        >
-          <template #icon><UploadOutlined /></template>
-          {{ avatarUploading ? "上传中..." : "选择头像" }}
-        </a-button>
-      </div>
-    </a-modal>
-
-    <a-modal
-      v-model:open="pwdVisible"
-      title="修改密码"
-      :confirm-loading="pwdLoading"
-      @ok="handleChangePwd"
-      ok-text="确认修改"
-      cancel-text="取消"
-      :width="420"
-      centered
-    >
-      <a-form layout="vertical" style="margin-top: 16px">
-        <a-form-item label="原密码">
-          <a-input-password v-model:value="pwdForm.oldPassword" placeholder="请输入原密码" />
-        </a-form-item>
-        <a-form-item label="新密码">
-          <a-input-password v-model:value="pwdForm.newPassword" placeholder="至少6位" />
-        </a-form-item>
-        <a-form-item label="确认新密码" style="margin-bottom: 0">
-          <a-input-password v-model:value="pwdForm.confirmPassword" placeholder="请再次输入" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
     <a-modal
       v-model:open="loginModalVisible"
       :title="null"
@@ -1416,32 +1297,6 @@ async function handleAvatarChange(e: Event) {
 :deep(.ant-modal .ant-btn-primary) {
   background: var(--theme-accent) !important;
   border: none !important;
-}
-
-.avatar-modal {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 0 6px;
-  text-align: center;
-}
-
-.avatar-modal-preview {
-  background: var(--theme-accent);
-  color: var(--theme-accent-contrast);
-  font-size: 32px;
-  font-weight: 700;
-  box-shadow: 0 16px 28px var(--theme-nav-active-shadow);
-}
-
-.avatar-modal-text {
-  margin-top: 16px;
-  color: var(--theme-text-muted);
-  font-size: 13px;
-}
-
-.avatar-upload-btn {
-  margin-top: 18px;
 }
 
 .login-header-btn {

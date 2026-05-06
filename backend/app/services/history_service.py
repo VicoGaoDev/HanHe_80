@@ -9,6 +9,7 @@ from app.models.image import Image
 from app.models.regenerate_log import RegenerateLog
 from app.models.credit_log import CreditLog
 from app.models.prompt_history import PromptHistory
+from app.models.history_pin import HistoryPin
 from app.models.user import User
 from app.services.prompt_reverse_service import (
     PROMPT_REVERSE_CREDIT_LOG_DESCRIPTION,
@@ -40,6 +41,20 @@ def _resolve_history_card_status(task_status: str | None, image_status: str | No
     return image_status or task_status or "pending"
 
 
+def _build_history_pin_key(item_type: str, image_id: int | None = None, history_id: int | None = None) -> str:
+    if item_type == "task" and isinstance(image_id, int):
+        return f"task:{image_id}"
+    if item_type == "prompt_history" and isinstance(history_id, int):
+        return f"prompt_history:{history_id}"
+    raise ValueError("invalid_history_pin_target")
+
+
+def _serialize_history_pin(pin: HistoryPin | None) -> tuple[bool, datetime | None]:
+    if not pin:
+        return False, None
+    return True, pin.pinned_at
+
+
 def _serialize_history_images(
     images: list[Image],
     *,
@@ -59,6 +74,7 @@ def get_user_history(
     user_id: int,
     page: int = 1,
     page_size: int = 20,
+    respect_pins: bool = True,
     mode: str | None = None,
     source: str | None = None,
     model: str | None = None,
@@ -68,6 +84,15 @@ def get_user_history(
     end_date: datetime | None = None,
 ):
     cos_config = get_optional_cos_config(db)
+    history_pins = (
+        db.query(HistoryPin)
+        .filter(HistoryPin.user_id == user_id)
+        .order_by(HistoryPin.pinned_at.desc(), HistoryPin.id.desc())
+        .all()
+        if respect_pins
+        else []
+    )
+    history_pin_map = {pin.item_key: pin for pin in history_pins}
     image_query = (
         db.query(Image)
         .join(Task, Image.task_id == Task.id)
@@ -128,12 +153,15 @@ def get_user_history(
         mask_asset = serialize_asset_urls(task.mask_image or "", cos_config=cos_config)
         reference_assets = [serialize_asset_urls(ref, cos_config=cos_config) for ref in _parse_refs(task.reference_images)]
         visible_images = _serialize_history_images(task.images, cos_config=cos_config)
+        is_pinned, pinned_at = _serialize_history_pin(history_pin_map.get(_build_history_pin_key("task", image_id=image.id)))
         items.append({
             "history_id": None,
             "item_type": "task",
             "display_id": task_external_id(task),
             "task_id": task_external_id(task),
             "image_id": image.id,
+            "is_pinned": is_pinned,
+            "pinned_at": pinned_at,
             "image_url": image_payload["image_url"],
             "preview_url": image_payload["preview_url"],
             "thumb_url": image_payload["thumb_url"],
@@ -163,12 +191,15 @@ def get_user_history(
 
     for row in prompt_reverse_rows:
         source_asset = serialize_asset_urls(row.source_image or "", cos_config=cos_config)
+        is_pinned, pinned_at = _serialize_history_pin(history_pin_map.get(_build_history_pin_key("prompt_history", history_id=row.id)))
         items.append({
             "history_id": row.id,
             "item_type": "prompt_history",
             "display_id": f"PR-{row.id}",
             "task_id": None,
             "image_id": -row.id,
+            "is_pinned": is_pinned,
+            "pinned_at": pinned_at,
             "image_url": "",
             "preview_url": "",
             "thumb_url": "",
@@ -196,7 +227,17 @@ def get_user_history(
             "images": [],
         })
 
-    items.sort(key=lambda item: item["created_at"] or datetime.min, reverse=True)
+    if respect_pins:
+        items.sort(
+            key=lambda item: (
+                1 if item.get("is_pinned") else 0,
+                item.get("pinned_at") or datetime.min,
+                item.get("created_at") or datetime.min,
+            ),
+            reverse=True,
+        )
+    else:
+        items.sort(key=lambda item: item.get("created_at") or datetime.min, reverse=True)
     total = len(items)
     start_index = (page - 1) * page_size
     return {"total": total, "items": items[start_index:start_index + page_size]}
@@ -221,6 +262,72 @@ def delete_user_history_task(db: Session, user_id: int, task_id: str):
     db.delete(task)
     db.commit()
     return True
+
+
+def toggle_history_pin(
+    db: Session,
+    user_id: int,
+    *,
+    item_type: str,
+    image_id: int | None = None,
+    history_id: int | None = None,
+):
+    item_key = _build_history_pin_key(item_type, image_id=image_id, history_id=history_id)
+
+    if item_type == "task":
+        if not isinstance(image_id, int):
+            raise ValueError("invalid_history_pin_target")
+        image_exists = (
+            db.query(Image.id)
+            .join(Task, Image.task_id == Task.id)
+            .filter(
+                Image.id == image_id,
+                Image.is_deleted.is_(False),
+                Task.user_id == user_id,
+            )
+            .first()
+        )
+        if not image_exists:
+            raise LookupError("history_item_not_found")
+    elif item_type == "prompt_history":
+        if not isinstance(history_id, int):
+            raise ValueError("invalid_history_pin_target")
+        prompt_history_exists = (
+            db.query(PromptHistory.id)
+            .filter(
+                PromptHistory.id == history_id,
+                PromptHistory.user_id == user_id,
+                PromptHistory.mode == PROMPT_REVERSE_MODE,
+            )
+            .first()
+        )
+        if not prompt_history_exists:
+            raise LookupError("history_item_not_found")
+    else:
+        raise ValueError("invalid_history_pin_target")
+
+    pin = (
+        db.query(HistoryPin)
+        .filter(HistoryPin.user_id == user_id, HistoryPin.item_key == item_key)
+        .first()
+    )
+    if pin:
+        db.delete(pin)
+        db.commit()
+        return {"is_pinned": False, "pinned_at": None}
+
+    pin = HistoryPin(
+        user_id=user_id,
+        item_type=item_type,
+        item_key=item_key,
+        image_id=image_id if item_type == "task" else None,
+        history_id=history_id if item_type == "prompt_history" else None,
+        pinned_at=datetime.utcnow(),
+    )
+    db.add(pin)
+    db.commit()
+    db.refresh(pin)
+    return {"is_pinned": True, "pinned_at": pin.pinned_at}
 
 
 def get_all_history(

@@ -429,7 +429,7 @@ async function loadRecentGeneratedTasks() {
   }
 
   try {
-    const res = await fetchHistory(1, MAX_RECENT_GENERATED_TASKS);
+    const res = await fetchHistory(1, MAX_RECENT_GENERATED_TASKS, { respect_pins: false });
     const seenTaskIds = new Set<string>();
     const recentTasks = res.items
       .filter((item) => item.mode !== "promptReverse" && !!item.task_id && !seenTaskIds.has(item.task_id) && seenTaskIds.add(item.task_id))
@@ -2104,7 +2104,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 .generate-workbench {
   display: grid;
   grid-template-columns: 382fr 618fr;
-  gap: 24px;
+  gap: 20px;
   align-items: stretch;
   min-height: 100%;
   height: 100%;
@@ -2146,7 +2146,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 }
 
 .mode-switch-group-primary {
-  gap: 10px;
+  gap: 12px;
 }
 
 .mode-switch-group-secondary {
@@ -2185,31 +2185,27 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
 .mode-switch-group-primary .mode-switch-btn {
   min-width: 116px;
-  border-radius: 15px;
-  border-color: rgba(239, 195, 113, 0.16);
-  background: rgba(255, 249, 239, 0.76);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border-radius: 14px;
+  border-color: #efd2a1;
+  background: rgba(255, 250, 242, 0.92);
+  box-shadow: none;
 
   &:hover,
   &:focus {
-    color: #995b00;
-    border-color: rgba(239, 195, 113, 0.24);
-    background: var(--theme-control-hover-bg);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.24),
-      0 10px 18px rgba(255, 169, 37, 0.18);
+    color: #8c5609;
+    border-color: #e5bf80;
+    background: rgba(255, 244, 224, 0.96);
+    box-shadow: 0 10px 20px rgba(236, 185, 88, 0.1);
   }
 }
 
 .mode-switch-group-primary .mode-switch-btn.active,
 .mode-switch-group-primary .mode-switch-btn.active:hover,
 .mode-switch-group-primary .mode-switch-btn.active:focus {
-  color: #3f2a08;
+  color: var(--theme-accent-contrast);
   border-color: transparent;
   background: var(--theme-accent);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 10px 18px rgba(255, 169, 37, 0.22);
+  box-shadow: 0 14px 24px var(--theme-shadow-strong);
 }
 
 .mode-switch-btn.tool {
@@ -2243,9 +2239,13 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
 .mode-switch-group-primary .generate-tab-label {
   min-height: 40px;
-  padding: 0 14px;
-  border-radius: 15px;
-  font-weight: 800;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-weight: 700;
+
+  .anticon {
+    font-size: 17px;
+  }
 }
 
 .tool-trigger {
@@ -2302,11 +2302,11 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 }
 
 .generate-config-panel {
-  padding: 18px;
-  border-radius: 28px;
-  border-color: rgba(239, 195, 113, 0.42);
+  padding: 16px;
+  border-radius: 24px;
+  border-color: rgba(239, 223, 190, 0.92);
   box-shadow:
-    0 20px 44px rgba(246, 178, 70, 0.14),
+    0 18px 36px rgba(236, 185, 88, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -2318,7 +2318,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 12px 0 6px;
+  padding: 0 10px 0 4px;
 }
 
 .settings-footer {
@@ -2326,13 +2326,13 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   z-index: 3;
   flex-shrink: 0;
   margin-top: auto;
-  padding-top: 10px;
+  padding-top: 8px;
   background: linear-gradient(180deg, rgba(255, 250, 240, 0), rgba(255, 250, 240, 0.94) 28%, rgba(255, 254, 251, 1));
 }
 
 .config-section {
   position: relative;
-  padding: 0 0 12px;
+  padding: 0 0 10px;
   transition: transform var(--motion-duration-base) var(--motion-ease-soft), opacity var(--motion-duration-base) var(--motion-ease-soft);
 }
 
@@ -2366,11 +2366,11 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 }
 
 .history-btn {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 12px;
   color: #a88962 !important;
-  font-size: 17px;
+  font-size: 15px;
   background: rgba(255, 250, 242, 0.92) !important;
   border: 1px solid rgba(241, 221, 183, 0.95) !important;
   transition:
@@ -2569,8 +2569,8 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   margin-bottom: var(--config-title-gap);
 
   h3 {
-    font-size: 15px;
-    line-height: 1.4;
+    font-size: 14px;
+    line-height: 1.35;
     color: var(--config-title-color);
     margin: 0;
     font-weight: 700;
@@ -2581,6 +2581,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   font-size: 12px;
   color: #9f845d;
   font-weight: 500;
+  line-height: 1.5;
 }
 
 /* --- Upload (compact) --- */
@@ -2841,9 +2842,9 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
 .generate-btn {
   margin-top: 10px;
-  height: 50px;
-  border-radius: 18px;
-  font-size: 16px;
+  height: 48px;
+  border-radius: 16px;
+  font-size: 15px;
   font-weight: 700;
   background: var(--theme-accent) !important;
   border: none !important;
@@ -3221,7 +3222,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  padding: 18px 20px 20px;
+  padding: 16px 18px 18px;
   animation: generate-slide-right-in var(--motion-duration-stage-delayed) var(--motion-ease-enter) 0.14s both;
 }
 
@@ -3229,7 +3230,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
 }
 
 .result-head-main {
@@ -3249,8 +3250,8 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
 .result-tip-line {
   color: #8f7558;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .result-retain-badge {
@@ -3287,16 +3288,16 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
 .result-list {
   display: block;
-  margin-top: 16px;
+  margin-top: 12px;
   column-count: 3;
-  column-gap: 16px;
+  column-gap: 12px;
 }
 
 .result-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  margin-top: 18px;
+  margin-top: 14px;
   padding-right: 4px;
   display: flex;
   flex-direction: column;
@@ -3324,7 +3325,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 }
 
 .result-list-footnote {
-  margin: 16px 4px 2px;
+  margin: 12px 4px 2px;
   padding: 0 2px 4px;
   color: #a38a65;
   font-size: 12px;
@@ -3337,7 +3338,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   width: 100%;
   margin: 0 0 16px;
   position: relative;
-  border-radius: 20px;
+  border-radius: 16px;
   break-inside: avoid;
   -webkit-column-break-inside: avoid;
   transition: transform var(--motion-duration-hover) var(--motion-ease-enter);
@@ -3359,11 +3360,11 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 .result-frame {
   position: relative;
   min-height: 0;
-  border-radius: 18px;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px dashed #ead9b9;
   background: #fffaf0;
-  box-shadow: 0 12px 28px rgba(236, 185, 88, 0.08);
+  box-shadow: 0 12px 24px rgba(236, 185, 88, 0.08);
   transition:
     transform var(--motion-duration-hover) var(--motion-ease-enter),
     box-shadow var(--motion-duration-hover) var(--motion-ease-soft),
@@ -3387,14 +3388,14 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   &.failed {
     border-color: rgba(214, 87, 75, 0.34);
     background: linear-gradient(180deg, #fff0ed, #ffe1db);
-    box-shadow: 0 16px 30px rgba(214, 87, 75, 0.16);
+    box-shadow: 0 14px 26px rgba(214, 87, 75, 0.16);
     min-height: 220px;
   }
 }
 
 .result-card:hover .result-frame.clickable {
-  border-color: #efc784;
-  box-shadow: 0 18px 30px rgba(236, 185, 88, 0.16);
+  border-color: #e7bf7b;
+  box-shadow: 0 16px 28px rgba(236, 185, 88, 0.14);
 }
 
 .result-card:hover .result-frame.clickable img {
@@ -3413,26 +3414,32 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   inset: auto 12px 12px auto;
   display: flex;
   gap: 8px;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-soft),
+    transform var(--motion-duration-fast) var(--motion-ease-soft);
 
   .icon-chip {
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    background: transparent !important;
-    color: rgba(255, 255, 255, 0.96) !important;
-    box-shadow: none;
-    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 240, 214, 0.18) !important;
+    background: rgba(76, 52, 26, 0.58) !important;
+    color: #fff7ea !important;
+    box-shadow: 0 10px 20px rgba(34, 22, 10, 0.22);
+    backdrop-filter: blur(10px);
 
     &:hover,
     &:focus {
-      background: rgba(255, 255, 255, 0.94) !important;
-      border-color: rgba(255, 255, 255, 0.94) !important;
-      color: #684825 !important;
-      box-shadow: 0 14px 22px rgba(0, 0, 0, 0.12);
+      background: rgba(76, 52, 26, 0.78) !important;
+      border-color: rgba(255, 240, 214, 0.26) !important;
+      color: #fffdfa !important;
+      box-shadow: 0 14px 26px rgba(34, 22, 10, 0.28);
     }
 
     &:disabled {
-      border-color: rgba(255, 255, 255, 0.1) !important;
-      background: transparent !important;
-      color: rgba(255, 255, 255, 0.48) !important;
+      border-color: rgba(255, 240, 214, 0.08) !important;
+      background: rgba(56, 40, 24, 0.34) !important;
+      color: rgba(255, 247, 234, 0.45) !important;
       box-shadow: none;
       opacity: 1;
     }
@@ -3466,51 +3473,73 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   top: 12px;
   right: 12px;
   z-index: 3;
-  opacity: 1;
-  pointer-events: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  background: transparent !important;
-  color: rgba(255, 255, 255, 0.96) !important;
-  box-shadow: none;
-  backdrop-filter: blur(6px);
-  transition: opacity var(--motion-duration-fast) var(--motion-ease-soft);
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  border: 1px solid rgba(255, 240, 214, 0.18) !important;
+  background: rgba(76, 52, 26, 0.58) !important;
+  color: #fff7ea !important;
+  box-shadow: 0 10px 20px rgba(34, 22, 10, 0.22);
+  backdrop-filter: blur(10px);
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-soft),
+    transform var(--motion-duration-fast) var(--motion-ease-soft),
+    background var(--motion-duration-fast) var(--motion-ease-soft),
+    border-color var(--motion-duration-fast) var(--motion-ease-soft),
+    color var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
 
   &:hover,
   &:focus {
-    background: rgba(255, 255, 255, 0.94) !important;
-    border-color: rgba(255, 255, 255, 0.94) !important;
-    color: #684825 !important;
-    box-shadow: 0 14px 22px rgba(0, 0, 0, 0.12);
+    background: rgba(76, 52, 26, 0.78) !important;
+    border-color: rgba(255, 240, 214, 0.26) !important;
+    color: #fffdfa !important;
+    box-shadow: 0 14px 26px rgba(34, 22, 10, 0.28);
   }
 }
 
 .result-more-icon {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .result-more-trigger-failed.icon-chip {
-  border-color: rgba(201, 73, 60, 0.42) !important;
-  background: rgba(201, 73, 60, 0.18) !important;
-  color: #c9493c !important;
-  box-shadow: 0 10px 22px rgba(201, 73, 60, 0.2);
+  border-color: rgba(255, 214, 209, 0.18) !important;
+  background: rgba(180, 58, 43, 0.88) !important;
+  color: #fff5f2 !important;
+  box-shadow: 0 10px 22px rgba(140, 40, 28, 0.24);
 
   &:hover,
   &:focus {
-    background: rgba(201, 73, 60, 0.94) !important;
-    border-color: rgba(201, 73, 60, 0.94) !important;
+    background: rgba(201, 73, 60, 0.98) !important;
+    border-color: rgba(255, 224, 220, 0.24) !important;
     color: #fff7f5 !important;
-    box-shadow: 0 14px 26px rgba(201, 73, 60, 0.3);
+    box-shadow: 0 14px 26px rgba(140, 40, 28, 0.34);
   }
 }
 
+.result-card:hover .result-actions,
+.result-card:focus-within .result-actions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.result-card:hover .result-more-trigger.icon-chip,
+.result-card:focus-within .result-more-trigger.icon-chip {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 .icon-chip {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px !important;
   border: none !important;
   background: rgba(255, 255, 255, 0.92) !important;
   color: #684825 !important;
   box-shadow: 0 10px 16px rgba(0, 0, 0, 0.1);
+  font-size: 14px !important;
   transition:
     transform var(--motion-duration-press) var(--motion-ease-soft),
     background var(--motion-duration-fast) var(--motion-ease-soft),
@@ -3540,7 +3569,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 24px 32px;
+  padding: 8px 20px 28px;
   animation: generate-fade-up var(--motion-duration-reveal) var(--motion-ease-enter) 0.2s both;
 }
 
@@ -3996,16 +4025,16 @@ html[data-theme="dark"] .generate-page .mode-switch-btn {
 }
 
 html[data-theme="dark"] .generate-page .mode-switch-group-primary .mode-switch-btn {
-  border-color: var(--theme-panel-border);
-  background: var(--theme-panel-bg-soft);
+  border-color: #efd2a1;
+  background: #fff;
   box-shadow: none;
 
   &:hover,
   &:focus {
-    color: var(--theme-title);
-    border-color: var(--theme-border-strong);
-    background: var(--theme-control-hover-bg);
-    box-shadow: 0 10px 18px var(--theme-shadow-soft);
+    color: #8c5609;
+    border-color: #e5bf80;
+    background: rgba(255, 244, 224, 0.96);
+    box-shadow: 0 10px 20px rgba(236, 185, 88, 0.1);
   }
 }
 
@@ -4013,9 +4042,9 @@ html[data-theme="dark"] .generate-page .mode-switch-group-primary .mode-switch-b
 html[data-theme="dark"] .generate-page .mode-switch-group-primary .mode-switch-btn.active:hover,
 html[data-theme="dark"] .generate-page .mode-switch-group-primary .mode-switch-btn.active:focus {
   color: #fff;
-  border-color: #050505;
-  background: #050505;
-  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+  border-color: transparent;
+  background: var(--theme-accent);
+  box-shadow: 0 14px 24px var(--theme-shadow-strong);
 }
 
 html[data-theme="dark"] .generate-page .mode-switch-btn.tool {

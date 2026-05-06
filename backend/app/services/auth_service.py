@@ -23,11 +23,16 @@ def _validate_email(email: str) -> str:
     return normalized
 
 
-def register_user(db: Session, username: str, email: str, password: str) -> tuple[str, User]:
-    normalized_username = (username or "").strip()
-    normalized_email = _validate_email(email)
-    if len(normalized_username) < 2 or len(normalized_username) > 20:
+def _validate_username(username: str) -> str:
+    normalized = (username or "").strip()
+    if len(normalized) < 2 or len(normalized) > 20:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="用户名需 2-20 个字符")
+    return normalized
+
+
+def register_user(db: Session, username: str, email: str, password: str) -> tuple[str, User]:
+    normalized_username = _validate_username(username)
+    normalized_email = _validate_email(email)
     if len(password) < 6:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="密码至少6位")
 
@@ -83,3 +88,13 @@ def change_password(db: Session, user: User, old_password: str, new_password: st
 
     user.password_hash = hash_password(new_password)
     db.commit()
+
+
+def update_username(db: Session, user: User, username: str) -> User:
+    normalized_username = _validate_username(username)
+    if user.username == normalized_username:
+        return user
+    user.username = normalized_username
+    db.commit()
+    db.refresh(user)
+    return user

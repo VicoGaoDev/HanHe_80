@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
-from app.schemas.history import UserHistoryResponse
-from app.services.history_service import delete_user_history_task, get_user_history
+from app.schemas.history import HistoryPinToggleRequest, HistoryPinToggleResponse, UserHistoryResponse
+from app.services.history_service import delete_user_history_task, get_user_history, toggle_history_pin
 
 router = APIRouter(prefix="/api/history", tags=["历史记录"])
 
@@ -15,6 +15,7 @@ router = APIRouter(prefix="/api/history", tags=["历史记录"])
 def list_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    respect_pins: bool = Query(True),
     mode: str | None = Query(None, pattern="^(generate|inpaint|promptReverse)$"),
     source: str | None = Query(None, pattern="^(web|app)$"),
     model: str | None = Query(None),
@@ -30,6 +31,7 @@ def list_history(
         user.id,
         page,
         page_size,
+        respect_pins=respect_pins,
         mode=mode,
         source=source,
         model=model,
@@ -49,3 +51,23 @@ def delete_history_task(
     if not delete_user_history_task(db, user.id, task_id):
         raise HTTPException(status_code=404, detail="任务不存在")
     return {"ok": True}
+
+
+@router.post("/pins/toggle", response_model=HistoryPinToggleResponse)
+def toggle_history_card_pin(
+    body: HistoryPinToggleRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return toggle_history_pin(
+            db,
+            user.id,
+            item_type=body.item_type,
+            image_id=body.image_id,
+            history_id=body.history_id,
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="无效的历史卡片标识")
+    except LookupError:
+        raise HTTPException(status_code=404, detail="历史卡片不存在")

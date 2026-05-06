@@ -53,6 +53,8 @@ class UserHistoryCardItem(BaseModel):
     display_id: str = ""
     task_id: str | None = None
     image_id: int | None = None
+    is_pinned: bool = False
+    pinned_at: datetime | None = None
     image_url: str = ""
     preview_url: str = ""
     thumb_url: str = ""
@@ -83,3 +85,14 @@ class UserHistoryCardItem(BaseModel):
 class UserHistoryResponse(BaseModel):
     total: int
     items: list[UserHistoryCardItem]
+
+
+class HistoryPinToggleRequest(BaseModel):
+    item_type: str
+    image_id: int | None = None
+    history_id: int | None = None
+
+
+class HistoryPinToggleResponse(BaseModel):
+    is_pinned: bool
+    pinned_at: datetime | None = None

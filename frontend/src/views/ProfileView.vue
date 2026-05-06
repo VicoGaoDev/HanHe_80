@@ -1,0 +1,676 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from "vue";
+import { message } from "ant-design-vue";
+import {
+  CopyOutlined,
+  LockOutlined,
+  UploadOutlined,
+  UserOutlined,
+} from "@ant-design/icons-vue";
+import { changePassword, getMe, updateProfile, uploadAvatar } from "@/api/auth";
+import { useAuthStore } from "@/stores/auth";
+
+const auth = useAuthStore();
+
+const loadingProfile = ref(false);
+const avatarUploading = ref(false);
+const avatarInput = ref<HTMLInputElement | null>(null);
+const usernameLoading = ref(false);
+const showPasswordForm = ref(false);
+const usernameForm = ref({
+  username: "",
+});
+const pwdLoading = ref(false);
+const pwdForm = ref({
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
+
+const avatarUrl = computed(() => auth.user?.avatar_url || "");
+const avatarFallback = computed(() => auth.user?.username?.charAt(0)?.toUpperCase() || "U");
+const roleLabel = computed(() => {
+  if (auth.user?.role === "superadmin") return "超级管理员";
+  if (auth.user?.role === "admin") return "管理员";
+  return "积分用户";
+});
+
+async function syncProfile() {
+  if (!auth.isLoggedIn) return;
+  loadingProfile.value = true;
+  try {
+    auth.updateUser(await getMe());
+  } catch {
+    message.error("获取个人信息失败");
+  } finally {
+    loadingProfile.value = false;
+  }
+}
+
+function triggerAvatarSelect() {
+  avatarInput.value?.click();
+}
+
+async function handleAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  avatarUploading.value = true;
+  try {
+    const nextUser = await uploadAvatar(file);
+    auth.updateUser(nextUser);
+    message.success("头像上传成功");
+  } catch (err: any) {
+    message.error(err.response?.data?.detail || "头像上传失败");
+  } finally {
+    avatarUploading.value = false;
+    input.value = "";
+  }
+}
+
+async function handleUpdateUsername() {
+  const nextUsername = usernameForm.value.username.trim();
+  if (!nextUsername) {
+    message.warning("请输入用户名");
+    return;
+  }
+  if (nextUsername === (auth.user?.username || "")) {
+    message.info("用户名未变化");
+    return;
+  }
+  usernameLoading.value = true;
+  try {
+    const nextUser = await updateProfile({ username: nextUsername });
+    auth.updateUser(nextUser);
+    usernameForm.value.username = nextUser.username;
+    message.success("用户名修改成功");
+  } catch (err: any) {
+    message.error(err.response?.data?.detail || "用户名修改失败");
+  } finally {
+    usernameLoading.value = false;
+  }
+}
+
+async function handleChangePwd() {
+  if (!pwdForm.value.oldPassword || !pwdForm.value.newPassword) {
+    message.warning("请填写完整");
+    return;
+  }
+  if (pwdForm.value.newPassword !== pwdForm.value.confirmPassword) {
+    message.warning("两次密码不一致");
+    return;
+  }
+  pwdLoading.value = true;
+  try {
+    await changePassword(pwdForm.value.oldPassword, pwdForm.value.newPassword);
+    pwdForm.value = {
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    };
+    message.success("密码修改成功");
+  } catch (err: any) {
+    message.error(err.response?.data?.detail || "修改失败");
+  } finally {
+    pwdLoading.value = false;
+  }
+}
+
+async function copyBusinessId() {
+  const value = auth.user?.business_id;
+  if (!value) return;
+  try {
+    await navigator.clipboard.writeText(value);
+    message.success("Business ID 已复制");
+  } catch {
+    message.error("复制失败");
+  }
+}
+
+onMounted(() => {
+  syncProfile();
+});
+
+watch(
+  () => auth.user?.username,
+  (value) => {
+    usernameForm.value.username = value || "";
+  },
+  { immediate: true }
+);
+</script>
+
+<template>
+  <div class="profile-page warm-page motion-page-enter">
+    <div class="profile-topbar">
+      <div class="profile-topbar-main">
+        <div class="profile-topbar-icon">
+          <UserOutlined />
+        </div>
+        <div class="profile-topbar-copy">
+          <h1 class="profile-topbar-title">个人主页</h1>
+          <p class="warm-page-desc">查看账号基础信息，并在这里统一管理头像与密码。</p>
+        </div>
+      </div>
+    </div>
+
+    <a-spin :spinning="loadingProfile">
+      <div class="profile-layout">
+        <section class="profile-summary warm-card motion-card-lift">
+          <div class="profile-summary-main">
+            <a-avatar :size="92" class="profile-avatar" :src="avatarUrl || undefined">
+              {{ avatarFallback }}
+            </a-avatar>
+            <div class="profile-summary-copy">
+              <div class="profile-name-row">
+                <h2>{{ auth.user?.username || "未登录用户" }}</h2>
+                <span class="profile-role-badge">{{ roleLabel }}</span>
+              </div>
+              <div class="profile-email">{{ auth.user?.email || "未绑定邮箱" }}</div>
+              <div class="profile-business-id">
+                <span>{{ auth.user?.business_id || "-" }}</span>
+                <a-button
+                  v-if="auth.user?.business_id"
+                  class="profile-copy-btn"
+                  type="text"
+                  @click="copyBusinessId"
+                >
+                  <template #icon><CopyOutlined /></template>
+                  复制
+                </a-button>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-stats">
+            <div class="profile-stat-card">
+              <span>当前积分</span>
+              <strong>{{ auth.user?.credits ?? 0 }}</strong>
+            </div>
+            <div class="profile-stat-card">
+              <span>账户角色</span>
+              <strong>{{ roleLabel }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-actions">
+          <div class="profile-action-card warm-card motion-card-lift">
+            <div class="profile-settings-stack">
+              <div class="profile-setting-block">
+                <div class="profile-setting-row">
+                  <div class="profile-setting-info">
+                    <h4>编辑用户名</h4>
+                    <span>支持 2-20 个字符，修改后会同步更新导航栏显示。</span>
+                  </div>
+                  <div class="profile-setting-controls profile-setting-controls-username">
+                    <a-input
+                      v-model:value="usernameForm.username"
+                      :maxlength="20"
+                      placeholder="请输入新的用户名"
+                      @press-enter="handleUpdateUsername"
+                    />
+                    <a-button
+                      type="primary"
+                      class="warm-primary-btn"
+                      :loading="usernameLoading"
+                      @click="handleUpdateUsername"
+                    >
+                      <template #icon><UserOutlined /></template>
+                      {{ usernameLoading ? "保存中..." : "保存用户名" }}
+                    </a-button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="profile-setting-block">
+                <div class="profile-setting-row">
+                  <div class="profile-setting-info">
+                    <h4>上传头像</h4>
+                    <span>支持 JPG / PNG / WEBP / GIF，图片最大 1MB。</span>
+                  </div>
+                  <div class="profile-setting-controls profile-setting-controls-avatar">
+                    <a-avatar :size="56" class="profile-avatar profile-avatar-small" :src="avatarUrl || undefined">
+                      {{ avatarFallback }}
+                    </a-avatar>
+                    <input
+                      ref="avatarInput"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      hidden
+                      @change="handleAvatarChange"
+                    />
+                    <a-button
+                      type="primary"
+                      class="warm-primary-btn"
+                      :loading="avatarUploading"
+                      @click="triggerAvatarSelect"
+                    >
+                      <template #icon><UploadOutlined /></template>
+                      {{ avatarUploading ? "上传中..." : "选择头像" }}
+                    </a-button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="profile-setting-block">
+                <div class="profile-setting-row">
+                  <div class="profile-setting-info">
+                    <h4>修改密码</h4>
+                    <span>建议定期更新密码，提升账号安全性。</span>
+                  </div>
+                  <a-button class="profile-toggle-btn" @click="showPasswordForm = !showPasswordForm">
+                    <template #icon><LockOutlined /></template>
+                    {{ showPasswordForm ? "收起" : "修改密码" }}
+                  </a-button>
+                </div>
+                <a-form v-if="showPasswordForm" layout="vertical" class="profile-password-form">
+                  <a-form-item label="原密码">
+                    <a-input-password v-model:value="pwdForm.oldPassword" placeholder="请输入原密码" />
+                  </a-form-item>
+                  <a-form-item label="新密码">
+                    <a-input-password v-model:value="pwdForm.newPassword" placeholder="至少 6 位" />
+                  </a-form-item>
+                  <a-form-item label="确认新密码" style="margin-bottom: 0">
+                    <a-input-password
+                      v-model:value="pwdForm.confirmPassword"
+                      placeholder="请再次输入"
+                      @press-enter="handleChangePwd"
+                    />
+                  </a-form-item>
+                  <div class="profile-password-actions">
+                    <a-button type="primary" class="warm-primary-btn" :loading="pwdLoading" @click="handleChangePwd">
+                      <template #icon><LockOutlined /></template>
+                      {{ pwdLoading ? "提交中..." : "确认修改" }}
+                    </a-button>
+                  </div>
+                </a-form>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </a-spin>
+  </div>
+</template>
+
+<style scoped lang="scss">
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-topbar,
+.profile-summary,
+.profile-action-card {
+  border: 1px solid #ead9b9;
+  box-shadow: 0 16px 28px rgba(110, 74, 29, 0.08);
+}
+
+.profile-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(255, 247, 233, 0.92));
+}
+
+.profile-topbar-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.profile-topbar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 215, 132, 0.9), rgba(255, 175, 55, 0.92));
+  color: #5b380d;
+  font-size: 18px;
+  box-shadow: 0 10px 18px rgba(255, 169, 37, 0.22);
+}
+
+.profile-topbar-copy {
+  min-width: 0;
+}
+
+.profile-topbar-title {
+  margin: 0;
+  color: #4f361b;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.profile-topbar .warm-page-desc {
+  margin: 4px 0 0;
+  color: #866b49;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.profile-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-summary,
+.profile-action-card {
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(255, 248, 236, 0.92));
+  padding: 18px;
+}
+
+.profile-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.profile-summary-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.profile-avatar {
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, #ffd06d, #ffab25);
+  color: #5a3c14;
+  font-size: 30px;
+  font-weight: 700;
+  box-shadow: 0 16px 28px rgba(255, 169, 37, 0.2);
+}
+
+.profile-avatar-small {
+  font-size: 26px;
+}
+
+.profile-summary-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profile-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+
+  h2 {
+    margin: 0;
+    color: #4f361b;
+    font-size: 24px;
+    line-height: 1.2;
+    font-weight: 800;
+  }
+}
+
+.profile-role-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 208, 109, 0.18);
+  color: #8f5a12;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-email {
+  color: #7d6241;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.profile-business-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid #eedcba;
+  color: #6a4b20;
+  font-size: 13px;
+  line-height: 1.5;
+
+  span {
+    min-width: 0;
+    word-break: break-all;
+  }
+}
+
+.profile-copy-btn {
+  color: #9b6110;
+  border-radius: 10px;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 12px;
+  min-width: min(360px, 100%);
+}
+
+.profile-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid #eedcba;
+
+  span {
+    color: #876d4b;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  strong {
+    color: #4f361b;
+    font-size: 24px;
+    line-height: 1.1;
+    font-weight: 800;
+  }
+}
+
+.profile-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+
+  h3 {
+    margin: 0;
+    color: #4f361b;
+    font-size: 18px;
+    line-height: 1.2;
+    font-weight: 800;
+  }
+
+  span {
+    color: #866b49;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+.profile-actions {
+  display: block;
+}
+
+.profile-settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-setting-block {
+  padding-top: 14px;
+  border-top: 1px solid rgba(234, 217, 185, 0.9);
+}
+
+.profile-setting-block:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.profile-setting-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+
+  h4 {
+    margin: 0;
+    color: #4f361b;
+    font-size: 16px;
+    line-height: 1.2;
+    font-weight: 800;
+  }
+
+  span {
+    color: #866b49;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+.profile-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  h4 {
+    margin: 0;
+    color: #4f361b;
+    font-size: 16px;
+    line-height: 1.2;
+    font-weight: 800;
+  }
+
+  span {
+    color: #866b49;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+.profile-setting-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.profile-setting-controls-username {
+  min-width: min(420px, 100%);
+
+  :deep(.ant-input) {
+    min-width: 220px;
+  }
+}
+
+.profile-toggle-btn {
+  height: 36px;
+  padding-inline: 14px;
+  border-radius: 12px;
+  border-color: #ead3a9;
+  background: rgba(255, 249, 239, 0.88);
+  color: #8d5b14;
+  font-weight: 700;
+}
+
+.profile-avatar-panel {
+  display: contents;
+}
+
+.profile-password-form {
+  margin-top: 14px;
+}
+
+.profile-password-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+
+@media (max-width: 980px) {
+  .profile-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-stats {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-page {
+    gap: 12px;
+  }
+
+  .profile-topbar,
+  .profile-summary,
+  .profile-action-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .profile-summary-main,
+  .profile-setting-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .profile-setting-controls,
+  .profile-setting-controls-username {
+    width: 100%;
+  }
+
+  .profile-setting-controls {
+    justify-content: flex-start;
+  }
+
+  .profile-setting-controls-username {
+    :deep(.ant-input) {
+      min-width: 0;
+      width: 100%;
+    }
+  }
+
+  .profile-stats {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

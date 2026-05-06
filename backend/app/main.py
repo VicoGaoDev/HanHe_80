@@ -95,6 +95,7 @@ def on_startup():
     _ensure_scene_binding_required_columns()
     _ensure_template_required_columns()
     _ensure_feedback_schema()
+    _ensure_history_pin_schema()
     if settings.should_run_schema_compat:
         _ensure_schema_compat()
     _backfill_task_credit_costs()
@@ -643,6 +644,37 @@ def _ensure_feedback_schema():
     if "ix_feedback_business_id" not in refreshed_indexes:
         with engine.begin() as conn:
             conn.execute(text("CREATE UNIQUE INDEX ix_feedback_business_id ON feedback (business_id)"))
+
+
+def _ensure_history_pin_schema():
+    inspector = inspect(engine)
+    if "history_pins" not in inspector.get_table_names():
+        from app.models.history_pin import HistoryPin
+
+        HistoryPin.__table__.create(bind=engine)
+        inspector = inspect(engine)
+
+    history_pin_columns = {col["name"] for col in inspector.get_columns("history_pins")}
+    history_pin_indexes = {index["name"] for index in inspector.get_indexes("history_pins")}
+
+    with engine.begin() as conn:
+        if "item_key" not in history_pin_columns:
+            conn.execute(text("ALTER TABLE history_pins ADD COLUMN item_key VARCHAR(64)"))
+        if "image_id" not in history_pin_columns:
+            conn.execute(text("ALTER TABLE history_pins ADD COLUMN image_id INTEGER"))
+        if "history_id" not in history_pin_columns:
+            conn.execute(text("ALTER TABLE history_pins ADD COLUMN history_id INTEGER"))
+        if "pinned_at" not in history_pin_columns:
+            conn.execute(text("ALTER TABLE history_pins ADD COLUMN pinned_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+        if "created_at" not in history_pin_columns:
+            conn.execute(text("ALTER TABLE history_pins ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+
+    refreshed_indexes = {index["name"] for index in inspect(engine).get_indexes("history_pins")}
+    with engine.begin() as conn:
+        if "ix_history_pins_user_pinned_at" not in refreshed_indexes:
+            conn.execute(text("CREATE INDEX ix_history_pins_user_pinned_at ON history_pins (user_id, pinned_at DESC)"))
+        if "ux_history_pins_user_item_key" not in refreshed_indexes:
+            conn.execute(text("CREATE UNIQUE INDEX ux_history_pins_user_item_key ON history_pins (user_id, item_key)"))
 
 
 def _backfill_task_credit_costs():
