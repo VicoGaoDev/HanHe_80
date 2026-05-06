@@ -184,7 +184,7 @@ onMounted(load);
 
 <style scoped lang="scss">
 .feedback-total {
-  color: #8c7458;
+  color: var(--text-secondary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -209,14 +209,14 @@ onMounted(load);
 .filter-reset-btn {
   height: 36px;
   border-radius: 12px;
-  border: 1px solid #efc784 !important;
-  background: #fff7e8 !important;
-  color: #b16d10 !important;
+  border: 1px solid var(--theme-panel-border-strong) !important;
+  background: var(--theme-panel-bg-strong) !important;
+  color: var(--theme-accent-text) !important;
 }
 
 .content-cell {
   max-width: 420px;
-  color: #5a3c14;
+  color: var(--theme-title);
 }
 
 .id-cell {
@@ -224,7 +224,7 @@ onMounted(load);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #7b5c2d;
+  color: var(--theme-accent-text);
   font-weight: 600;
 }
 
@@ -235,7 +235,7 @@ onMounted(load);
 
 .view-btn {
   padding-inline: 0;
-  color: #c7770d !important;
+  color: var(--theme-link) !important;
   font-weight: 600;
 }
 

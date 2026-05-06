@@ -305,8 +305,8 @@ watch(
 .profile-topbar,
 .profile-summary,
 .profile-action-card {
-  border: 1px solid #ead9b9;
-  box-shadow: 0 16px 28px rgba(110, 74, 29, 0.08);
+  border: 1px solid var(--theme-panel-border);
+  box-shadow: 0 16px 28px var(--theme-shadow-soft);
 }
 
 .profile-topbar {
@@ -316,7 +316,7 @@ watch(
   gap: 12px;
   padding: 14px 18px;
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(255, 247, 233, 0.92));
+  background: var(--theme-modal-bg);
 }
 
 .profile-topbar-main {
@@ -333,10 +333,10 @@ watch(
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(255, 215, 132, 0.9), rgba(255, 175, 55, 0.92));
-  color: #5b380d;
+  background: linear-gradient(180deg, var(--theme-brand-bg-start), var(--theme-brand-bg-end));
+  color: var(--theme-accent-contrast);
   font-size: 18px;
-  box-shadow: 0 10px 18px rgba(255, 169, 37, 0.22);
+  box-shadow: 0 10px 18px var(--theme-brand-shadow);
 }
 
 .profile-topbar-copy {
@@ -345,7 +345,7 @@ watch(
 
 .profile-topbar-title {
   margin: 0;
-  color: #4f361b;
+  color: var(--theme-title);
   font-size: 24px;
   line-height: 1.2;
   font-weight: 800;
@@ -353,7 +353,7 @@ watch(
 
 .profile-topbar .warm-page-desc {
   margin: 4px 0 0;
-  color: #866b49;
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -367,7 +367,7 @@ watch(
 .profile-summary,
 .profile-action-card {
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(255, 248, 236, 0.92));
+  background: var(--theme-modal-bg);
   padding: 18px;
 }
 
@@ -387,11 +387,11 @@ watch(
 
 .profile-avatar {
   flex: 0 0 auto;
-  background: linear-gradient(180deg, #ffd06d, #ffab25);
-  color: #5a3c14;
+  background: linear-gradient(180deg, var(--theme-brand-bg-start), var(--theme-brand-bg-end));
+  color: var(--theme-accent-contrast);
   font-size: 30px;
   font-weight: 700;
-  box-shadow: 0 16px 28px rgba(255, 169, 37, 0.2);
+  box-shadow: 0 16px 28px var(--theme-brand-shadow);
 }
 
 .profile-avatar-small {
@@ -413,7 +413,7 @@ watch(
 
   h2 {
     margin: 0;
-    color: #4f361b;
+    color: var(--theme-title);
     font-size: 24px;
     line-height: 1.2;
     font-weight: 800;
@@ -426,14 +426,14 @@ watch(
   min-height: 28px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(255, 208, 109, 0.18);
-  color: #8f5a12;
+  background: var(--theme-pill-bg);
+  color: var(--theme-pill-text);
   font-size: 12px;
   font-weight: 700;
 }
 
 .profile-email {
-  color: #7d6241;
+  color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -446,9 +446,9 @@ watch(
   max-width: 100%;
   padding: 8px 10px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.54);
-  border: 1px solid #eedcba;
-  color: #6a4b20;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
+  color: var(--theme-title);
   font-size: 13px;
   line-height: 1.5;
 
@@ -459,7 +459,7 @@ watch(
 }
 
 .profile-copy-btn {
-  color: #9b6110;
+  color: var(--theme-link);
   border-radius: 10px;
 }
 
@@ -476,17 +476,17 @@ watch(
   gap: 6px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.58);
-  border: 1px solid #eedcba;
+  background: var(--theme-summary-bg);
+  border: 1px solid var(--theme-panel-border);
 
   span {
-    color: #876d4b;
+    color: var(--text-secondary);
     font-size: 12px;
     line-height: 1.5;
   }
 
   strong {
-    color: #4f361b;
+    color: var(--theme-title);
     font-size: 24px;
     line-height: 1.1;
     font-weight: 800;
@@ -501,14 +501,14 @@ watch(
 
   h3 {
     margin: 0;
-    color: #4f361b;
+    color: var(--theme-title);
     font-size: 18px;
     line-height: 1.2;
     font-weight: 800;
   }
 
   span {
-    color: #866b49;
+    color: var(--text-secondary);
     font-size: 13px;
     line-height: 1.6;
   }
@@ -526,7 +526,7 @@ watch(
 
 .profile-setting-block {
   padding-top: 14px;
-  border-top: 1px solid rgba(234, 217, 185, 0.9);
+  border-top: 1px solid var(--theme-border);
 }
 
 .profile-setting-block:first-child {
@@ -542,14 +542,14 @@ watch(
 
   h4 {
     margin: 0;
-    color: #4f361b;
+    color: var(--theme-title);
     font-size: 16px;
     line-height: 1.2;
     font-weight: 800;
   }
 
   span {
-    color: #866b49;
+    color: var(--text-secondary);
     font-size: 13px;
     line-height: 1.6;
   }
@@ -570,14 +570,14 @@ watch(
 
   h4 {
     margin: 0;
-    color: #4f361b;
+    color: var(--theme-title);
     font-size: 16px;
     line-height: 1.2;
     font-weight: 800;
   }
 
   span {
-    color: #866b49;
+    color: var(--text-secondary);
     font-size: 13px;
     line-height: 1.6;
   }
@@ -603,9 +603,9 @@ watch(
   height: 36px;
   padding-inline: 14px;
   border-radius: 12px;
-  border-color: #ead3a9;
-  background: rgba(255, 249, 239, 0.88);
-  color: #8d5b14;
+  border-color: var(--theme-panel-border-strong);
+  background: var(--theme-panel-bg-strong);
+  color: var(--theme-accent-text);
   font-weight: 700;
 }
 

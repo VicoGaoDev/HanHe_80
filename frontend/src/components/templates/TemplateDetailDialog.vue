@@ -217,7 +217,7 @@ const detailMetaList = computed(() => {
   height: 30px;
   padding-inline: 10px;
   border-radius: 10px;
-  color: #a9772e !important;
+  color: var(--theme-link) !important;
   transition:
     transform var(--motion-duration-press) var(--motion-ease-soft),
     background var(--motion-duration-fast) var(--motion-ease-soft),
@@ -225,10 +225,10 @@ const detailMetaList = computed(() => {
     box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
 
   &:hover {
-    background: #fff4df !important;
-    color: #c7800c !important;
+    background: var(--theme-panel-bg-strong) !important;
+    color: var(--theme-link-hover) !important;
     transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(223, 139, 29, 0.12);
+    box-shadow: 0 10px 20px var(--theme-shadow-soft);
   }
 
   &:active {
@@ -239,9 +239,9 @@ const detailMetaList = computed(() => {
 .detail-prompt {
   padding: 12px 14px;
   border-radius: 14px;
-  background: #fff8ee;
-  border: 1px solid #f2e3c6;
-  color: #4c341a;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
+  color: var(--theme-title);
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
@@ -261,8 +261,8 @@ const detailMetaList = computed(() => {
   height: 84px;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid #f1ddb7;
-  background: #fff8ee;
+  border: 1px solid var(--theme-panel-border);
+  background: var(--theme-panel-bg-soft);
   cursor: pointer;
   transition:
     transform var(--motion-duration-base) var(--motion-ease-soft),
@@ -278,8 +278,8 @@ const detailMetaList = computed(() => {
 
   &:hover {
     transform: translateY(-2px);
-    border-color: #e7bf7b;
-    box-shadow: 0 16px 26px rgba(236, 185, 88, 0.14);
+    border-color: var(--theme-border-strong);
+    box-shadow: 0 16px 26px var(--theme-shadow-medium);
   }
 }
 
@@ -293,8 +293,8 @@ const detailMetaList = computed(() => {
   height: clamp(220px, 36vh, 340px);
   border-radius: 18px;
   overflow: hidden;
-  border: 1px solid #f1ddb7;
-  background: #fff8ee;
+  border: 1px solid var(--theme-panel-border);
+  background: var(--theme-panel-bg-soft);
   cursor: zoom-in;
   transition:
     transform var(--motion-duration-base) var(--motion-ease-soft),
@@ -310,14 +310,14 @@ const detailMetaList = computed(() => {
   img {
     object-fit: contain;
     display: block;
-    background: #fffdfb;
+    background: var(--theme-panel-bg);
     transition: transform var(--motion-duration-hover) var(--motion-ease-soft);
   }
 
   &:not(.empty):hover {
     transform: translateY(-3px);
-    border-color: #e7bf7b;
-    box-shadow: 0 18px 30px rgba(236, 185, 88, 0.14);
+    border-color: var(--theme-border-strong);
+    box-shadow: 0 18px 30px var(--theme-shadow-medium);
   }
 
   &:not(.empty):hover img {
@@ -337,7 +337,7 @@ const detailMetaList = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a88e68;
+  color: var(--text-muted);
 }
 
 .detail-meta {
@@ -346,9 +346,9 @@ const detailMetaList = computed(() => {
   gap: 0;
   padding: 12px 14px;
   border-radius: 14px;
-  background: #fffaf2;
-  border: 1px solid #f2e3c6;
-  color: #8f7558;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.8;
 

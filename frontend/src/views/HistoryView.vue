@@ -1104,28 +1104,28 @@ function handleReedit(item: UserHistoryCard) {
 }
 
 .history-filter-btn-primary {
-  border-color: #df8b1d !important;
-  background: linear-gradient(135deg, #f2a533 0%, #df8b1d 100%) !important;
-  color: #fff8eb !important;
+  border-color: var(--theme-accent) !important;
+  background: var(--theme-accent) !important;
+  color: var(--theme-accent-contrast) !important;
 
   &:hover,
   &:focus {
-    border-color: #c7770d !important;
-    background: linear-gradient(135deg, #f5b24c 0%, #e49729 100%) !important;
-    color: #ffffff !important;
+    border-color: var(--theme-accent-strong) !important;
+    background: var(--theme-accent-strong) !important;
+    color: var(--theme-accent-contrast) !important;
   }
 }
 
 .history-filter-btn-secondary {
-  border-color: #efc784 !important;
-  background: #fff7e8 !important;
-  color: #b16d10 !important;
+  border-color: var(--theme-panel-border-strong) !important;
+  background: var(--theme-panel-bg-strong) !important;
+  color: var(--theme-accent-text) !important;
 
   &:hover,
   &:focus {
-    border-color: #e1a64a !important;
-    background: #fff0d3 !important;
-    color: #c7770d !important;
+    border-color: var(--theme-border-strong) !important;
+    background: var(--theme-control-hover-bg) !important;
+    color: var(--theme-accent-text-hover) !important;
   }
 }
 
@@ -1133,9 +1133,9 @@ function handleReedit(item: UserHistoryCard) {
   width: 32px;
   border-radius: 10px;
   padding: 0 !important;
-  border-color: #efc784 !important;
-  background: #fff7e8 !important;
-  color: #b16d10 !important;
+  border-color: var(--theme-panel-border-strong) !important;
+  background: var(--theme-panel-bg-strong) !important;
+  color: var(--theme-accent-text) !important;
   transition:
     transform var(--motion-duration-press) var(--motion-ease-soft),
     box-shadow var(--motion-duration-base) var(--motion-ease-soft),
@@ -1145,17 +1145,17 @@ function handleReedit(item: UserHistoryCard) {
 
   &:hover,
   &:focus {
-    border-color: #e1a64a !important;
-    color: #c7770d !important;
-    background: #fff0d3 !important;
+    border-color: var(--theme-border-strong) !important;
+    color: var(--theme-accent-text-hover) !important;
+    background: var(--theme-control-hover-bg) !important;
     transform: translateY(-1px);
   }
 
   &.active {
-    border-color: #df8b1d !important;
-    background: linear-gradient(135deg, #f2a533 0%, #df8b1d 100%) !important;
-    color: #fff8eb !important;
-    box-shadow: 0 10px 22px rgba(223, 139, 29, 0.2);
+    border-color: var(--theme-accent) !important;
+    background: var(--theme-accent) !important;
+    color: var(--theme-accent-contrast) !important;
+    box-shadow: 0 10px 22px var(--theme-shadow-strong);
   }
 
   &:active {
@@ -1184,7 +1184,7 @@ function handleReedit(item: UserHistoryCard) {
   gap: 12px;
   flex-wrap: wrap;
   font-size: 13px;
-  color: #8f7558;
+  color: var(--text-secondary);
 }
 
 .history-batch-actions {
@@ -1215,40 +1215,40 @@ function handleReedit(item: UserHistoryCard) {
 }
 
 .history-batch-btn-secondary {
-  border-color: #efc784 !important;
-  background: #fff7e8 !important;
-  color: #b16d10 !important;
+  border-color: var(--theme-panel-border-strong) !important;
+  background: var(--theme-panel-bg-strong) !important;
+  color: var(--theme-accent-text) !important;
 
   &:hover,
   &:focus {
-    border-color: #e1a64a !important;
-    background: #fff0d3 !important;
-    color: #c7770d !important;
+    border-color: var(--theme-border-strong) !important;
+    background: var(--theme-control-hover-bg) !important;
+    color: var(--theme-accent-text-hover) !important;
   }
 
   &[disabled] {
-    border-color: #f3dfba !important;
-    background: #fffaf2 !important;
-    color: #d2b489 !important;
+    border-color: var(--theme-control-border) !important;
+    background: var(--theme-panel-bg-soft) !important;
+    color: var(--text-muted) !important;
   }
 }
 
 .history-batch-btn-primary {
-  border-color: #df8b1d !important;
-  background: linear-gradient(135deg, #f2a533 0%, #df8b1d 100%) !important;
-  color: #fff8eb !important;
+  border-color: var(--theme-accent) !important;
+  background: var(--theme-accent) !important;
+  color: var(--theme-accent-contrast) !important;
 
   &:hover,
   &:focus {
-    border-color: #c7770d !important;
-    background: linear-gradient(135deg, #f5b24c 0%, #e49729 100%) !important;
-    color: #ffffff !important;
+    border-color: var(--theme-accent-strong) !important;
+    background: var(--theme-accent-strong) !important;
+    color: var(--theme-accent-contrast) !important;
   }
 
   &[disabled] {
-    border-color: #f0d29f !important;
-    background: linear-gradient(135deg, #f7ddb1 0%, #efcb8a 100%) !important;
-    color: #fff8eb !important;
+    border-color: var(--theme-control-border) !important;
+    background: var(--theme-control-hover-bg) !important;
+    color: var(--text-muted) !important;
   }
 }
 
@@ -1304,8 +1304,8 @@ function handleReedit(item: UserHistoryCard) {
   }
 
   &:hover .result-card-media:not(.result-card-media-failed) {
-    box-shadow: 0 16px 28px rgba(236, 185, 88, 0.14);
-    border-color: #e7bf7b;
+    box-shadow: 0 16px 28px var(--theme-shadow-medium);
+    border-color: var(--theme-border-strong);
   }
 
   &:hover .result-card-media.result-card-media-failed {
@@ -1318,7 +1318,7 @@ function handleReedit(item: UserHistoryCard) {
   }
 
   &:hover .result-card-model {
-    color: #a36c18;
+    color: var(--theme-accent-text-hover);
   }
 }
 
@@ -1329,8 +1329,8 @@ function handleReedit(item: UserHistoryCard) {
   z-index: 3;
   padding: 5px 7px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(241, 221, 183, 0.92);
+  background: rgba(var(--theme-surface-strong-rgb), 0.88);
+  border: 1px solid var(--theme-panel-border);
   box-shadow: 0 6px 16px rgba(76, 52, 26, 0.08);
   backdrop-filter: blur(8px);
 }
@@ -1342,11 +1342,11 @@ function handleReedit(item: UserHistoryCard) {
   box-sizing: border-box;
   border-radius: var(--media-radius);
   overflow: hidden;
-  border: 1px dashed #ead9b9;
+  border: 1px dashed var(--theme-panel-border);
   background:
-    radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 250, 240, 0.98) 58%, rgba(250, 238, 214, 0.96) 100%),
-    linear-gradient(180deg, #fffdf8, #fff4df);
-  box-shadow: 0 12px 24px rgba(236, 185, 88, 0.08);
+    radial-gradient(circle at 50% 45%, rgba(var(--theme-surface-strong-rgb), 0.98) 0%, rgba(var(--theme-page-base-rgb), 0.98) 58%, rgba(var(--theme-page-base-rgb), 0.96) 100%),
+    linear-gradient(180deg, var(--theme-panel-bg), var(--theme-panel-bg-strong));
+  box-shadow: 0 12px 24px var(--theme-shadow-soft);
   cursor: pointer;
   position: relative;
   transition:
@@ -1382,10 +1382,10 @@ function handleReedit(item: UserHistoryCard) {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  color: #9b825f;
+  color: var(--text-secondary);
   text-align: center;
   font-size: 28px;
-  background: linear-gradient(180deg, #fffaf0, #fffdf9);
+  background: linear-gradient(180deg, var(--theme-panel-bg-soft), var(--theme-panel-bg));
   border-radius: calc(var(--media-radius, 18px) - 1px);
 }
 
@@ -1588,7 +1588,7 @@ function handleReedit(item: UserHistoryCard) {
   gap: 6px;
   font-size: 13px;
   font-weight: 700;
-  color: #8a6d45;
+  color: var(--text-secondary);
 }
 
 .detail-section > .detail-label {
@@ -1607,7 +1607,7 @@ function handleReedit(item: UserHistoryCard) {
   height: 30px;
   padding-inline: 10px;
   border-radius: 10px;
-  color: #a9772e !important;
+  color: var(--theme-link) !important;
   transition:
     transform var(--motion-duration-press) var(--motion-ease-soft),
     background var(--motion-duration-fast) var(--motion-ease-soft),
@@ -1615,10 +1615,10 @@ function handleReedit(item: UserHistoryCard) {
     box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
 
   &:hover {
-    background: #fff4df !important;
-    color: #c7800c !important;
+    background: var(--theme-panel-bg-strong) !important;
+    color: var(--theme-link-hover) !important;
     transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(223, 139, 29, 0.12);
+    box-shadow: 0 10px 20px var(--theme-shadow-soft);
   }
 
   &:active {
@@ -1629,9 +1629,9 @@ function handleReedit(item: UserHistoryCard) {
 .detail-prompt {
   padding: 12px 14px;
   border-radius: 12px;
-  background: #fff8ee;
-  border: 1px solid #f2e3c6;
-  color: #4c341a;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
+  color: var(--theme-title);
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1651,8 +1651,8 @@ function handleReedit(item: UserHistoryCard) {
   height: 84px;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #ead9b9;
-  background: #fff8ee;
+  border: 1px solid var(--theme-panel-border);
+  background: var(--theme-panel-bg-soft);
   cursor: pointer;
   transition:
     transform var(--motion-duration-base) var(--motion-ease-soft),
@@ -1668,8 +1668,8 @@ function handleReedit(item: UserHistoryCard) {
 
   &:hover {
     transform: translateY(-2px);
-    border-color: #e7bf7b;
-    box-shadow: 0 16px 24px rgba(236, 185, 88, 0.12);
+    border-color: var(--theme-border-strong);
+    box-shadow: 0 16px 24px var(--theme-shadow-soft);
   }
 }
 
@@ -1689,8 +1689,8 @@ function handleReedit(item: UserHistoryCard) {
   height: clamp(220px, 36vh, 340px);
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid #ead9b9;
-  background: #fff8ee;
+  border: 1px solid var(--theme-panel-border);
+  background: var(--theme-panel-bg-soft);
   cursor: pointer;
   transition:
     transform var(--motion-duration-base) var(--motion-ease-soft),
@@ -1706,7 +1706,7 @@ function handleReedit(item: UserHistoryCard) {
   img {
     object-fit: contain;
     display: block;
-    background: #fffdfb;
+    background: var(--theme-panel-bg);
     transition: transform var(--motion-duration-hover) var(--motion-ease-soft);
   }
 
@@ -1716,8 +1716,8 @@ function handleReedit(item: UserHistoryCard) {
 
   &:not(.pending):hover {
     transform: translateY(-3px);
-    border-color: #e7bf7b;
-    box-shadow: 0 16px 28px rgba(236, 185, 88, 0.14);
+    border-color: var(--theme-border-strong);
+    box-shadow: 0 16px 28px var(--theme-shadow-medium);
   }
 
   &:not(.pending):hover img {
@@ -1727,7 +1727,7 @@ function handleReedit(item: UserHistoryCard) {
   &.failed img {
     object-fit: contain;
     padding: 18px;
-    background: #fffdfb;
+    background: var(--theme-panel-bg);
   }
 
   &.single {
@@ -1741,9 +1741,9 @@ function handleReedit(item: UserHistoryCard) {
   gap: 0;
   padding: 12px 14px;
   border-radius: 12px;
-  background: #fffaf2;
-  border: 1px solid #f2e3c6;
-  color: #8f7558;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.8;
 
@@ -1765,12 +1765,12 @@ function handleReedit(item: UserHistoryCard) {
   justify-content: center;
   gap: 10px;
   text-align: center;
-  color: #9b825f;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
 .history-load-more-tip-finished {
-  color: #b39a74;
+  color: var(--text-muted);
 }
 
 .history-load-more-anchor {

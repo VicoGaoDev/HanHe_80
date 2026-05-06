@@ -118,7 +118,7 @@ async function handleSubmit() {
 
 .feedback-section-title {
   margin-bottom: 8px;
-  color: #8a6d45;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 700;
 }
@@ -126,12 +126,12 @@ async function handleSubmit() {
 .feedback-prompt-preview {
   padding: 12px 14px;
   border-radius: 16px;
-  background: #fffaf2;
-  border: 1px solid #f2e3c6;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
 }
 
 .feedback-prompt-text {
-  color: #5a3c14;
+  color: var(--theme-title);
   font-size: 13px;
   line-height: 1.8;
   white-space: pre-wrap;

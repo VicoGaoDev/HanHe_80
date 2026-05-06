@@ -699,13 +699,13 @@ watch(filterSignature, async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #4c341a;
+  color: var(--theme-title);
   font-weight: 700;
 }
 
 .table-user-avatar {
-  background: linear-gradient(180deg, #ffd06d, #ffb02b);
-  color: #5a3c14;
+  background: linear-gradient(180deg, var(--theme-brand-bg-start), var(--theme-brand-bg-end));
+  color: var(--theme-accent-contrast);
   font-weight: 700;
 }
 
@@ -716,10 +716,10 @@ watch(filterSignature, async () => {
 }
 
 :deep(.admin-mobile-table .ant-table-thead > tr > th) {
-  background: #fff8ed;
-  color: #7a5b2d;
+  background: var(--theme-table-head-bg);
+  color: var(--theme-title);
   font-weight: 700;
-  border-bottom: 1px solid rgba(240, 223, 190, 0.95);
+  border-bottom: 1px solid var(--theme-border);
 }
 
 :deep(.admin-mobile-table .ant-table-body) {

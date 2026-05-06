@@ -255,7 +255,7 @@ function copyText(value: string) {
   margin-bottom: 8px;
   font-size: 12px;
   font-weight: 700;
-  color: #8d7457;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -263,8 +263,8 @@ function copyText(value: string) {
 .plain-input {
   :deep(.ant-input) {
     border-radius: 16px;
-    border-color: #efdcb9;
-    background: #fffdf8;
+    border-color: var(--theme-control-border);
+    background: var(--theme-control-bg);
   }
 }
 
@@ -280,8 +280,8 @@ function copyText(value: string) {
 
   :deep(.ant-input) {
     border-radius: 16px;
-    border-color: #efdcb9;
-    background: #fffdf8;
+    border-color: var(--theme-control-border);
+    background: var(--theme-control-bg);
   }
 }
 
@@ -291,12 +291,12 @@ function copyText(value: string) {
   display: flex;
   align-items: center;
   padding: 0 16px;
-  background: #fff8ec;
-  border: 1px solid #f0dfbe;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
   border-radius: 16px;
   font-family: "SF Mono", "Consolas", "Monaco", monospace;
   font-size: 14px;
-  color: #80684b;
+  color: var(--theme-title);
   letter-spacing: 1px;
   cursor: pointer;
 }
@@ -310,16 +310,16 @@ function copyText(value: string) {
   width: 40px;
   height: 40px;
   border-radius: 14px !important;
-  background: #fff7e8 !important;
-  border: 1px solid #efc784 !important;
-  color: #b16d10 !important;
+  background: var(--theme-panel-bg-strong) !important;
+  border: 1px solid var(--theme-panel-border-strong) !important;
+  color: var(--theme-accent-text) !important;
 }
 
 .cos-icon-btn:hover,
 .cos-icon-btn:focus {
-  border-color: #e1a64a !important;
-  background: #fff0d3 !important;
-  color: #c7770d !important;
+  border-color: var(--theme-border-strong) !important;
+  background: var(--theme-control-hover-bg) !important;
+  color: var(--theme-accent-text-hover) !important;
 }
 
 .cos-footer {

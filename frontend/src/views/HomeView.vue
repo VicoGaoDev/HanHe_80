@@ -726,7 +726,7 @@ onMounted(() => {
     .showcase-empty,
     .promise-item,
     .hero-secondary-btn {
-      background: #fff !important;
+      background: var(--theme-panel-bg) !important;
       border-color: var(--theme-panel-border) !important;
       box-shadow: none !important;
     }
@@ -758,11 +758,11 @@ onMounted(() => {
 
     .hero-glow-main,
     .hero-glow-sub {
-      background: rgba(0, 0, 0, 0.05) !important;
+      background: var(--theme-overlay-soft) !important;
     }
 
     .hero-badge {
-      background: #fff !important;
+      background: var(--theme-panel-bg) !important;
       border: 1px solid var(--theme-panel-border);
       color: var(--theme-title) !important;
     }
@@ -788,8 +788,8 @@ onMounted(() => {
 
     .panel-dot,
     .highlight-icon {
-      background: #050505 !important;
-      color: #fff !important;
+      background: var(--theme-accent) !important;
+      color: var(--theme-accent-contrast) !important;
       box-shadow: none !important;
     }
 
@@ -803,11 +803,11 @@ onMounted(() => {
     }
 
     .showcase-marquee::before {
-      background: linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0) 100%) !important;
+      background: linear-gradient(90deg, var(--theme-panel-bg) 0%, rgba(var(--theme-surface-strong-rgb), 0) 100%) !important;
     }
 
     .showcase-marquee::after {
-      background: linear-gradient(270deg, #fff 0%, rgba(255, 255, 255, 0) 100%) !important;
+      background: linear-gradient(270deg, var(--theme-panel-bg) 0%, rgba(var(--theme-surface-strong-rgb), 0) 100%) !important;
     }
 
     .showcase-card {
@@ -815,25 +815,25 @@ onMounted(() => {
 
       &:hover {
         border-color: var(--theme-border-strong) !important;
-        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 10px 24px var(--theme-shadow-soft) !important;
       }
     }
 
     .showcase-card-mask {
-      background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.78) 100%) !important;
+      background: linear-gradient(180deg, rgba(22, 24, 29, 0) 0%, var(--theme-overlay-heavy) 100%) !important;
     }
 
     .showcase-card-prompt {
-      color: #fff !important;
+      color: var(--theme-accent-contrast) !important;
     }
 
     .showcase-overlay {
-      background: linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.48)) !important;
+      background: linear-gradient(180deg, var(--theme-overlay-soft), var(--theme-overlay-strong)) !important;
     }
 
     .showcase-overlay-text {
-      background: rgba(255, 255, 255, 0.96) !important;
-      color: #111 !important;
+      background: rgba(var(--theme-surface-strong-rgb), 0.96) !important;
+      color: var(--theme-accent-text-hover) !important;
       border: 1px solid var(--theme-panel-border);
     }
 
@@ -851,7 +851,7 @@ onMounted(() => {
 
     .promise-item {
       .anticon {
-        color: #050505 !important;
+        color: var(--theme-accent) !important;
       }
     }
   }
@@ -948,7 +948,7 @@ onMounted(() => {
 
 <style lang="scss">
 html[data-theme="dark"] .home-page .hero-section.hero-section {
-  background: rgb(252, 252, 252) !important;
+  background: var(--theme-page-base) !important;
   border: none !important;
   box-shadow: none !important;
   border-radius: 0 !important;
@@ -957,7 +957,7 @@ html[data-theme="dark"] .home-page .hero-section.hero-section {
 html[data-theme="dark"] .home-page .section-block,
 html[data-theme="dark"] .home-page .showcase-shell,
 html[data-theme="dark"] .home-page .promise-shell {
-  background: rgb(252, 252, 252) !important;
+  background: var(--theme-page-base) !important;
   border-color: transparent !important;
   box-shadow: none !important;
   border-radius: 0 !important;
@@ -965,26 +965,26 @@ html[data-theme="dark"] .home-page .promise-shell {
 
 html[data-theme="dark"] .home-page .showcase-marquee,
 html[data-theme="dark"] .home-page .showcase-skeleton-row {
-  background: rgb(252, 252, 252) !important;
+  background: var(--theme-page-base) !important;
 }
 
 html[data-theme="dark"] .home-page .showcase-marquee::before {
-  background: linear-gradient(90deg, rgb(252, 252, 252) 0%, rgba(252, 252, 252, 0) 100%) !important;
+  background: linear-gradient(90deg, var(--theme-page-base) 0%, rgba(var(--theme-page-base-rgb), 0) 100%) !important;
 }
 
 html[data-theme="dark"] .home-page .showcase-marquee::after {
-  background: linear-gradient(270deg, rgb(252, 252, 252) 0%, rgba(252, 252, 252, 0) 100%) !important;
+  background: linear-gradient(270deg, var(--theme-page-base) 0%, rgba(var(--theme-page-base-rgb), 0) 100%) !important;
 }
 
 html[data-theme="dark"] .home-page .highlight-card.warm-card {
-  background: #fff !important;
+  background: var(--theme-panel-bg) !important;
   border: 1px solid var(--theme-panel-border) !important;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 10px 24px var(--theme-shadow-soft) !important;
 }
 
 html[data-theme="dark"] .home-page .metric-card,
 html[data-theme="dark"] .home-page .promise-item {
-  background: #fff !important;
+  background: var(--theme-panel-bg) !important;
   border-color: var(--theme-panel-border) !important;
   box-shadow: none !important;
 }
@@ -993,7 +993,7 @@ html[data-theme="dark"] .home-page .hero-panel,
 html[data-theme="dark"] .home-page .hero-secondary-btn,
 html[data-theme="dark"] .home-page .hero-badge,
 html[data-theme="dark"] .home-page .showcase-empty {
-  background: #fff !important;
+  background: var(--theme-panel-bg) !important;
   box-shadow: none !important;
 }
 </style>

@@ -396,8 +396,8 @@ watch(loadMoreAnchor, (target) => {
   width: 100%;
   overflow: hidden;
   border-radius: 16px;
-  border: 1px solid #ead9b9;
-  background: #fff8ec;
+  border: 1px solid var(--theme-panel-border);
+  background: var(--theme-panel-bg-soft);
   cursor: pointer;
   transition:
     transform var(--motion-duration-hover) var(--motion-ease-enter),
@@ -406,8 +406,8 @@ watch(loadMoreAnchor, (target) => {
 
   &:hover {
     transform: translateY(-6px);
-    border-color: #e7bf7b;
-    box-shadow: 0 18px 32px rgba(236, 185, 88, 0.16);
+    border-color: var(--theme-border-strong);
+    box-shadow: 0 18px 32px var(--theme-shadow-medium);
   }
 
   &:active {
@@ -420,19 +420,19 @@ watch(loadMoreAnchor, (target) => {
   flex-direction: column;
   gap: 8px;
   padding: 12px 14px 14px;
-  background: linear-gradient(180deg, rgba(255, 252, 245, 0.96), #fff8ec);
-  border-top: 1px solid rgba(240, 223, 190, 0.92);
+  background: linear-gradient(180deg, rgba(var(--theme-surface-strong-rgb), 0.96), var(--theme-panel-bg-soft));
+  border-top: 1px solid var(--theme-border);
 }
 
 .template-card-model {
-  color: #8a6d45;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 700;
   line-height: 1.4;
 }
 
 .template-card-prompt {
-  color: #5b4324;
+  color: var(--theme-title);
   font-size: 13px;
   line-height: 1.65;
   display: -webkit-box;
@@ -446,7 +446,7 @@ watch(loadMoreAnchor, (target) => {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  color: #9a7f59;
+  color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -454,7 +454,7 @@ watch(loadMoreAnchor, (target) => {
 .template-cover {
   position: relative;
   overflow: hidden;
-  background: #fff8ec;
+  background: var(--theme-panel-bg-soft);
 
   img {
     width: 100%;
@@ -470,7 +470,7 @@ watch(loadMoreAnchor, (target) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a88e68;
+  color: var(--text-muted);
 }
 
 .template-cover-empty {
@@ -499,8 +499,8 @@ watch(loadMoreAnchor, (target) => {
 .template-overlay-text {
   padding: 10px 18px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-  color: #5d4526;
+  background: rgba(var(--theme-surface-strong-rgb), 0.92);
+  color: var(--theme-accent-text-hover);
   font-size: 14px;
   font-weight: 700;
   transition: transform var(--motion-duration-swift) var(--motion-ease-soft);
@@ -546,7 +546,7 @@ watch(loadMoreAnchor, (target) => {
   height: 40px;
   padding-inline: 16px;
   border-radius: 14px;
-  box-shadow: 0 14px 28px rgba(236, 185, 88, 0.18);
+  box-shadow: 0 14px 28px var(--theme-shadow-strong);
 }
 
 .detail-label {
@@ -555,7 +555,7 @@ watch(loadMoreAnchor, (target) => {
   gap: 6px;
   font-size: 13px;
   font-weight: 700;
-  color: #8a6d45;
+  color: var(--text-secondary);
 }
 
 .detail-section > .detail-label {
@@ -574,7 +574,7 @@ watch(loadMoreAnchor, (target) => {
   height: 30px;
   padding-inline: 10px;
   border-radius: 10px;
-  color: #a9772e !important;
+  color: var(--theme-link) !important;
   transition:
     transform var(--motion-duration-press) var(--motion-ease-soft),
     background var(--motion-duration-fast) var(--motion-ease-soft),
@@ -582,10 +582,10 @@ watch(loadMoreAnchor, (target) => {
     box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
 
   &:hover {
-    background: #fff4df !important;
-    color: #c7800c !important;
+    background: var(--theme-panel-bg-strong) !important;
+    color: var(--theme-link-hover) !important;
     transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(223, 139, 29, 0.12);
+    box-shadow: 0 10px 20px var(--theme-shadow-soft);
   }
 
   &:active {
@@ -596,9 +596,9 @@ watch(loadMoreAnchor, (target) => {
 .detail-prompt {
   padding: 12px 14px;
   border-radius: 12px;
-  background: #fff8ee;
-  border: 1px solid #f1ddb7;
-  color: #4c341a;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
+  color: var(--theme-title);
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
@@ -618,8 +618,8 @@ watch(loadMoreAnchor, (target) => {
   height: 84px;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #ead9b9;
-  background: #fff8ee;
+  border: 1px solid var(--theme-panel-border);
+  background: var(--theme-panel-bg-soft);
   cursor: pointer;
   transition:
     transform var(--motion-duration-base) var(--motion-ease-soft),
@@ -635,8 +635,8 @@ watch(loadMoreAnchor, (target) => {
 
   &:hover {
     transform: translateY(-2px);
-    border-color: #e7bf7b;
-    box-shadow: 0 16px 24px rgba(236, 185, 88, 0.12);
+    border-color: var(--theme-border-strong);
+    box-shadow: 0 16px 24px var(--theme-shadow-soft);
   }
 }
 
@@ -650,8 +650,8 @@ watch(loadMoreAnchor, (target) => {
   height: clamp(220px, 36vh, 340px);
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid #ead9b9;
-  background: #fff8ee;
+  border: 1px solid var(--theme-panel-border);
+  background: var(--theme-panel-bg-soft);
   cursor: zoom-in;
   transition:
     transform var(--motion-duration-base) var(--motion-ease-soft),
@@ -667,14 +667,14 @@ watch(loadMoreAnchor, (target) => {
   img {
     object-fit: contain;
     display: block;
-    background: #fffdfb;
+    background: var(--theme-panel-bg);
     transition: transform var(--motion-duration-hover) var(--motion-ease-soft);
   }
 
   &:not(.empty):hover {
     transform: translateY(-3px);
-    border-color: #e7bf7b;
-    box-shadow: 0 16px 28px rgba(236, 185, 88, 0.14);
+    border-color: var(--theme-border-strong);
+    box-shadow: 0 16px 28px var(--theme-shadow-medium);
   }
 
   &:not(.empty):hover img {
@@ -696,9 +696,9 @@ watch(loadMoreAnchor, (target) => {
   gap: 0;
   padding: 12px 14px;
   border-radius: 12px;
-  background: #fffaf2;
-  border: 1px solid #f1ddb7;
-  color: #8f7558;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.8;
 
@@ -721,12 +721,12 @@ watch(loadMoreAnchor, (target) => {
   gap: 10px;
   min-height: 48px;
   margin: 14px 0 4px;
-  color: #8d7457;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
 .templates-load-more-tip-finished {
-  color: #a88e68;
+  color: var(--text-muted);
 }
 
 .templates-load-more-anchor {

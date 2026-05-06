@@ -129,6 +129,9 @@ onMounted(load);
 <style scoped lang="scss">
 .back-btn {
   border-radius: 12px;
+  border-color: var(--theme-panel-border-strong);
+  background: var(--theme-panel-bg-strong);
+  color: var(--theme-accent-text);
 }
 
 .detail-grid {
@@ -151,7 +154,7 @@ onMounted(load);
 
   h3 {
     margin: 0;
-    color: #4c341a;
+    color: var(--theme-title);
     font-size: 18px;
   }
 }
@@ -165,19 +168,19 @@ onMounted(load);
   > div {
     padding: 12px 14px;
     border-radius: 14px;
-    background: #fff8ee;
-    border: 1px solid #f2e3c6;
+    background: var(--theme-panel-bg-soft);
+    border: 1px solid var(--theme-panel-border);
   }
 
   span {
     display: block;
     margin-bottom: 6px;
-    color: #8c7458;
+    color: var(--text-secondary);
     font-size: 12px;
   }
 
   strong {
-    color: #5a3c14;
+    color: var(--theme-title);
     word-break: break-word;
   }
 }
@@ -192,7 +195,7 @@ onMounted(load);
 
 .detail-label {
   margin-bottom: 8px;
-  color: #8a6d45;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 700;
 }
@@ -200,9 +203,9 @@ onMounted(load);
 .detail-text {
   padding: 14px 16px;
   border-radius: 16px;
-  background: #fffaf2;
-  border: 1px solid #f2e3c6;
-  color: #5a3c14;
+  background: var(--theme-panel-bg-soft);
+  border: 1px solid var(--theme-panel-border);
+  color: var(--theme-title);
   line-height: 1.8;
   white-space: pre-wrap;
   word-break: break-word;
