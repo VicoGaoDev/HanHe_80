@@ -80,6 +80,14 @@
   --theme-shadow-soft: rgba(236, 185, 88, 0.12);
   --theme-shadow-medium: rgba(236, 185, 88, 0.16);
   --theme-shadow-strong: rgba(255, 169, 37, 0.24);
+  --theme-page-base: #fffaf4;
+  --theme-page-base-rgb: 255, 250, 244;
+  --theme-surface-strong: #fffefb;
+  --theme-surface-strong-rgb: 255, 254, 251;
+  --theme-overlay-soft: rgba(52, 40, 24, 0.08);
+  --theme-overlay-medium: rgba(52, 40, 24, 0.14);
+  --theme-overlay-strong: rgba(34, 25, 14, 0.48);
+  --theme-overlay-heavy: rgba(34, 25, 14, 0.72);
   --motion-ease-enter: cubic-bezier(0.24, 0.72, 0.32, 1);
   --motion-ease-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --motion-duration-press: 0.16s;

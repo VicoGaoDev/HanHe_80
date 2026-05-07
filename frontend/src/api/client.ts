@@ -21,8 +21,13 @@ client.interceptors.response.use(
   (res) => res.data,
   (error) => {
     if (error.response?.status === 401) {
-      clearStoredAuth();
-      router.push("/templates");
+      const url = String(error.config?.url ?? "");
+      const isAuthCredentialsRequest =
+        url.includes("/auth/login") || url.includes("/auth/register");
+      if (!isAuthCredentialsRequest) {
+        clearStoredAuth();
+        router.push("/templates");
+      }
     }
     return Promise.reject(error);
   }

@@ -33,12 +33,14 @@
 - `business_id`: 任务对外业务 ID，32 位十六进制字符串；任务创建响应、轮询接口、历史展示和日志追踪统一使用该字段。
 - `user_id`: 发起任务的用户。
 - `model`: 生成所用模型或场景模型标识。
+- `source`: 任务来源，当前默认 `web`；可用于区分不同客户端或入口。
 - `mode`: 任务模式，当前主要为 `generate` 或 `inpaint`。
 - `prompt`: 任务提示词。
 - `num_images`: 任务声明的图片数量；当前实际生成链路里通常按单图子任务落库。
 - `size`: 宽高比，例如 `1:1`、`3:4`。
 - `resolution`: 分辨率档位，例如 `2K`、`4K`。
 - `custom_size`: 自定义尺寸文本。
+- `reference_image`: 单张参考图地址；兼容旧链路或单图场景。
 - `reference_images`: 参考图列表，JSON 字符串形式存储。
 - `source_image`: 图编辑原图地址。
 - `mask_image`: 图编辑蒙版地址。
@@ -91,11 +93,24 @@
 - `num_images`: 模板默认生成数量。
 - `result_image`: 模板结果图。
 - `sort_order`: 模板排序。
+- `created_at` / `updated_at`: 模板创建时间、更新时间。
+
+### `template_tags`
+
+- `name`: 标签名称，唯一。
+- `created_at`: 标签创建时间。
+
+### `template_tag_relations`
+
+- `template_id`: 模板 ID。
+- `tag_id`: 标签 ID。
+- 使用联合主键 `(template_id, tag_id)` 保证同一模板不会重复绑定同一标签。
 
 ### `api_keys`
 
 - `key`: 站点通用配置项中的主 Key。
 - `tongyi_key`: 通义相关密钥。
+- `contact_qr_image`: 联系二维码图片地址。
 - `cos_secret_id` / `cos_secret_key`: 腾讯云 COS 凭证。
 - `cos_bucket` / `cos_region` / `cos_public_base_url`: COS 存储配置。
 - `announcement_enabled` / `announcement_content` / `announcement_updated_at`: 公告配置。
@@ -104,9 +119,12 @@
 ### `external_api_configs`
 
 - `name`: 配置名称，唯一。
+- `description`: 配置说明。
 - `group_name`: 配置分组。
 - `model_key`: 模型标识。
 - `model_label` / `model_description`: 前台展示文案。
+- `sort_order`: 配置排序。
+- `hide_resolution`: 是否在前端隐藏分辨率参数。
 - `request_url`: 实际调用地址。
 - `headers_json`: 请求头模板。
 - `payload_json`: 请求体模板。
@@ -115,18 +133,43 @@
 - `supports_generation` / `supports_inpaint` / `supports_prompt_reverse`: 功能支持矩阵。
 - `is_active_generation` / `is_active_inpaint` / `is_active_prompt_reverse`: 是否启用。
 - `status`: 配置状态，常见为 `enabled`。
+- `created_at` / `updated_at`: 创建时间、更新时间。
 
 ### `external_api_scene_bindings`
 
 - `scene_key`: 场景唯一键，例如不同生图、编辑或反推场景。
 - `scene_type`: 场景类型。
 - `scene_label` / `scene_description`: 场景文案。
+- `sort_order`: 场景排序。
 - `api_config_id`: 绑定的接口配置。
 - `display_name` / `subtitle`: 前端展示名称与副标题。
 - `credit_cost`: 该场景的积分成本。
 - `hide_aspect_ratio` / `hide_resolution` / `hide_custom_size`: 前端是否隐藏相关参数。
 - `aspect_ratio_options_json` / `image_size_options_json` / `custom_size_options_json`: 可选参数列表。
 - `status`: 场景状态，常见为 `enabled`。
+- `updated_at`: 最后更新时间。
+
+### `history_pins`
+
+- `user_id`: 置顶归属用户。
+- `item_type`: 置顶项类型，当前默认 `task`。
+- `item_key`: 置顶项唯一键；前端通常使用业务 ID 或兼容标识符。
+- `image_id` / `history_id`: 兼容旧历史结构的补充引用字段。
+- `pinned_at`: 实际置顶时间。
+- `created_at`: 记录创建时间。
+
+### `feedback`
+
+- `business_id`: Feedback 对外业务 ID，32 位十六进制字符串。
+- `user_id`: 提交反馈的用户。
+- `task_id`: 关联任务。
+- `content`: 用户反馈内容。
+- `status`: 处理状态，当前默认 `pending`。
+- `process_note`: 处理过程备注。
+- `result_note`: 处理结果备注。
+- `handled_by`: 处理人。
+- `handled_at`: 处理时间。
+- `created_at` / `updated_at`: 创建时间、更新时间。
 
 ### `regenerate_logs`
 
@@ -232,32 +275,32 @@ CREATE TABLE api_keys (
   announcement_enabled INT NOT NULL,
   announcement_content VARCHAR(5000) NOT NULL,
   announcement_updated_at DATETIME NULL,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE external_api_configs (
   id INT NOT NULL AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL,
-  description VARCHAR(255) NOT NULL,
-  group_name VARCHAR(100) NOT NULL,
-  model_key VARCHAR(50) NOT NULL,
-  model_label VARCHAR(100) NOT NULL,
-  model_description VARCHAR(255) NOT NULL,
-  sort_order INT NOT NULL,
-  hide_resolution TINYINT(1) NOT NULL,
-  request_url VARCHAR(500) NOT NULL,
+  description VARCHAR(255) NOT NULL DEFAULT '',
+  group_name VARCHAR(100) NOT NULL DEFAULT '默认',
+  model_key VARCHAR(50) NOT NULL DEFAULT '',
+  model_label VARCHAR(100) NOT NULL DEFAULT '',
+  model_description VARCHAR(255) NOT NULL DEFAULT '',
+  sort_order INT NOT NULL DEFAULT 0,
+  hide_resolution TINYINT(1) NOT NULL DEFAULT 0,
+  request_url VARCHAR(500) NOT NULL DEFAULT '',
   headers_json TEXT NOT NULL,
   payload_json TEXT NOT NULL,
   response_json TEXT NOT NULL,
-  result_base64_field VARCHAR(255) NOT NULL,
-  supports_generation TINYINT(1) NOT NULL,
-  supports_inpaint TINYINT(1) NOT NULL,
-  supports_prompt_reverse TINYINT(1) NOT NULL,
-  is_active_generation TINYINT(1) NOT NULL,
-  is_active_inpaint TINYINT(1) NOT NULL,
-  is_active_prompt_reverse TINYINT(1) NOT NULL,
-  status VARCHAR(20) NOT NULL,
+  result_base64_field VARCHAR(255) NOT NULL DEFAULT '',
+  supports_generation TINYINT(1) NOT NULL DEFAULT 0,
+  supports_inpaint TINYINT(1) NOT NULL DEFAULT 0,
+  supports_prompt_reverse TINYINT(1) NOT NULL DEFAULT 0,
+  is_active_generation TINYINT(1) NOT NULL DEFAULT 0,
+  is_active_inpaint TINYINT(1) NOT NULL DEFAULT 0,
+  is_active_prompt_reverse TINYINT(1) NOT NULL DEFAULT 0,
+  status VARCHAR(20) NOT NULL DEFAULT 'enabled',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -267,6 +310,7 @@ CREATE TABLE external_api_configs (
 CREATE TABLE template_tags (
   id INT NOT NULL AUTO_INCREMENT,
   name VARCHAR(50) NOT NULL,
+  UNIQUE KEY uq_template_tags_name (name),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -274,14 +318,14 @@ CREATE TABLE template_tags (
 CREATE TABLE templates (
   id INT NOT NULL AUTO_INCREMENT,
   prompt TEXT NOT NULL,
-  model VARCHAR(50) DEFAULT NULL,
+  model VARCHAR(50) DEFAULT 'banana_pro',
   reference_images TEXT,
-  size VARCHAR(20) DEFAULT NULL,
-  resolution VARCHAR(10) DEFAULT NULL,
-  custom_size VARCHAR(50) DEFAULT NULL,
-  num_images INT DEFAULT NULL,
-  result_image VARCHAR(255) DEFAULT NULL,
-  sort_order INT DEFAULT NULL,
+  size VARCHAR(20) DEFAULT '1:1',
+  resolution VARCHAR(10) DEFAULT '2K',
+  custom_size VARCHAR(50) DEFAULT '',
+  num_images INT DEFAULT 1,
+  result_image VARCHAR(255) DEFAULT '',
+  sort_order INT DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
@@ -294,11 +338,11 @@ CREATE TABLE users (
   email VARCHAR(255) DEFAULT NULL,
   email_verified TINYINT(1) NOT NULL DEFAULT 0,
   password_hash VARCHAR(255) NOT NULL,
-  avatar_url VARCHAR(500) DEFAULT NULL,
-  `role` VARCHAR(20) DEFAULT NULL,
-  status VARCHAR(10) DEFAULT NULL,
+  avatar_url VARCHAR(500) DEFAULT '',
+  `role` VARCHAR(20) DEFAULT 'user',
+  status VARCHAR(10) DEFAULT 'active',
   is_whitelisted TINYINT(1) NOT NULL DEFAULT 0,
-  credits INT NOT NULL,
+  credits INT NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -345,19 +389,20 @@ CREATE TABLE tasks (
   id INT NOT NULL AUTO_INCREMENT,
   business_id VARCHAR(32) NOT NULL,
   user_id INT NOT NULL,
-  model VARCHAR(50) DEFAULT NULL,
-  mode VARCHAR(20) DEFAULT NULL,
+  model VARCHAR(50) DEFAULT '',
+  source VARCHAR(20) NOT NULL DEFAULT 'web',
+  mode VARCHAR(20) DEFAULT 'generate',
   prompt TEXT,
-  num_images INT DEFAULT NULL,
-  size VARCHAR(20) DEFAULT NULL,
-  resolution VARCHAR(10) DEFAULT NULL,
-  custom_size VARCHAR(50) DEFAULT NULL,
-  reference_image VARCHAR(500) DEFAULT NULL,
+  num_images INT DEFAULT 4,
+  size VARCHAR(20) DEFAULT '3:4',
+  resolution VARCHAR(10) DEFAULT '4K',
+  custom_size VARCHAR(50) DEFAULT '',
+  reference_image VARCHAR(500) DEFAULT '',
   reference_images TEXT,
-  source_image VARCHAR(500) DEFAULT NULL,
-  mask_image VARCHAR(500) DEFAULT NULL,
+  source_image VARCHAR(500) DEFAULT '',
+  mask_image VARCHAR(500) DEFAULT '',
   credit_cost INT NOT NULL DEFAULT 0,
-  status VARCHAR(20) DEFAULT NULL,
+  status VARCHAR(20) DEFAULT 'pending',
   error_message TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   enqueued_at DATETIME DEFAULT NULL,
@@ -380,7 +425,7 @@ CREATE TABLE credit_logs (
   user_id INT NOT NULL,
   amount INT NOT NULL,
   type VARCHAR(20) NOT NULL,
-  description VARCHAR(500) DEFAULT NULL,
+  description VARCHAR(500) DEFAULT '',
   operator_id INT DEFAULT NULL,
   task_id INT DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -394,12 +439,12 @@ CREATE TABLE credit_logs (
 CREATE TABLE images (
   id INT NOT NULL AUTO_INCREMENT,
   task_id INT NOT NULL,
-  image_url VARCHAR(255) DEFAULT NULL,
-  preview_url VARCHAR(500) DEFAULT NULL,
-  image_format VARCHAR(20) DEFAULT NULL,
-  image_size_bytes INT DEFAULT NULL,
-  status VARCHAR(20) DEFAULT NULL,
-  error_message VARCHAR(2000) DEFAULT NULL,
+  image_url VARCHAR(255) DEFAULT '',
+  preview_url VARCHAR(500) DEFAULT '',
+  image_format VARCHAR(20) DEFAULT '',
+  image_size_bytes INT DEFAULT 0,
+  status VARCHAR(20) DEFAULT 'pending',
+  error_message VARCHAR(2000) DEFAULT '',
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   deleted_at DATETIME DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -407,11 +452,49 @@ CREATE TABLE images (
   CONSTRAINT fk_images_task FOREIGN KEY (task_id) REFERENCES tasks (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE history_pins (
+  id INT NOT NULL AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  item_type VARCHAR(20) NOT NULL DEFAULT 'task',
+  item_key VARCHAR(64) NOT NULL,
+  image_id INT DEFAULT NULL,
+  history_id INT DEFAULT NULL,
+  pinned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY ix_history_pins_user_id (user_id),
+  CONSTRAINT fk_history_pins_user FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE feedback (
+  id INT NOT NULL AUTO_INCREMENT,
+  business_id VARCHAR(32) NOT NULL,
+  user_id INT NOT NULL,
+  task_id INT NOT NULL,
+  content TEXT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  process_note VARCHAR(5000) NOT NULL DEFAULT '',
+  result_note VARCHAR(5000) NOT NULL DEFAULT '',
+  handled_by INT DEFAULT NULL,
+  handled_at DATETIME DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_feedback_business_id (business_id),
+  KEY ix_feedback_user_id (user_id),
+  KEY ix_feedback_task_id (task_id),
+  KEY ix_feedback_status (status),
+  KEY ix_feedback_handled_by (handled_by),
+  CONSTRAINT fk_feedback_user FOREIGN KEY (user_id) REFERENCES users (id),
+  CONSTRAINT fk_feedback_task FOREIGN KEY (task_id) REFERENCES tasks (id),
+  CONSTRAINT fk_feedback_handled_by FOREIGN KEY (handled_by) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE regenerate_logs (
   id INT NOT NULL AUTO_INCREMENT,
   image_id INT NOT NULL,
-  old_image_url VARCHAR(255) DEFAULT NULL,
-  new_image_url VARCHAR(255) DEFAULT NULL,
+  old_image_url VARCHAR(255) DEFAULT '',
+  new_image_url VARCHAR(255) DEFAULT '',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   CONSTRAINT fk_regenerate_logs_image FOREIGN KEY (image_id) REFERENCES images (id)
@@ -419,7 +502,6 @@ CREATE TABLE regenerate_logs (
 
 CREATE UNIQUE INDEX ix_users_email ON users (email);
 CREATE INDEX ix_users_username ON users (username);
-CREATE UNIQUE INDEX ix_template_tags_name ON template_tags (name);
 
 INSERT INTO users (
   business_id, username, email, email_verified, password_hash, avatar_url,
