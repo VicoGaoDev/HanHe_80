@@ -157,6 +157,7 @@ export interface FeedbackTaskSummary {
   prompt: string;
   status: string;
   created_at?: string | null;
+  images: ImageResult[];
 }
 
 export interface FeedbackItem {
@@ -198,6 +199,7 @@ export interface FeedbackUpdatePayload {
 
 export interface AdminFeedbackQuery extends FeedbackListQuery {
   user_id?: string;
+  feedback_id?: string;
 }
 
 export interface AdminUser {

@@ -244,6 +244,7 @@ def admin_history(
 def admin_feedback_list(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    feedback_id: Optional[str] = Query(None),
     user_id: Optional[str] = Query(None),
     task_id: Optional[str] = Query(None),
     status: Optional[str] = Query(None, pattern="^(pending|processing|completed)$"),
@@ -252,6 +253,7 @@ def admin_feedback_list(
 ):
     return list_feedbacks(
         db,
+        feedback_id=feedback_id,
         user_id=_resolve_optional_user_id(db, user_id),
         task_id=task_id,
         status_filter=status,

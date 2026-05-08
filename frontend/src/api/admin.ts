@@ -111,6 +111,7 @@ export function listAdminFeedbacks(
   query?: AdminFeedbackQuery,
 ): Promise<FeedbackListResponse> {
   const params: Record<string, unknown> = { page, page_size: pageSize };
+  if (query?.feedback_id) params.feedback_id = query.feedback_id;
   if (query?.user_id) params.user_id = query.user_id;
   if (query?.task_id) params.task_id = query.task_id;
   if (query?.status) params.status = query.status;

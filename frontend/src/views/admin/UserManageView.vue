@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from "vue";
 import { message, Modal } from "ant-design-vue";
-import { PlusOutlined, TeamOutlined, WalletOutlined, SearchOutlined, UndoOutlined } from "@ant-design/icons-vue";
+import { CopyOutlined, PlusOutlined, TeamOutlined, WalletOutlined, SearchOutlined, UndoOutlined } from "@ant-design/icons-vue";
 import {
   listUsers,
   createUser,
@@ -43,7 +43,7 @@ const whitelistKeyword = ref("");
 const whitelistLoadingId = ref<string | null>(null);
 
 const columns = [
-  { title: "ID", dataIndex: "id", width: 70 },
+  { title: "ID", dataIndex: "id", width: 58 },
   { title: "用户", dataIndex: "username", width: 240 },
   { title: "邮箱", dataIndex: "email", width: 240 },
   { title: "角色", dataIndex: "role", width: 100 },
@@ -51,7 +51,7 @@ const columns = [
   { title: "积分", dataIndex: "credits", width: 100 },
   { title: "状态", dataIndex: "status", width: 90 },
   { title: "创建时间", dataIndex: "created_at", width: 170 },
-  { title: "操作", key: "action", width: 420 },
+  { title: "操作", key: "action", width: 300 },
 ];
 
 const filteredUsers = computed(() => {
@@ -235,6 +235,21 @@ function resetFilters() {
   filters.sort = "created_at_desc";
 }
 
+function formatUserId(id?: string) {
+  if (!id) return "-";
+  if (id.length <= 8) return id;
+  return `${id.slice(0, 4)}...${id.slice(-4)}`;
+}
+
+async function copyUserId(id: string) {
+  try {
+    await navigator.clipboard.writeText(id);
+    message.success("用户 ID 已复制");
+  } catch {
+    message.error("复制失败，请重试");
+  }
+}
+
 function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "-"; }
 </script>
 
@@ -306,6 +321,16 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
         class="admin-mobile-table"
       >
         <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'id'">
+            <div class="id-cell">
+              <a-tooltip :title="record.id">
+                <span class="id-text">{{ formatUserId(record.id) }}</span>
+              </a-tooltip>
+              <a-button type="text" size="small" class="id-copy-btn" @click="copyUserId(record.id)">
+                <template #icon><CopyOutlined /></template>
+              </a-button>
+            </div>
+          </template>
           <template v-if="column.dataIndex === 'username'">
             <div class="user-cell">
               <a-avatar :size="34" :src="record.avatar_url || undefined" class="table-avatar">
@@ -346,7 +371,6 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
                 <template #icon><WalletOutlined /></template>
                 分配积分
               </a-button>
-              <a-divider type="vertical" />
               <a-button
                 type="link"
                 size="small"
@@ -358,7 +382,6 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
                 积分清零
               </a-button>
               <template v-if="isSuperAdmin">
-                <a-divider type="vertical" />
                 <a-button
                   type="link"
                   size="small"
@@ -370,7 +393,6 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
                 >
                   {{ record.status === "active" ? "禁用" : "启用" }}
                 </a-button>
-                <a-divider type="vertical" />
                 <a-button
                   type="link"
                   size="small"
@@ -380,7 +402,6 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
                 >
                   {{ record.role === "admin" ? "取消管理员" : "设为管理员" }}
                 </a-button>
-                <a-divider type="vertical" />
                 <a-button type="link" size="small" class="user-action-btn user-action-btn-secondary" @click="openResetPwd(record)">
                   重置密码
                 </a-button>
@@ -601,23 +622,42 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
   word-break: break-all;
 }
 
-.table-actions {
+.id-cell {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
+  gap: 2px;
+  max-width: 100%;
 }
 
-.table-actions :deep(.ant-divider-vertical) {
-  margin-inline: 2px;
-  border-inline-start-color: #efd7b1;
+.id-text {
+  color: #8c7458;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.id-copy-btn {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 !important;
+  color: #b16d10 !important;
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 300px;
 }
 
 .user-action-btn {
   height: 30px;
-  padding-inline: 10px;
+  padding-inline: 8px;
   border-radius: 10px;
   font-weight: 600;
+  margin: 0;
 }
 
 .user-action-btn.user-action-btn-primary {

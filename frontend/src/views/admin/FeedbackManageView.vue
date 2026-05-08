@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { MessageOutlined, SearchOutlined, UndoOutlined } from "@ant-design/icons-vue";
+import { CopyOutlined, MessageOutlined, SearchOutlined, UndoOutlined } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import { listAdminFeedbacks } from "@/api/admin";
@@ -15,10 +15,12 @@ const page = ref(1);
 const pageSize = ref(20);
 
 const filters = reactive<{
+  feedback_id: string;
   user_id: string;
   task_id: string;
   status: FeedbackStatus | undefined;
 }>({
+  feedback_id: "",
   user_id: "",
   task_id: "",
   status: undefined,
@@ -27,7 +29,9 @@ const filters = reactive<{
 const columns = [
   { title: "反馈编号", dataIndex: "feedback_id", width: 220 },
   { title: "用户", dataIndex: "username", width: 140 },
-  { title: "反馈内容", dataIndex: "content", ellipsis: true },
+  { title: "反馈内容", dataIndex: "content", width: 240, ellipsis: true },
+  { title: "处理进度", dataIndex: "process_note", width: 240, ellipsis: true },
+  { title: "处理结果", dataIndex: "result_note", width: 240, ellipsis: true },
   { title: "状态", dataIndex: "status", width: 120 },
   { title: "更新时间", dataIndex: "updated_at", width: 180 },
   { title: "操作", key: "action", width: 120, fixed: "right" as const },
@@ -53,10 +57,20 @@ function formatTime(value?: string | null) {
   return value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss") : "-";
 }
 
+async function copyFeedbackId(feedbackId: string) {
+  try {
+    await navigator.clipboard.writeText(feedbackId);
+    message.success("反馈编号已复制");
+  } catch {
+    message.error("复制失败，请重试");
+  }
+}
+
 async function load() {
   loading.value = true;
   try {
     const res = await listAdminFeedbacks(page.value, pageSize.value, {
+      feedback_id: filters.feedback_id.trim() || undefined,
       user_id: filters.user_id.trim() || undefined,
       task_id: filters.task_id.trim() || undefined,
       status: filters.status,
@@ -76,6 +90,7 @@ function handleSearch() {
 }
 
 function handleReset() {
+  filters.feedback_id = "";
   filters.user_id = "";
   filters.task_id = "";
   filters.status = undefined;
@@ -112,6 +127,15 @@ onMounted(load);
     </div>
 
     <div class="warm-card filter-bar motion-fade-up motion-card-lift" style="--motion-delay: 120ms">
+      <a-input
+        v-model:value="filters.feedback_id"
+        allow-clear
+        placeholder="按反馈编号筛选"
+        class="filter-input warm-input"
+        @press-enter="handleSearch"
+      >
+        <template #prefix><SearchOutlined /></template>
+      </a-input>
       <a-input
         v-model:value="filters.user_id"
         allow-clear
@@ -156,16 +180,27 @@ onMounted(load);
           onChange: handlePageChange,
           onShowSizeChange: handlePageChange,
         }"
-        :scroll="{ x: 900 }"
+        :scroll="{ x: 1380 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'feedback_id'">
-            <a-tooltip :title="record.feedback_id">
-              <div class="id-cell">{{ record.feedback_id }}</div>
-            </a-tooltip>
+            <div class="id-cell">
+              <a-tooltip :title="record.feedback_id">
+                <div class="id-cell-text">{{ record.feedback_id }}</div>
+              </a-tooltip>
+              <a-button type="text" size="small" class="copy-id-btn" @click="copyFeedbackId(record.feedback_id)">
+                <template #icon><CopyOutlined /></template>
+              </a-button>
+            </div>
           </template>
           <template v-else-if="column.dataIndex === 'content'">
             <div class="content-cell">{{ record.content }}</div>
+          </template>
+          <template v-else-if="column.dataIndex === 'process_note'">
+            <div class="content-cell muted-cell">{{ record.process_note || "暂未更新处理进度" }}</div>
+          </template>
+          <template v-else-if="column.dataIndex === 'result_note'">
+            <div class="content-cell muted-cell">{{ record.result_note || "暂未填写处理结果" }}</div>
           </template>
           <template v-else-if="column.dataIndex === 'status'">
             <a-tag class="warm-tag" :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>
@@ -217,15 +252,36 @@ onMounted(load);
 .content-cell {
   max-width: 420px;
   color: var(--theme-title);
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.muted-cell {
+  color: var(--theme-text-secondary);
 }
 
 .id-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.id-cell-text {
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--theme-accent-text);
   font-weight: 600;
+}
+
+.copy-id-btn {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 !important;
+  color: var(--theme-accent-text) !important;
 }
 
 .warm-tag {

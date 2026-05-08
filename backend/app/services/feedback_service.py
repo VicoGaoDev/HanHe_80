@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.feedback import Feedback
 from app.models.task import Task
 from app.models.user import User
+from app.services.image_delivery_service import get_optional_cos_config, serialize_image
 from app.services.business_id_service import (
     feedback_external_id,
     get_feedback_by_business_id,
@@ -26,6 +27,7 @@ def _feedback_base_query(db: Session):
             selectinload(Feedback.user),
             selectinload(Feedback.handler),
             selectinload(Feedback.task).selectinload(Task.user),
+            selectinload(Feedback.task).selectinload(Task.images),
         )
     )
 
@@ -55,7 +57,18 @@ def _validate_optional_text(value: str | None, field_label: str) -> str:
     return normalized
 
 
-def _serialize_feedback(item: Feedback) -> dict:
+def _serialize_task_images(task: Task | None, *, db: Session) -> list[dict]:
+    if not task:
+        return []
+    cos_config = get_optional_cos_config(db)
+    return [
+        serialize_image(image, cos_config=cos_config)
+        for image in sorted(task.images or [], key=lambda candidate: candidate.id, reverse=True)
+        if not image.is_deleted
+    ]
+
+
+def _serialize_feedback(item: Feedback, *, db: Session, include_task_images: bool = False) -> dict:
     task = item.task
     task_user = task.user if task else None
     handler = item.handler
@@ -82,6 +95,7 @@ def _serialize_feedback(item: Feedback) -> dict:
             "prompt": task.prompt if task else "",
             "status": task.status if task else "",
             "created_at": task.created_at if task else None,
+            "images": _serialize_task_images(task, db=db) if include_task_images else [],
         },
     }
 
@@ -103,12 +117,13 @@ def create_feedback(db: Session, user: User, task_id: str, content: str) -> dict
     created = _feedback_base_query(db).filter(Feedback.id == item.id).first()
     if not created:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="反馈创建失败")
-    return _serialize_feedback(created)
+    return _serialize_feedback(created, db=db, include_task_images=True)
 
 
 def list_feedbacks(
     db: Session,
     *,
+    feedback_id: str | None = None,
     user_id: int | None = None,
     task_id: str | None = None,
     status_filter: str | None = None,
@@ -116,6 +131,12 @@ def list_feedbacks(
     page_size: int = 20,
 ) -> dict:
     query = _feedback_base_query(db)
+    if feedback_id:
+        feedback = get_feedback_by_business_id(db, feedback_id)
+        if not feedback:
+            return {"total": 0, "items": []}
+        query = query.filter(Feedback.id == feedback.id)
+
     if user_id is not None:
         query = query.filter(Feedback.user_id == user_id)
 
@@ -135,7 +156,7 @@ def list_feedbacks(
         .limit(page_size)
         .all()
     )
-    return {"total": total, "items": [_serialize_feedback(item) for item in rows]}
+    return {"total": total, "items": [_serialize_feedback(item, db=db) for item in rows]}
 
 
 def get_feedback_detail(
@@ -153,7 +174,7 @@ def get_feedback_detail(
     detail = _feedback_base_query(db).filter(Feedback.id == item.id).first()
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="反馈不存在")
-    return _serialize_feedback(detail)
+    return _serialize_feedback(detail, db=db, include_task_images=True)
 
 
 def update_feedback(
@@ -198,4 +219,4 @@ def update_feedback(
     detail = _feedback_base_query(db).filter(Feedback.id == item.id).first()
     if not detail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="反馈不存在")
-    return _serialize_feedback(detail)
+    return _serialize_feedback(detail, db=db, include_task_images=True)

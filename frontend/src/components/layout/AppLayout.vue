@@ -66,8 +66,8 @@ let themeObserver: MutationObserver | null = null;
 
 const primaryMenuItems = [
   { key: "templates", label: "创意模版", iconSrc: withBaseUrl("nav-templates.svg"), darkIconSrc: withBaseUrl("nav-templates-mono.svg") },
-  { key: "generate", label: "自定义绘图", iconSrc: withBaseUrl("nav-generate.svg") },
-  { key: "history", label: "历史记录", iconSrc: withBaseUrl("nav-history.svg"), darkIconSrc: withBaseUrl("nav-history-mono.svg") },
+  { key: "generate", label: "AI 生图", iconSrc: withBaseUrl("nav-generate.svg") },
+  { key: "history", label: "历史图片", iconSrc: withBaseUrl("nav-history.svg"), darkIconSrc: withBaseUrl("nav-history-mono.svg") },
 ];
 
 function getPrimaryMenuIconSrc(item: (typeof primaryMenuItems)[number]) {

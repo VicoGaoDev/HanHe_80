@@ -1,6 +1,8 @@
 from datetime import datetime
 from pydantic import BaseModel
 
+from app.schemas.task import ImageOut
+
 
 class FeedbackTaskSummary(BaseModel):
     task_id: str
@@ -10,6 +12,7 @@ class FeedbackTaskSummary(BaseModel):
     prompt: str = ""
     status: str = ""
     created_at: datetime | None = None
+    images: list[ImageOut] = []
 
 
 class FeedbackListItem(BaseModel):

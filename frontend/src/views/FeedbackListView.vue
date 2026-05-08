@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import { MessageOutlined, SearchOutlined, UndoOutlined } from "@ant-design/icons-vue";
+import { CopyOutlined, MessageOutlined, UndoOutlined } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import { listMyFeedbacks } from "@/api/feedback";
 import type { FeedbackItem, FeedbackStatus } from "@/types";
 
-const router = useRouter();
 const loading = ref(false);
 const items = ref<FeedbackItem[]>([]);
 const total = ref(0);
@@ -15,24 +13,22 @@ const page = ref(1);
 const pageSize = ref(20);
 
 const filters = reactive<{
-  task_id: string;
   status: FeedbackStatus | undefined;
 }>({
-  task_id: "",
   status: undefined,
 });
 
 const columns = [
   { title: "反馈编号", dataIndex: "feedback_id", width: 220 },
-  { title: "反馈内容", dataIndex: "content", ellipsis: true },
+  { title: "反馈内容", dataIndex: "content", width: 260, ellipsis: true },
+  { title: "处理进度", dataIndex: "process_note", width: 260, ellipsis: true },
+  { title: "处理结果", dataIndex: "result_note", width: 260, ellipsis: true },
   { title: "状态", dataIndex: "status", width: 120 },
   { title: "更新时间", dataIndex: "updated_at", width: 180 },
-  { title: "操作", key: "action", width: 120, fixed: "right" as const },
 ];
 
 const activeFilterSummary = computed(() => {
   const chips: string[] = [];
-  if (filters.task_id.trim()) chips.push(`任务 ${filters.task_id.trim()}`);
   if (filters.status) chips.push(statusLabel(filters.status));
   return chips;
 });
@@ -57,11 +53,19 @@ function formatTime(value?: string | null) {
   return value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss") : "-";
 }
 
+async function copyFeedbackId(feedbackId: string) {
+  try {
+    await navigator.clipboard.writeText(feedbackId);
+    message.success("反馈编号已复制");
+  } catch {
+    message.error("复制失败，请重试");
+  }
+}
+
 async function load() {
   loading.value = true;
   try {
     const res = await listMyFeedbacks(page.value, pageSize.value, {
-      task_id: filters.task_id.trim() || undefined,
       status: filters.status,
     });
     items.value = res.items;
@@ -79,7 +83,6 @@ function handleSearch() {
 }
 
 function handleReset() {
-  filters.task_id = "";
   filters.status = undefined;
   page.value = 1;
   void load();
@@ -89,10 +92,6 @@ function handlePageChange(nextPage: number, nextPageSize: number) {
   page.value = nextPage;
   pageSize.value = nextPageSize;
   void load();
-}
-
-function openDetail(feedbackId: string) {
-  router.push(`/feedbacks/${feedbackId}`);
 }
 
 onMounted(load);
@@ -114,15 +113,6 @@ onMounted(load);
     </div>
 
     <div class="warm-card filter-bar motion-fade-up motion-card-lift" style="--motion-delay: 120ms">
-      <a-input
-        v-model:value="filters.task_id"
-        allow-clear
-        placeholder="按任务 ID 筛选"
-        class="filter-input warm-input"
-        @press-enter="handleSearch"
-      >
-        <template #prefix><SearchOutlined /></template>
-      </a-input>
       <a-select v-model:value="filters.status" allow-clear placeholder="反馈状态" class="filter-select warm-select">
         <a-select-option value="pending">待处理</a-select-option>
         <a-select-option value="processing">处理中</a-select-option>
@@ -153,25 +143,39 @@ onMounted(load);
           onChange: handlePageChange,
           onShowSizeChange: handlePageChange,
         }"
-        :scroll="{ x: 860 }"
+        :scroll="{ x: 1280 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'feedback_id'">
-            <a-tooltip :title="record.feedback_id">
-              <div class="id-cell">{{ record.feedback_id }}</div>
-            </a-tooltip>
+            <div class="id-cell">
+              <a-tooltip :title="record.feedback_id">
+                <div class="id-cell-text">{{ record.feedback_id }}</div>
+              </a-tooltip>
+              <a-button type="text" size="small" class="copy-id-btn" @click="copyFeedbackId(record.feedback_id)">
+                <template #icon><CopyOutlined /></template>
+              </a-button>
+            </div>
           </template>
           <template v-else-if="column.dataIndex === 'content'">
-            <div class="content-cell">{{ record.content }}</div>
+            <a-tooltip :title="record.content || '-'">
+              <div class="content-cell clamp-text">{{ record.content || "-" }}</div>
+            </a-tooltip>
+          </template>
+          <template v-else-if="column.dataIndex === 'process_note'">
+            <a-tooltip :title="record.process_note || '暂未更新处理进度'">
+              <div class="content-cell muted-cell clamp-text">{{ record.process_note || "暂未更新处理进度" }}</div>
+            </a-tooltip>
+          </template>
+          <template v-else-if="column.dataIndex === 'result_note'">
+            <a-tooltip :title="record.result_note || '暂未填写处理结果'">
+              <div class="content-cell muted-cell clamp-text">{{ record.result_note || "暂未填写处理结果" }}</div>
+            </a-tooltip>
           </template>
           <template v-else-if="column.dataIndex === 'status'">
             <a-tag class="warm-tag" :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'updated_at'">
             {{ formatTime(record.updated_at) }}
-          </template>
-          <template v-else-if="column.key === 'action'">
-            <a-button type="link" class="view-btn" @click="openDetail(record.feedback_id)">查看详情</a-button>
           </template>
         </template>
       </a-table>
@@ -195,10 +199,6 @@ onMounted(load);
   flex-wrap: wrap;
 }
 
-.filter-input {
-  width: 240px;
-}
-
 .filter-select {
   width: 160px;
 }
@@ -220,9 +220,30 @@ onMounted(load);
 .content-cell {
   max-width: 420px;
   color: var(--theme-title);
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.clamp-text {
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.muted-cell {
+  color: var(--theme-text-secondary);
 }
 
 .id-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.id-cell-text {
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -231,14 +252,16 @@ onMounted(load);
   font-weight: 600;
 }
 
-.warm-tag {
-  border-radius: 999px;
-  font-weight: 600;
+.copy-id-btn {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 !important;
+  color: var(--theme-accent-text) !important;
 }
 
-.view-btn {
-  padding-inline: 0;
-  color: var(--theme-link) !important;
+.warm-tag {
+  border-radius: 999px;
   font-weight: 600;
 }
 
@@ -248,7 +271,6 @@ onMounted(load);
     align-items: stretch;
   }
 
-  .filter-input,
   .filter-select {
     width: 100%;
   }
