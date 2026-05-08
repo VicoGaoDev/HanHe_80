@@ -8,6 +8,8 @@
 - 首次登录后请立即修改默认密码。
 - `tasks.created_at` 表示任务记录创建时间。
 - `tasks.enqueued_at` 表示任务成功进入分发/入队流程的时间，可用于计算排队耗时。
+- `tasks.request_started_at` 表示任务首次真实发起第三方接口请求的时间。
+- `tasks.request_finished_at` 表示任务最近一次第三方接口请求返回的时间。
 - `tasks.updated_at` 表示任务最近一次状态或内容更新的时间；任务完成后可结合 `created_at` 估算总耗时。
 
 ## 关键字段说明
@@ -49,6 +51,8 @@
 - `error_message`: 失败原因或最近一次错误信息。
 - `created_at`: 任务记录写入数据库时间。
 - `enqueued_at`: 任务成功进入分发/入队流程时间。
+- `request_started_at`: 任务首次真实发起第三方接口请求时间。
+- `request_finished_at`: 任务最近一次第三方接口请求返回时间。
 - `updated_at`: 任务最后一次状态更新时间；成功或失败后会更新。
 
 ### `images`
@@ -406,6 +410,8 @@ CREATE TABLE tasks (
   error_message TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   enqueued_at DATETIME DEFAULT NULL,
+  request_started_at DATETIME DEFAULT NULL,
+  request_finished_at DATETIME DEFAULT NULL,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_tasks_business_id (business_id),

@@ -134,5 +134,7 @@ def serialize_task(task: Task, *, cos_config: CosRuntimeConfig | None = None) ->
         "error_message": task.error_message or "",
         "created_at": task.created_at,
         "enqueued_at": task.enqueued_at,
+        "request_started_at": task.request_started_at,
+        "request_finished_at": task.request_finished_at,
         "images": [serialize_image(image, cos_config=cos_config) for image in task.images],
     }

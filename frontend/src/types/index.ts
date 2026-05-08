@@ -50,6 +50,8 @@ export interface TaskResult {
   error_message?: string;
   created_at: string;
   enqueued_at?: string | null;
+  request_started_at?: string | null;
+  request_finished_at?: string | null;
   images: ImageResult[];
 }
 

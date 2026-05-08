@@ -27,6 +27,8 @@ class Task(Base):
     error_message = Column(Text, default="")
     created_at = Column(DateTime, server_default=func.now())
     enqueued_at = Column(DateTime, nullable=True)
+    request_started_at = Column(DateTime, nullable=True)
+    request_finished_at = Column(DateTime, nullable=True)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", backref="tasks")

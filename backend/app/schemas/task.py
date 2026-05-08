@@ -50,6 +50,8 @@ class TaskOut(BaseModel):
     error_message: str = ""
     created_at: datetime | None = None
     enqueued_at: datetime | None = None
+    request_started_at: datetime | None = None
+    request_finished_at: datetime | None = None
     images: list[ImageOut] = []
 
     model_config = {"from_attributes": True}

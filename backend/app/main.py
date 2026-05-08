@@ -142,6 +142,10 @@ def _ensure_schema_compat():
             conn.execute(text("ALTER TABLE tasks ADD COLUMN error_message TEXT"))
         if "enqueued_at" not in task_columns:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN enqueued_at DATETIME"))
+        if "request_started_at" not in task_columns:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN request_started_at DATETIME"))
+        if "request_finished_at" not in task_columns:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN request_finished_at DATETIME"))
 
     image_columns = {col["name"] for col in inspector.get_columns("images")}
     with engine.begin() as conn:
@@ -465,24 +469,24 @@ def _ensure_business_id_schema():
             task_columns = {col["name"] for col in inspector.get_columns("tasks")}
             if "business_id" not in task_columns:
                 conn.execute(text("ALTER TABLE tasks ADD COLUMN business_id VARCHAR(32) NULL"))
-
-    from app.database import SessionLocal
-    from app.models.user import User
-    from app.models.task import Task
-
-    db = SessionLocal()
-    try:
-        changed = False
-        for user in db.query(User).filter((User.business_id.is_(None)) | (User.business_id == "")).all():
-            user.business_id = generate_business_id()
-            changed = True
-        for task in db.query(Task).filter((Task.business_id.is_(None)) | (Task.business_id == "")).all():
-            task.business_id = generate_business_id()
-            changed = True
-        if changed:
-            db.commit()
-    finally:
-        db.close()
+        if "users" in table_names:
+            missing_user_ids = conn.execute(
+                text("SELECT id FROM users WHERE business_id IS NULL OR business_id = ''")
+            ).scalars().all()
+            for user_id in missing_user_ids:
+                conn.execute(
+                    text("UPDATE users SET business_id = :business_id WHERE id = :id"),
+                    {"business_id": generate_business_id(), "id": user_id},
+                )
+        if "tasks" in table_names:
+            missing_task_ids = conn.execute(
+                text("SELECT id FROM tasks WHERE business_id IS NULL OR business_id = ''")
+            ).scalars().all()
+            for task_id in missing_task_ids:
+                conn.execute(
+                    text("UPDATE tasks SET business_id = :business_id WHERE id = :id"),
+                    {"business_id": generate_business_id(), "id": task_id},
+                )
 
     inspector = inspect(engine)
     with engine.begin() as conn:
@@ -534,7 +538,14 @@ def _ensure_task_credit_cost_column():
         return
 
     task_columns = {col["name"] for col in inspector.get_columns("tasks")}
-    if "credit_cost" in task_columns and "custom_size" in task_columns and "enqueued_at" in task_columns and "source" in task_columns:
+    if (
+        "credit_cost" in task_columns
+        and "custom_size" in task_columns
+        and "enqueued_at" in task_columns
+        and "request_started_at" in task_columns
+        and "request_finished_at" in task_columns
+        and "source" in task_columns
+    ):
         return
 
     with engine.begin() as conn:
@@ -544,6 +555,10 @@ def _ensure_task_credit_cost_column():
             conn.execute(text("ALTER TABLE tasks ADD COLUMN custom_size VARCHAR(50) DEFAULT ''"))
         if "enqueued_at" not in task_columns:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN enqueued_at DATETIME"))
+        if "request_started_at" not in task_columns:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN request_started_at DATETIME"))
+        if "request_finished_at" not in task_columns:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN request_finished_at DATETIME"))
         if "source" not in task_columns:
             conn.execute(text("ALTER TABLE tasks ADD COLUMN source VARCHAR(20) DEFAULT 'web'"))
 

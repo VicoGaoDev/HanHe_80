@@ -61,6 +61,18 @@ def _clip_response_preview(payload: object) -> str:
         return preview
     return preview[:MAX_RESPONSE_PREVIEW_LENGTH] + "..."
 
+
+def _mark_task_request_started(task: Task) -> bool:
+    if task.request_started_at is not None:
+        return False
+    task.request_started_at = datetime.utcnow()
+    task.request_finished_at = None
+    return True
+
+
+def _mark_task_request_finished(task: Task) -> None:
+    task.request_finished_at = datetime.utcnow()
+
 def _read_file_as_base64(ref_url: str) -> tuple[str, str] | None:
     """Read a local or remote image and return (mime_type, base64_data)."""
     result = load_image_bytes(ref_url)
@@ -651,6 +663,9 @@ def _process_task(task_id: int, *, use_distributed_lock: bool = True):
             db.refresh(task)
             if _expire_processing_task(db, task, images):
                 return
+            if _mark_task_request_started(task):
+                db.commit()
+                db.refresh(task)
             result, error_message = _call_gemini_api(
                 prompt=task.prompt,
                 aspect_ratio=task.size,
@@ -662,6 +677,8 @@ def _process_task(task_id: int, *, use_distributed_lock: bool = True):
                 source_image=task.source_image or "",
                 mask_image=task.mask_image or "",
             )
+            _mark_task_request_finished(task)
+            db.commit()
 
             if result:
                 img_bytes, mime = result
@@ -770,6 +787,9 @@ def _process_single_image(image_id: int, *, use_distributed_lock: bool = True):
 
         ref_urls = _parse_reference_images(task)
         task_mode = (task.mode or "generate").lower()
+        if _mark_task_request_started(task):
+            db.commit()
+            db.refresh(task)
 
         result, error_message = _call_gemini_api(
             prompt=task.prompt,
@@ -782,6 +802,8 @@ def _process_single_image(image_id: int, *, use_distributed_lock: bool = True):
             source_image=task.source_image or "",
             mask_image=task.mask_image or "",
         )
+        _mark_task_request_finished(task)
+        db.commit()
 
         if result:
             img_bytes, mime = result
