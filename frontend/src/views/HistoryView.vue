@@ -8,6 +8,7 @@ import {
   CopyOutlined,
   DeleteOutlined,
   DownloadOutlined,
+  EditOutlined,
   EyeOutlined,
   LoadingOutlined,
   MessageOutlined,
@@ -640,6 +641,30 @@ function handleReedit(item: UserHistoryCard) {
   }
   router.push("/generate");
 }
+
+function handleEditImage(item: UserHistoryCard) {
+  const referenceImage = item.mode === "promptReverse"
+    ? item.source_image
+    : (item.image_url || item.preview_url || item.thumb_url || "");
+  if (!referenceImage) {
+    message.warning("当前图片暂不可用于图编辑");
+    return;
+  }
+  localStorage.setItem(
+    "generateDraftFromHistory",
+    JSON.stringify({
+      mode: "generate",
+      model: item.model,
+      prompt: "",
+      reference_images: [referenceImage],
+      num_images: 1,
+      size: item.size,
+      resolution: item.resolution,
+      custom_size: item.custom_size,
+    })
+  );
+  router.push("/generate");
+}
 </script>
 
 <template>
@@ -836,6 +861,11 @@ function handleReedit(item: UserHistoryCard) {
               <a-tooltip v-if="canHistoryViewOriginal(item)" title="查看原图">
                 <a-button shape="circle" type="text" class="history-overlay-btn" @click.stop="handleViewOriginal(item)">
                   <template #icon><EyeOutlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="图片编辑">
+                <a-button shape="circle" type="text" class="history-overlay-btn" @click.stop="handleEditImage(item)">
+                  <template #icon><EditOutlined /></template>
                 </a-button>
               </a-tooltip>
               <a-tooltip title="重新编辑">

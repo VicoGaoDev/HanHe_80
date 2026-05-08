@@ -971,6 +971,35 @@ function handleReeditTask(task: GeneratedTaskItem) {
   message.success("已回填到编辑区");
 }
 
+function handleEditImageTask(task: GeneratedTaskItem, image: ImageResult) {
+  const referenceImage = image.image_url || image.preview_url || "";
+  if (!referenceImage) {
+    message.warning("当前结果图暂不可用于图编辑");
+    return;
+  }
+  generateMode.value = "imageEdit";
+  prompt.value = task.prompt;
+  repaintPrompt.value = "";
+  if (task.model) selectedModel.value = task.model;
+  size.value = task.size || "9:16";
+  resolution.value = task.resolution || "2K";
+  customSize.value = task.customSize || "";
+  numImages.value = Math.min(4, Math.max(1, Number(task.numImages || 1)));
+  syncReferenceItems([referenceImage]);
+  revokeObjectUrl(sourcePreviewUrl.value);
+  sourcePreviewUrl.value = "";
+  sourceImageUrl.value = "";
+  repaintMaskUrl.value = "";
+  reverseImageUrl.value = "";
+  reversePromptResult.value = "";
+  hasRepaintMask.value = false;
+  canUndoMask.value = false;
+  canRedoMask.value = false;
+  repaintCanvasRef.value?.clearMask();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  message.success("已切换到图编辑，并载入当前结果图");
+}
+
 async function handleRegenerate(task: GeneratedTaskItem) {
   const payload: GenerateTaskPayload = task.mode === "inpaint"
     ? {
@@ -1924,6 +1953,11 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                       <a-tooltip title="查看原图">
                         <a-button shape="circle" class="icon-chip" @click.stop="handlePreview(getResultPreviewUrl(item.image))">
                           <template #icon><EyeOutlined /></template>
+                        </a-button>
+                      </a-tooltip>
+                      <a-tooltip title="图片编辑">
+                        <a-button shape="circle" class="icon-chip" @click.stop="handleEditImageTask(item.task, item.image)">
+                          <template #icon><EditOutlined /></template>
                         </a-button>
                       </a-tooltip>
                       <a-tooltip title="重新生成">
