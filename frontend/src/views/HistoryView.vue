@@ -40,6 +40,7 @@ const dateRangeFilter = ref<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
 const generationModels = ref<GenerationModelOption[]>([]);
 const detailOpen = ref(false);
 const failedResultAsset = withBaseUrl("failed-result.svg");
+const generateEmptyStateAsset = withBaseUrl("generate-empty-state.svg");
 const expiredResultAsset = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 960 960">
   <defs>
@@ -254,6 +255,10 @@ function statusLabel(status: UserHistoryCard["status"]) {
     failed: "失败",
   };
   return mapping[status] || status;
+}
+
+function isHistoryItemPending(status: UserHistoryCard["status"]) {
+  return status === "pending" || status === "queued" || status === "processing";
 }
 
 function isHistoryItemExpired(item: Pick<UserHistoryCard, "created_at" | "status">) {
@@ -778,7 +783,13 @@ function handleEditImage(item: UserHistoryCard) {
         >
           <div
             class="result-card-media"
-            :class="{ 'result-card-media-failed': item.status === 'failed' }"
+            :class="{
+              'result-card-media-failed': item.status === 'failed',
+              'result-card-media-pending': isHistoryItemPending(item.status),
+            }"
+            :style="{
+              '--history-pending-bg-image': `url('${generateEmptyStateAsset}')`,
+            }"
           >
             <div v-if="batchMode" class="result-card-select" @click.stop>
               <a-checkbox
@@ -795,7 +806,7 @@ function handleEditImage(item: UserHistoryCard) {
               loading="lazy"
             />
             <div v-else class="result-card-placeholder">
-              <template v-if="item.status === 'pending' || item.status === 'queued' || item.status === 'processing'">
+              <template v-if="isHistoryItemPending(item.status)">
                 <a-spin
                   :indicator="h(LoadingOutlined, { style: { fontSize: '28px', color: '#7c8db5' } })"
                 />
@@ -841,7 +852,7 @@ function handleEditImage(item: UserHistoryCard) {
                   <template #icon><PushpinOutlined /></template>
                 </a-button>
               </a-tooltip>
-              <a-tooltip title="删除">
+              <a-tooltip v-if="!isHistoryItemPending(item.status)" title="删除">
                 <a-button shape="circle" type="text" class="history-overlay-btn history-overlay-btn-danger" @click.stop="handleDelete(item)">
                   <template #icon><DeleteOutlined /></template>
                 </a-button>
@@ -854,7 +865,7 @@ function handleEditImage(item: UserHistoryCard) {
                   <template #icon><EyeOutlined /></template>
                 </a-button>
               </a-tooltip>
-              <a-tooltip v-if="canEditHistoryImage(item)" title="结果图编辑">
+              <a-tooltip v-if="item.status === 'success' && canEditHistoryImage(item)" title="结果图编辑">
                 <a-button shape="circle" type="text" class="history-overlay-btn" @click.stop="handleEditImage(item)">
                   <template #icon><EditOutlined /></template>
                 </a-button>
@@ -1295,6 +1306,13 @@ function handleEditImage(item: UserHistoryCard) {
     background: linear-gradient(180deg, #fff0ed, #ffe1db);
     box-shadow: 0 14px 26px rgba(214, 87, 75, 0.16);
   }
+
+  &.result-card-media-pending {
+    background:
+      linear-gradient(180deg, rgba(255, 252, 246, 0.24), rgba(255, 248, 238, 0.34)),
+      var(--history-pending-bg-image) center / cover no-repeat,
+      linear-gradient(180deg, var(--theme-panel-bg-soft), var(--theme-panel-bg));
+  }
 }
 
 .result-card-placeholder {
@@ -1307,7 +1325,8 @@ function handleEditImage(item: UserHistoryCard) {
   color: var(--text-secondary);
   text-align: center;
   font-size: 28px;
-  background: linear-gradient(180deg, var(--theme-panel-bg-soft), var(--theme-panel-bg));
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.1), rgba(255, 250, 240, 0.16));
+  backdrop-filter: blur(0.25px);
   border-radius: calc(var(--media-radius, 18px) - 1px);
 }
 

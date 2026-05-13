@@ -2046,7 +2046,10 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                   }"
                   :class="{ pending: item.image.status === 'pending' }"
                 >
-                  <div class="result-top-actions">
+                  <div
+                    v-if="item.taskId || item.image.status !== 'pending'"
+                    class="result-top-actions"
+                  >
                     <a-tooltip v-if="item.taskId" title="反馈">
                       <button
                         type="button"
@@ -2057,7 +2060,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                         <MessageOutlined class="result-more-icon" />
                       </button>
                     </a-tooltip>
-                    <a-tooltip title="删除">
+                    <a-tooltip v-if="item.image.status !== 'pending'" title="删除">
                       <a-button
                         shape="circle"
                         class="icon-chip result-delete-trigger"
