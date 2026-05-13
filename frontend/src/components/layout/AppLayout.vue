@@ -369,6 +369,8 @@ function openCreditsContact() {
   creditsContactVisible.value = true;
 }
 
+provide("openCreditsContact", openCreditsContact);
+
 function goCreditLogs() {
   mobileDrawerOpen.value = false;
   router.push("/credit-logs");
