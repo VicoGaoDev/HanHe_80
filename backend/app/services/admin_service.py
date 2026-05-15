@@ -90,11 +90,35 @@ def list_users(db: Session) -> list[dict]:
         .order_by(User.created_at.desc())
         .all()
     )
-    credit_map = get_user_credits_map(db, [user.id for user in users])
-    return [_serialize_user_with_balance(user, credit_map.get(user.id, 0)) for user in users]
+    user_ids = [user.id for user in users]
+    credit_map = get_user_credits_map(db, user_ids)
+    consumed_credit_rows = (
+        db.query(
+            CreditLog.user_id,
+            func.coalesce(func.sum(func.abs(CreditLog.amount)), 0).label("consumed_credits"),
+        )
+        .filter(
+            CreditLog.user_id.in_(user_ids),
+            CreditLog.type == "consume",
+        )
+        .group_by(CreditLog.user_id)
+        .all()
+    ) if user_ids else []
+    consumed_credit_map = {
+        int(row.user_id): int(row.consumed_credits or 0)
+        for row in consumed_credit_rows
+    }
+    return [
+        _serialize_user_with_balance(
+            user,
+            credit_map.get(user.id, 0),
+            consumed_credit_map.get(user.id, 0),
+        )
+        for user in users
+    ]
 
 
-def _serialize_user_with_balance(user: User, balance: int) -> dict:
+def _serialize_user_with_balance(user: User, balance: int, consumed_credits: int = 0) -> dict:
     return {
         "id": user_external_id(user),
         "username": user.username,
@@ -104,6 +128,7 @@ def _serialize_user_with_balance(user: User, balance: int) -> dict:
         "status": user.status,
         "is_whitelisted": bool(user.is_whitelisted),
         "credits": int(balance or 0),
+        "consumed_credits": int(consumed_credits or 0),
         "created_at": user.created_at,
     }
 

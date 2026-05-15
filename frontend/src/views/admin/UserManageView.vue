@@ -26,7 +26,7 @@ const form = reactive({ username: "", password: "", role: "user" });
 const filters = reactive({
   username: "",
   status: undefined as "active" | "disabled" | undefined,
-  sort: "created_at_desc" as "created_at_desc" | "credits_desc",
+  sort: "created_at_desc" as "created_at_desc" | "credits_desc" | "consumed_credits_desc",
 });
 
 const resetPwdOpen = ref(false);
@@ -48,8 +48,8 @@ const columns = [
   { title: "ID", dataIndex: "id", width: 58 },
   { title: "用户", dataIndex: "username", width: 212 },
   { title: "角色", dataIndex: "role", width: 88 },
-  { title: "白名单", dataIndex: "is_whitelisted", width: 88 },
-  { title: "积分", dataIndex: "credits", width: 84 },
+  { title: "剩余积分", dataIndex: "credits", width: 92 },
+  { title: "已消耗积分", dataIndex: "consumed_credits", width: 108 },
   { title: "状态", dataIndex: "status", width: 82 },
   { title: "创建时间", dataIndex: "created_at", width: 154 },
   { title: "操作", key: "action", width: 340 },
@@ -68,6 +68,12 @@ const filteredUsers = computed(() => {
   return [...list].sort((a, b) => {
     if (filters.sort === "credits_desc") {
       if (b.credits !== a.credits) return b.credits - a.credits;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    if (filters.sort === "consumed_credits_desc") {
+      if ((b.consumed_credits ?? 0) !== (a.consumed_credits ?? 0)) {
+        return (b.consumed_credits ?? 0) - (a.consumed_credits ?? 0);
+      }
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     }
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -328,6 +334,7 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
       >
         <a-select-option value="created_at_desc">创建时间（默认）</a-select-option>
         <a-select-option value="credits_desc">剩余积分（从高到低）</a-select-option>
+        <a-select-option value="consumed_credits_desc">消耗积分（从高到低）</a-select-option>
       </a-select>
       <a-button class="filter-reset-btn" @click="resetFilters">
         <template #icon><UndoOutlined /></template>
@@ -343,7 +350,7 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
         :loading="loading"
         row-key="id"
         :pagination="false"
-        :scroll="{ x: 1180 }"
+        :scroll="{ x: 1280 }"
         class="admin-mobile-table"
       >
         <template #bodyCell="{ column, record }">
@@ -373,10 +380,8 @@ function fmtTime(t: string) { return t ? new Date(t).toLocaleString("zh-CN") : "
               {{ record.role === "admin" ? "管理员" : "普通用户" }}
             </a-tag>
           </template>
-          <template v-else-if="column.dataIndex === 'is_whitelisted'">
-            <a-tag class="warm-tag" :class="record.is_whitelisted ? 'warm-tag-whitelist' : 'warm-tag-muted'">
-              {{ record.is_whitelisted ? "白名单" : "-" }}
-            </a-tag>
+          <template v-else-if="column.dataIndex === 'consumed_credits'">
+            <span style="font-weight: 700; color: #cf1322">{{ record.consumed_credits ?? 0 }}</span>
           </template>
           <template v-else-if="column.dataIndex === 'credits'">
             <span style="font-weight: 700; color: #d48806">{{ record.credits }}</span>

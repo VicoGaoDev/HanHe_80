@@ -215,6 +215,7 @@ export interface AdminUser {
   status: string;
   is_whitelisted: boolean;
   credits: number;
+  consumed_credits: number;
   created_at: string;
 }
 

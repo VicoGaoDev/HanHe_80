@@ -76,7 +76,7 @@ const filters = reactive<{
 
 const columns = [
   { title: "用户", dataIndex: "username", width: 120 },
-  { title: "模型", dataIndex: "model", width: 110 },
+  { title: "模型", dataIndex: "model", width: 165 },
   { title: "提示词", dataIndex: "prompt", width: 240, ellipsis: true },
   { title: "状态", dataIndex: "status", width: 128 },
   { title: "来源", dataIndex: "source", width: 68 },

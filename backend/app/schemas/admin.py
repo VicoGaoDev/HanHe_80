@@ -17,6 +17,7 @@ class UserOut(BaseModel):
     status: str
     is_whitelisted: bool = False
     credits: int = 0
+    consumed_credits: int = 0
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
