@@ -36,6 +36,7 @@ import { useAuthStore } from "@/stores/auth";
 import RepaintCanvas from "@/components/generate/RepaintCanvas.vue";
 import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
 import { withBaseUrl } from "@/lib/assets";
+import { formatGenerationErrorMessage, getPreferredGenerationErrorMessage } from "@/lib/generationErrors";
 import type { GenerationModelOption, ImageResult, PromptHistoryItem, SceneOptionItem, TaskResult, TaskSceneConfig, UserHistoryCard } from "@/types";
 
 const auth = useAuthStore();
@@ -476,7 +477,7 @@ function syncTaskFromResult(taskId: string, data: TaskResult) {
   if (previousStatus !== data.status && (data.status === "success" || data.status === "failed")) {
     data.status === "success"
       ? message.success(`任务 #${taskId} 已完成`)
-      : message.warning(nextErrorMessage || `任务 #${taskId} 生成失败`);
+      : message.warning(formatGenerationErrorMessage(nextErrorMessage, `任务 #${taskId} 生成失败`));
   }
 }
 
@@ -525,7 +526,7 @@ function convertHistoryCardToGeneratedTask(item: UserHistoryCard): GeneratedTask
 }
 
 function getGeneratedTaskFailureMessage(task: GeneratedTaskItem, image: ImageResult) {
-  return image.error_message || task.errorMessage || "生成失败，请重试";
+  return getPreferredGenerationErrorMessage(task.errorMessage, image.error_message, "生成失败，请重试");
 }
 
 async function loadRecentGeneratedTasks() {
@@ -1045,7 +1046,7 @@ async function handleGenerate() {
       showInsufficientCreditsContact(detail);
       return;
     }
-    message.error(detail || "创建任务失败");
+    message.error(formatGenerationErrorMessage(detail, "创建任务失败"));
   }
 }
 
@@ -1166,7 +1167,7 @@ async function handleRegenerate(task: GeneratedTaskItem) {
       showInsufficientCreditsContact(detail);
       return;
     }
-    message.error(detail || "重新生成失败");
+    message.error(formatGenerationErrorMessage(detail, "重新生成失败"));
   }
 }
 

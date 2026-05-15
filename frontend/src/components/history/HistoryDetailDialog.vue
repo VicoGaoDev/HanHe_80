@@ -5,6 +5,7 @@ import { CopyOutlined, DownloadOutlined, LoadingOutlined, PictureOutlined, Reloa
 import dayjs from "dayjs";
 import { getDisplayImageUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
 import { withBaseUrl } from "@/lib/assets";
+import { getTaskImageFailureMessage } from "@/lib/generationErrors";
 import type { ImageResult, UserHistoryCard } from "@/types";
 
 const props = withDefaults(defineProps<{
@@ -137,6 +138,10 @@ function getDetailPreviewSrc(item: UserHistoryCard, image: Pick<ImageResult, "th
   return getNestedPreviewSrc(image);
 }
 
+function getDetailFailureMessage(item: UserHistoryCard, image: ImageResult) {
+  return getTaskImageFailureMessage(item, image);
+}
+
 function openPreview(url: string) {
   if (!url) return;
   previewSrc.value = url;
@@ -213,6 +218,9 @@ function handleDownload(item: UserHistoryCard) {
                   :class="{ 'failed-result-image': img.status === 'failed' }"
                   loading="lazy"
                 />
+                <div v-if="img.status === 'failed'" class="detail-failure-message">
+                  {{ getDetailFailureMessage(item, img) }}
+                </div>
                 <div v-else class="result-card-placeholder">
                   <a-spin
                     :indicator="h(LoadingOutlined, { style: { fontSize: '28px', color: '#7c8db5' } })"
@@ -489,6 +497,7 @@ function handleDownload(item: UserHistoryCard) {
   overflow: hidden;
   border: 1px solid var(--theme-panel-border);
   background: var(--theme-panel-bg-soft);
+  position: relative;
   cursor: pointer;
   transition:
     transform var(--motion-duration-base) var(--motion-ease-soft),
@@ -546,6 +555,22 @@ function handleDownload(item: UserHistoryCard) {
   padding: 28px;
   background: linear-gradient(180deg, #fff2ef, #ffdcd5);
   opacity: 0.96;
+}
+
+.detail-failure-message {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 245, 244, 0.96);
+  color: #cf3f36;
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 600;
+  box-shadow: 0 10px 24px rgba(207, 63, 54, 0.12);
+  pointer-events: none;
 }
 
 .detail-meta {
