@@ -189,6 +189,8 @@
 - `image_id` / `history_id`: 兼容旧历史结构的补充引用字段。
 - `pinned_at`: 实际置顶时间。
 - `created_at`: 记录创建时间。
+- 使用联合唯一约束 `(user_id, item_key)` 保证同一用户不会重复置顶同一项。
+- 使用组合索引 `(user_id, pinned_at)` 优化按用户查询置顶列表与按置顶时间倒序展示。
 
 ### `feedback`
 
@@ -540,6 +542,8 @@ CREATE TABLE history_pins (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY ix_history_pins_user_id (user_id),
+  KEY ix_history_pins_user_pinned_at (user_id, pinned_at DESC),
+  UNIQUE KEY ux_history_pins_user_item_key (user_id, item_key),
   CONSTRAINT fk_history_pins_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
