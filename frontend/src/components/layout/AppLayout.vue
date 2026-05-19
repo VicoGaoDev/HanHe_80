@@ -25,6 +25,7 @@ import {
   setStoredUserCompletedUnreadFeedbackCount,
   subscribeUserCompletedUnreadFeedbackCount,
 } from "@/lib/userFeedbackNotice";
+import { subscribeAuthSessionExpired } from "@/lib/authSessionNotice";
 import { APP_THEME_ATTRIBUTE, type AppThemeName } from "@/config/theme";
 import { getCurrentTheme } from "@/lib/theme";
 import type { AnnouncementConfig } from "@/types";
@@ -82,6 +83,7 @@ const adminUnresolvedFeedbackCount = ref(getStoredAdminUnresolvedFeedbackCount()
 let unsubscribeAdminFeedbackCount: (() => void) | null = null;
 const userCompletedUnreadFeedbackCount = ref(getStoredUserCompletedUnreadFeedbackCount());
 let unsubscribeUserFeedbackCount: (() => void) | null = null;
+let unsubscribeAuthSessionExpired: (() => void) | null = null;
 const UNRESOLVED_FEEDBACK_NOTIFICATION_KEY = "global-admin-unresolved-feedback";
 
 const primaryMenuItems = [
@@ -238,6 +240,8 @@ const registerCodeLoading = ref(false);
 const redeemDialogOpen = ref(false);
 const redeemLoading = ref(false);
 const redeemForm = reactive({ key: "" });
+const authExpiredPromptVisible = ref(false);
+const expiredSessionRedirectPath = ref("");
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -248,6 +252,23 @@ function openAuthModal(tab: "login" | "register") {
   authTab.value = tab;
   loginModalVisible.value = true;
 }
+
+function handleAuthSessionExpired(detail: { redirectPath: string }) {
+  auth.logout();
+  expiredSessionRedirectPath.value = detail.redirectPath || route.fullPath || "/templates";
+  if (loginModalVisible.value) return;
+  authTab.value = "login";
+  loginModalVisible.value = true;
+  if (authExpiredPromptVisible.value) return;
+  authExpiredPromptVisible.value = true;
+  message.warning("登录已过期，请重新登录");
+}
+
+watch(loginModalVisible, (open) => {
+  if (!open) {
+    authExpiredPromptVisible.value = false;
+  }
+});
 
 function resetAuthForms() {
   loginForm.account = "";
@@ -268,11 +289,16 @@ async function handleLoginSubmit() {
   try {
     const res = await apiLogin(loginForm.account, loginForm.password);
     auth.setAuth(res.token, res.user);
+    const redirectPath = expiredSessionRedirectPath.value;
+    expiredSessionRedirectPath.value = "";
     message.success("登录成功");
     loginModalVisible.value = false;
     resetAuthForms();
     await nextTick();
     await checkAnnouncement();
+    if (redirectPath && redirectPath !== route.fullPath) {
+      await router.replace(redirectPath);
+    }
   } catch (err: any) {
     message.error(err.response?.data?.detail || "登录失败");
   } finally {
@@ -437,6 +463,7 @@ onMounted(async () => {
   unsubscribeUserFeedbackCount = subscribeUserCompletedUnreadFeedbackCount((count) => {
     userCompletedUnreadFeedbackCount.value = count;
   });
+  unsubscribeAuthSessionExpired = subscribeAuthSessionExpired(handleAuthSessionExpired);
 
   if (typeof document !== "undefined") {
     themeObserver = new MutationObserver(() => {
@@ -471,6 +498,8 @@ onBeforeUnmount(() => {
   unsubscribeAdminFeedbackCount = null;
   unsubscribeUserFeedbackCount?.();
   unsubscribeUserFeedbackCount = null;
+  unsubscribeAuthSessionExpired?.();
+  unsubscribeAuthSessionExpired = null;
   themeObserver?.disconnect();
   themeObserver = null;
 });

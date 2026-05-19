@@ -17,6 +17,7 @@ import {
   listUsers,
 } from "@/api/admin";
 import { setStoredAdminUnresolvedFeedbackCount } from "@/lib/adminFeedbackNotice";
+import { isSessionExpiredError } from "@/lib/authError";
 import AnalyticsFilterBar from "@/components/admin/AnalyticsFilterBar.vue";
 import BreakdownCharts from "@/components/admin/BreakdownCharts.vue";
 import HistoryDetailDialog from "@/components/history/HistoryDetailDialog.vue";
@@ -82,14 +83,13 @@ const filters = reactive<{
 });
 
 const columns = [
-  { title: "用户", dataIndex: "username", width: 120 },
+  { title: "用户", dataIndex: "username", width: 172 },
   { title: "模型", dataIndex: "model", width: 165 },
   { title: "提示词", dataIndex: "prompt", width: 240, ellipsis: true },
   { title: "状态", dataIndex: "status", width: 128 },
   { title: "来源", dataIndex: "source", width: 68 },
   { title: "类型", dataIndex: "mode", width: 80 },
   { title: "消耗积分", dataIndex: "credit_cost", width: 84 },
-  { title: "图片", key: "imgCount", width: 52 },
   { title: "时间", dataIndex: "created_at", width: 148 },
   { title: "操作", key: "actions", width: 72, fixed: "right" as const },
 ];
@@ -277,7 +277,8 @@ async function loadAnalytics() {
     summary.value = summaryRes;
     timeseries.value = timeseriesRes;
     breakdown.value = breakdownRes;
-  } catch {
+  } catch (err: any) {
+    if (isSessionExpiredError(err)) return;
     message.error("获取统计分析失败");
   } finally {
     analyticsLoading.value = false;
@@ -288,7 +289,8 @@ async function loadStatsData() {
   statsLoading.value = true;
   try {
     stats.value = await getStats();
-  } catch {
+  } catch (err: any) {
+    if (isSessionExpiredError(err)) return;
     message.error("获取概览统计失败");
   } finally {
     statsLoading.value = false;
@@ -327,7 +329,8 @@ async function loadHistory() {
     history.value = res.items;
     historyTotal.value = res.total;
     historyCreditTotal.value = res.total_credit_cost;
-  } catch {
+  } catch (err: any) {
+    if (isSessionExpiredError(err)) return;
     message.error("获取任务记录失败");
   } finally {
     historyLoading.value = false;
@@ -626,14 +629,6 @@ watch(filterSignature, async () => {
                 </a-tag>
               </div>
             </template>
-            <template v-else-if="column.key === 'imgCount'">
-              <div class="history-image-count">
-                <span>{{ record.images.length }}</span>
-                <span v-if="record.is_soft_deleted" class="history-image-count-note">
-                  含 {{ record.soft_deleted_count || 0 }} 张已删
-                </span>
-              </div>
-            </template>
             <template v-else-if="column.dataIndex === 'created_at'">
               {{ fmtTime(record.created_at) }}
             </template>
@@ -780,18 +775,6 @@ watch(filterSignature, async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-}
-
-.history-image-count {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.history-image-count-note {
-  font-size: 11px;
-  color: #a68457;
-  line-height: 1.4;
 }
 
 .section-filter-chips {
