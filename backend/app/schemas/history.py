@@ -21,6 +21,7 @@ class HistoryItem(BaseModel):
     task_id: str | None = None
     history_id: int | None = None
     display_id: str = ""
+    user_id: str = ""
     username: str = ""
     avatar_url: str = ""
     task_type: str = "text_generate"

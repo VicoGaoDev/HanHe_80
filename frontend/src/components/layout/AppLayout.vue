@@ -626,39 +626,7 @@ watch(
           <a-button type="text" class="top-link-btn" @click="openCreditsContact">
             联系我们
           </a-button>
-        </div>
-
-        <div class="mobile-nav-entry">
-          <a-button type="text" class="mobile-nav-contact-btn" @click="openRedeemEntry">
-            兑换积分
-          </a-button>
-          <div v-if="auth.isLoggedIn" class="mobile-nav-credits" @click="goCreditLogs">
-            <ThunderboltOutlined />
-            <span>{{ auth.user?.credits ?? 0 }}</span>
-          </div>
-          <a-button class="mobile-nav-fab" type="primary" shape="circle" @click="toggleMobileDrawer">
-            <template #icon><MenuOutlined /></template>
-          </a-button>
-        </div>
-
-        <a-menu
-          mode="horizontal"
-          :selected-keys="selectedKeys"
-          class="header-menu"
-          @click="handleMenuClick"
-        >
-          <a-menu-item v-for="item in primaryMenuItems" :key="item.key">
-            <img :src="getPrimaryMenuIconSrc(item)" :alt="item.label" class="nav-menu-icon" />
-            <span>{{ item.label }}</span>
-          </a-menu-item>
-        </a-menu>
-
-        <div class="header-actions">
-          <a-button type="text" class="top-link-btn" @click="openRedeemEntry">
-            兑换积分
-          </a-button>
-          <template v-if="auth.isLoggedIn">
-            <a-dropdown v-if="isAdmin" :trigger="['hover']" overlay-class-name="warm-dropdown">
+            <a-dropdown v-if="auth.isLoggedIn && isAdmin" :trigger="['hover']" overlay-class-name="warm-dropdown">
               <a-badge :count="adminUnresolvedFeedbackCount" :offset="[-2, 2]" :show-zero="false">
                 <a-button class="admin-btn" type="text">
                   <SettingOutlined />
@@ -705,7 +673,38 @@ watch(
                 </a-menu>
               </template>
             </a-dropdown>
+        </div>
 
+        <div class="mobile-nav-entry">
+          <a-button type="text" class="mobile-nav-contact-btn" @click="openRedeemEntry">
+            兑换积分
+          </a-button>
+          <div v-if="auth.isLoggedIn" class="mobile-nav-credits" @click="goCreditLogs">
+            <ThunderboltOutlined />
+            <span>{{ auth.user?.credits ?? 0 }}</span>
+          </div>
+          <a-button class="mobile-nav-fab" type="primary" shape="circle" @click="toggleMobileDrawer">
+            <template #icon><MenuOutlined /></template>
+          </a-button>
+        </div>
+
+        <a-menu
+          mode="horizontal"
+          :selected-keys="selectedKeys"
+          class="header-menu"
+          @click="handleMenuClick"
+        >
+          <a-menu-item v-for="item in primaryMenuItems" :key="item.key">
+            <img :src="getPrimaryMenuIconSrc(item)" :alt="item.label" class="nav-menu-icon" />
+            <span>{{ item.label }}</span>
+          </a-menu-item>
+        </a-menu>
+
+        <div class="header-actions">
+          <a-button type="text" class="top-link-btn" @click="openRedeemEntry">
+            兑换积分
+          </a-button>
+          <template v-if="auth.isLoggedIn">
             <div class="credits-badge" @click="goCreditLogs">
               <ThunderboltOutlined />
               <span>{{ auth.user?.credits ?? 0 }}</span>

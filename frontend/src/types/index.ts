@@ -61,6 +61,7 @@ export interface HistoryItem {
   task_id?: string | null;
   history_id?: number | null;
   display_id?: string;
+  user_id?: string;
   username?: string;
   avatar_url?: string;
   task_type: TaskType;

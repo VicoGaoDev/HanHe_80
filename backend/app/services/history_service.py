@@ -28,7 +28,7 @@ from app.services.image_delivery_service import (
     serialize_asset_urls,
     serialize_image,
 )
-from app.services.business_id_service import task_external_id
+from app.services.business_id_service import task_external_id, user_external_id
 from app.utils.datetime_utils import now_local
 from app.utils.business_id import normalize_business_id
 
@@ -575,6 +575,7 @@ def get_all_history(
         if task.user_id not in user_cache:
             u = db.query(User).filter(User.id == task.user_id).first()
             user_cache[task.user_id] = {
+                "user_id": user_external_id(u),
                 "username": u.username if u else "未知",
                 "avatar_url": (u.avatar_url or "") if u else "",
             }
@@ -586,6 +587,7 @@ def get_all_history(
             "task_id": task_external_id(task),
             "history_id": None,
             "display_id": task_external_id(task),
+            "user_id": user_cache[task.user_id]["user_id"],
             "username": user_cache[task.user_id]["username"],
             "avatar_url": user_cache[task.user_id]["avatar_url"],
             "task_type": resolve_task_type_for_task(task, scene_type_map=scene_type_map),
@@ -616,6 +618,7 @@ def get_all_history(
         if log.user_id not in user_cache:
             u = db.query(User).filter(User.id == log.user_id).first()
             user_cache[log.user_id] = {
+                "user_id": user_external_id(u),
                 "username": u.username if u else "未知",
                 "avatar_url": (u.avatar_url or "") if u else "",
             }
@@ -625,6 +628,7 @@ def get_all_history(
             "task_id": None,
             "history_id": log.id,
             "display_id": f"PR-{log.id}",
+            "user_id": user_cache[log.user_id]["user_id"],
             "username": user_cache[log.user_id]["username"],
             "avatar_url": user_cache[log.user_id]["avatar_url"],
             "task_type": TASK_TYPE_PROMPT_REVERSE,
