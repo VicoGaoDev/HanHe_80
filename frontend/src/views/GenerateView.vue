@@ -105,6 +105,7 @@ const expiredResultAsset = `data:image/svg+xml;charset=UTF-8,${encodeURIComponen
 `)}`;
 const prompt = ref("");
 const repaintPrompt = ref("");
+const TASK_PROMPT_MAX_LENGTH = 5000;
 const selectedModel = ref("");
 const numImages = ref(1);
 const resolution = ref("2K");
@@ -1694,7 +1695,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                   :rows="5"
                   placeholder="描述您想要生成的图片..."
                   class="prompt-input"
-                  :maxlength="2000"
+                  :maxlength="TASK_PROMPT_MAX_LENGTH"
                   show-count
                 />
               </div>
@@ -1891,7 +1892,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                   :rows="5"
                   placeholder="描述您想要生成的图片..."
                   class="prompt-input"
-                  :maxlength="2000"
+                  :maxlength="TASK_PROMPT_MAX_LENGTH"
                   show-count
                 />
               </div>
@@ -2195,7 +2196,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                   :rows="5"
                   placeholder="描述需要局部重绘后的效果..."
                   class="prompt-input"
-                  :maxlength="2000"
+                  :maxlength="TASK_PROMPT_MAX_LENGTH"
                   show-count
                 />
               </div>

@@ -785,8 +785,12 @@ def _ensure_prompt_history_columns():
     if "prompt_history" not in inspector.get_table_names():
         return
 
-    prompt_history_columns = {col["name"] for col in inspector.get_columns("prompt_history")}
+    prompt_history_columns_info = inspector.get_columns("prompt_history")
+    prompt_history_columns = {col["name"] for col in prompt_history_columns_info}
+    prompt_column = next((col for col in prompt_history_columns_info if col["name"] == "prompt"), None)
     with engine.begin() as conn:
+        if prompt_column is not None and "VARCHAR(2000)" in str(prompt_column["type"]).upper():
+            conn.execute(text("ALTER TABLE prompt_history MODIFY COLUMN prompt VARCHAR(5000) NOT NULL"))
         if "mode" not in prompt_history_columns:
             conn.execute(text("ALTER TABLE prompt_history ADD COLUMN mode VARCHAR(20) DEFAULT 'generate'"))
         if "source_image" not in prompt_history_columns:

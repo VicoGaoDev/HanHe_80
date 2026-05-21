@@ -18,6 +18,7 @@ from app.utils.datetime_utils import now_local
 from app.utils.business_id import normalize_business_id
 
 ACTIVE_TASK_STATUSES = ("pending", "queued", "processing")
+MAX_TASK_PROMPT_LENGTH = 5000
 ENQUEUE_FAILURE_DESCRIPTION = "任务入队失败，返还积分"
 TASK_HTTP_FAILURE_REFUND_DESCRIPTION = "任务失败，返还积分"
 TASK_SUBMISSION_LOCK_PREFIX = "banana:tasks:submission:user"
@@ -144,6 +145,11 @@ def _validate_task_create_payload(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不支持的生成模式")
     if not prompt or not prompt.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="提示词不能为空")
+    if len(prompt.strip()) > MAX_TASK_PROMPT_LENGTH:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"提示词不能超过 {MAX_TASK_PROMPT_LENGTH} 个字符",
+        )
     if num_images < 1 or num_images > 8:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="生成数量须在 1-8 之间")
     if mode == "inpaint":
