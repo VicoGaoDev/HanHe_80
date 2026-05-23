@@ -26,7 +26,7 @@ import {
   setStoredUserCompletedUnreadFeedbackCount,
   subscribeUserCompletedUnreadFeedbackCount,
 } from "@/lib/userFeedbackNotice";
-import { getMyUnreadSystemMessageCount } from "@/api/systemMessages";
+import { getMyUnreadSystemMessageCount, listMySystemMessages } from "@/api/systemMessages";
 import {
   getStoredUnreadSystemMessageCount,
   setStoredUnreadSystemMessageCount,
@@ -99,6 +99,8 @@ let unsubscribeSystemMessageCount: (() => void) | null = null;
 let systemMessagePollTimer: ReturnType<typeof window.setInterval> | null = null;
 let unsubscribeAuthSessionExpired: (() => void) | null = null;
 const UNRESOLVED_FEEDBACK_NOTIFICATION_KEY = "global-admin-unresolved-feedback";
+const USER_UNREAD_SYSTEM_MESSAGE_NOTIFICATION_KEY = "global-user-unread-system-message";
+const notifiedUnreadSystemMessageIdsByUser = new Map<string, Set<string>>();
 
 const primaryMenuItems = [
   { key: "templates", label: "创意模版", iconSrc: withBaseUrl("nav-templates.svg"), darkIconSrc: withBaseUrl("nav-templates-mono.svg") },
@@ -221,6 +223,7 @@ function handleUserMenu({ key }: { key: string }) {
   else if (key === "settings") router.push("/settings");
   else if (key === "credits") router.push("/credit-logs");
   else if (key === "logout") {
+    resetUserUnreadSystemMessageNotificationState();
     auth.logout();
     setStoredUnreadSystemMessageCount(0);
     stopSystemMessagePolling();
@@ -264,18 +267,51 @@ async function syncUserCompletedUnreadFeedbackCount() {
   }
 }
 
-async function syncUserUnreadSystemMessageCount(options?: { showToast?: boolean }) {
+async function syncUserUnreadSystemMessageCount(options?: { showToast?: boolean; forceToast?: boolean }) {
   if (!auth.isLoggedIn) return;
   try {
     const previous = userUnreadSystemMessageCount.value;
     const { count } = await getMyUnreadSystemMessageCount();
     userUnreadSystemMessageCount.value = setStoredUnreadSystemMessageCount(count);
-    if (options?.showToast && count > previous) {
-      message.info(count === 1 ? "你有新的系统消息" : `你有 ${count} 条未读系统消息`);
+    if (options?.showToast && count > 0 && (options.forceToast || count > previous)) {
+      await notifyLatestUnreadSystemMessage(count);
     }
   } catch {
     // ignore system message count failures
   }
+}
+
+async function notifyLatestUnreadSystemMessage(unreadCount: number) {
+  if (unreadCount <= 0) {
+    notification.close(USER_UNREAD_SYSTEM_MESSAGE_NOTIFICATION_KEY);
+    return;
+  }
+
+  const { items } = await listMySystemMessages(1, Math.max(5, unreadCount));
+  const latestUnread = items.find((item) => !item.is_read);
+  const userKey = auth.user?.business_id || auth.user?.id || "anonymous";
+  const notifiedIds = notifiedUnreadSystemMessageIdsByUser.get(userKey) || new Set<string>();
+  if (!latestUnread || notifiedIds.has(latestUnread.message_id)) return;
+
+  notifiedIds.add(latestUnread.message_id);
+  notifiedUnreadSystemMessageIdsByUser.set(userKey, notifiedIds);
+  notification.info({
+    key: USER_UNREAD_SYSTEM_MESSAGE_NOTIFICATION_KEY,
+    message: latestUnread.subject || "新的系统消息",
+    description: unreadCount > 1 ? `你有 ${unreadCount} 条未读系统消息，点击查看详情。` : "你有新的系统消息，点击查看详情。",
+    placement: "topRight",
+    duration: 6,
+    style: { cursor: "pointer" },
+    onClick: () => {
+      notification.close(USER_UNREAD_SYSTEM_MESSAGE_NOTIFICATION_KEY);
+      router.push(`/system-messages/${latestUnread.message_id}`);
+    },
+  });
+}
+
+function resetUserUnreadSystemMessageNotificationState() {
+  notification.close(USER_UNREAD_SYSTEM_MESSAGE_NOTIFICATION_KEY);
+  notifiedUnreadSystemMessageIdsByUser.clear();
 }
 
 function startSystemMessagePolling() {
@@ -347,6 +383,7 @@ function resetForgotPasswordForm() {
 }
 
 function handleAuthSessionExpired(detail: { redirectPath: string }) {
+  resetUserUnreadSystemMessageNotificationState();
   auth.logout();
   expiredSessionRedirectPath.value = detail.redirectPath || route.fullPath || "/templates";
   if (loginModalVisible.value) return;
@@ -390,7 +427,7 @@ async function handleLoginSubmit() {
     resetAuthForms();
     await nextTick();
     await checkAnnouncement();
-    await syncUserUnreadSystemMessageCount();
+    await syncUserUnreadSystemMessageCount({ showToast: true, forceToast: true });
     startSystemMessagePolling();
     if (redirectPath && redirectPath !== route.fullPath) {
       await router.replace(redirectPath);
@@ -533,7 +570,7 @@ async function handleRegisterSubmit() {
     resetAuthForms();
     await nextTick();
     await checkAnnouncement();
-    await syncUserUnreadSystemMessageCount();
+    await syncUserUnreadSystemMessageCount({ showToast: true, forceToast: true });
     startSystemMessagePolling();
   } catch (err: any) {
     message.error(err.response?.data?.detail || err.message || "注册失败");
@@ -664,7 +701,7 @@ onMounted(async () => {
   }
   await syncAdminUnresolvedFeedbackCount();
   await syncUserCompletedUnreadFeedbackCount();
-  await syncUserUnreadSystemMessageCount();
+  await syncUserUnreadSystemMessageCount({ showToast: true, forceToast: true });
   startSystemMessagePolling();
 });
 
