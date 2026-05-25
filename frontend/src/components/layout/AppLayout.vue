@@ -568,6 +568,12 @@ async function handleRegisterSubmit() {
     );
     auth.setAuth(res.token, res.user);
     message.success("注册成功");
+    notification.success({
+      message: "赠送积分已到账",
+      description: "新用户注册赠送的 10 个试用积分已到账。",
+      placement: "topRight",
+      duration: 6,
+    });
     loginModalVisible.value = false;
     resetAuthForms();
     await nextTick();

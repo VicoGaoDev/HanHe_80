@@ -7,11 +7,12 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.models.user import User
 from app.services.business_id_service import user_external_id
-from app.services.user_credit_service import create_default_credit_account
+from app.services.user_credit_service import change_user_credit_balance
 from app.utils.security import create_access_token, hash_password, verify_password
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 CLOUDBASE_AUTH_PATH = "/auth"
+NEW_USER_TRIAL_CREDITS = 10
 
 
 def _normalize_email(email: str) -> str:
@@ -54,7 +55,13 @@ def register_user(db: Session, username: str, email: str, password: str) -> tupl
     )
     db.add(user)
     db.flush()
-    create_default_credit_account(db, user)
+    change_user_credit_balance(
+        db,
+        user.id,
+        delta=NEW_USER_TRIAL_CREDITS,
+        log_type="allocate",
+        description="新用户注册试用积分",
+    )
     db.commit()
     db.refresh(user)
     token = create_access_token(user_external_id(user), user.role)
