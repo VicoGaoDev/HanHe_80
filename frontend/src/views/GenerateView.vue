@@ -68,6 +68,7 @@ function showInsufficientCreditsContact(detail?: string) {
 
 type GenerateMode = "textGenerate" | "imageEdit" | "inpaint" | "promptReverse";
 const MAX_RECENT_GENERATED_TASKS = 20;
+const MAX_ACTIVE_GENERATION_IMAGES = 8;
 const DEFAULT_SCENE_COSTS: Record<string, number> = {
   banana: 4,
   banana2: 4,
@@ -281,6 +282,16 @@ const canClickGenerate = computed(() => {
   if (isImageEditMode.value) return true;
   return !!activePrompt.value.trim();
 });
+const activeGenerationImageCount = computed(() => (
+  generatedTasks.value.reduce((total, task) => {
+    if (!["submitting", "pending", "queued", "processing"].includes(task.status)) return total;
+    return total + Math.max(task.images.length, task.numImages || 1);
+  }, 0)
+));
+const remainingGenerationImageSlots = computed(() => Math.max(
+  MAX_ACTIVE_GENERATION_IMAGES - activeGenerationImageCount.value,
+  0
+));
 const selectedModelOption = computed(
   () => generationModels.value.find((item) => item.model_key === selectedModel.value) || null
 );
@@ -676,11 +687,17 @@ async function submitGeneratedTask(
   try {
     const res = await createTask(payload);
     const taskIds = res.task_ids?.length ? res.task_ids : (res.task_id ? [res.task_id] : []);
-    if (taskIds.length === localTasks.length) {
-      localTasks.forEach((localTask, index) => {
+    if (taskIds.length > 1 && taskIds.length <= localTasks.length) {
+      const acceptedLocalTasks = localTasks.slice(0, taskIds.length);
+      const extraTaskIds = new Set(localTasks.slice(taskIds.length).map((task) => task.localId));
+      generatedTasks.value = generatedTasks.value.filter((task) => !extraTaskIds.has(task.localId));
+      acceptedLocalTasks.forEach((localTask, index) => {
         const taskId = taskIds[index];
         updateGeneratedTask(localTask.localId, (task) => ({ ...task, taskId, status: "pending" }));
       });
+      if (taskIds.length < localTasks.length) {
+        message.info(`当前剩余 ${taskIds.length} 个生成名额，已自动发起 ${taskIds.length} 个任务`);
+      }
       try {
         const items = await refreshTasks(taskIds);
         if (items.some((item) => item.status !== "success" && item.status !== "failed")) startTaskPolling();
@@ -960,6 +977,16 @@ const creditCost = computed(() => (
     ? inpaintCreditCost.value
     : numImages.value * selectedModelCreditCost.value
 ));
+const actualSubmitImageCount = computed(() => (
+  generateMode.value === "inpaint"
+    ? Math.min(1, remainingGenerationImageSlots.value)
+    : Math.min(numImages.value, remainingGenerationImageSlots.value)
+));
+const actualSubmitCreditCost = computed(() => (
+  generateMode.value === "inpaint"
+    ? inpaintCreditCost.value
+    : actualSubmitImageCount.value * selectedModelCreditCost.value
+));
 const userCredits = computed(() => auth.user?.credits ?? 0);
 const isSuperAdmin = computed(() => auth.isSuperAdmin);
 const generateButtonText = computed(() => {
@@ -975,7 +1002,10 @@ const generateButtonText = computed(() => {
   if (isImageEditMode.value && hasFailedReferenceUploads.value) {
     return "参考图上传失败，请处理后再生成";
   }
-  return isSuperAdmin.value ? "开始生成" : `开始生成 · ${creditCost.value} 积分`;
+  if (remainingGenerationImageSlots.value <= 0) {
+    return "生成队列已满";
+  }
+  return isSuperAdmin.value ? "开始生成" : `开始生成 · ${actualSubmitCreditCost.value} 积分`;
 });
 const promptReverseButtonText = computed(() => {
   if (reverseLoading.value) return "提示词反推中...";
@@ -1046,12 +1076,18 @@ async function handleGenerate() {
     message.warning("请输入提示词");
     return;
   }
-  if (!isSuperAdmin.value && userCredits.value < creditCost.value) {
-    showInsufficientCreditsContact(`积分不足，需要 ${creditCost.value} 积分，当前余额 ${userCredits.value}`);
+  const availableSlots = remainingGenerationImageSlots.value;
+  if (availableSlots <= 0) {
+    message.warning(`当前最多允许同时生成 ${MAX_ACTIVE_GENERATION_IMAGES} 张图片，请等待部分任务完成后再试`);
+    return;
+  }
+  if (!isSuperAdmin.value && userCredits.value < actualSubmitCreditCost.value) {
+    showInsufficientCreditsContact(`积分不足，需要 ${actualSubmitCreditCost.value} 积分，当前余额 ${userCredits.value}`);
     return;
   }
 
   let payload: GenerateTaskPayload;
+  let requestedImageCount = 1;
 
   if (generateMode.value === "inpaint") {
     if (!sourceImageUrl.value.trim()) {
@@ -1087,16 +1123,20 @@ async function handleGenerate() {
       mask_image: maskUploadUrl,
     };
   } else {
+    requestedImageCount = Math.min(numImages.value, availableSlots);
     payload = {
       mode: "generate",
       model: selectedModel.value,
       prompt: prompt.value,
-      num_images: numImages.value,
+      num_images: requestedImageCount,
       size: hideAspectRatio.value ? "" : size.value,
       resolution: hideResolution.value ? "" : resolution.value,
       custom_size: hideCustomSize.value ? "" : customSize.value,
       reference_images: isImageEditMode.value && referenceUrls.value.length ? referenceUrls.value : undefined,
     };
+    if (requestedImageCount < numImages.value) {
+      message.info(`当前剩余 ${requestedImageCount} 个生成名额，已自动发起 ${requestedImageCount} 个任务`);
+    }
   }
 
   const submitMode: SubmitMode = generateMode.value === "imageEdit"
@@ -1149,7 +1189,7 @@ function handleReeditTask(task: GeneratedTaskItem) {
     prompt.value = task.prompt;
     repaintPrompt.value = "";
     if (task.model) selectedModel.value = task.model;
-    numImages.value = Math.min(4, Math.max(1, Number(task.numImages || 1)));
+    numImages.value = Math.min(MAX_ACTIVE_GENERATION_IMAGES, Math.max(1, Number(task.numImages || 1)));
     syncReferenceItems(task.referenceImages);
     revokeObjectUrl(sourcePreviewUrl.value);
     sourcePreviewUrl.value = "";
@@ -1176,7 +1216,7 @@ function handleEditImageTask(task: GeneratedTaskItem, image: ImageResult) {
   size.value = task.size || "9:16";
   resolution.value = task.resolution || "2K";
   customSize.value = task.customSize || "";
-  numImages.value = Math.min(4, Math.max(1, Number(task.numImages || 1)));
+  numImages.value = Math.min(MAX_ACTIVE_GENERATION_IMAGES, Math.max(1, Number(task.numImages || 1)));
   syncReferenceItems([referenceImage]);
   revokeObjectUrl(sourcePreviewUrl.value);
   sourcePreviewUrl.value = "";
@@ -1430,7 +1470,7 @@ function applyDraft(raw: string | null, successText: string, storageKey: string)
       prompt.value = draft.prompt || "";
       selectedModel.value = draft.model || selectedModel.value;
       syncReferenceItems(Array.isArray(draft.reference_images) ? draft.reference_images.slice(0, maxReferenceImages.value) : []);
-      numImages.value = Math.min(5, Math.max(1, Number(draft.num_images || 1)));
+      numImages.value = Math.min(MAX_ACTIVE_GENERATION_IMAGES, Math.max(1, Number(draft.num_images || 1)));
       repaintPrompt.value = "";
       revokeObjectUrl(sourcePreviewUrl.value);
       sourcePreviewUrl.value = "";
@@ -1800,8 +1840,8 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                   <a-slider
                     v-model:value="numImages"
                     :min="1"
-                    :max="5"
-                    :marks="{ 1: '1', 2: '2', 3: '3', 4: '4', 5: '5' }"
+                    :max="MAX_ACTIVE_GENERATION_IMAGES"
+                    :marks="{ 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8' }"
                     class="num-slider"
                   />
                 </div>
@@ -1812,16 +1852,20 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
               <div class="settings-footer">
                 <div class="generate-link-tip">
-                  解锁更多玩法，试试
-                  <a
-                    href="https://80ai.net/gptimage2-prompt"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="generate-link-tip-anchor"
-                  >
-                    提示词大全
-                  </a>
-                  (400+模版)
+                  <div class="generate-link-tip-left">
+                    <a
+                      href="https://80ai.net/gptimage2-prompt"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="generate-link-tip-anchor"
+                    >
+                      提示词灵感
+                    </a>
+                    (400+模版)
+                  </div>
+                  <div class="generate-link-tip-right">
+                    支持 <strong>8</strong> 张图片同时生成（{{ activeGenerationImageCount }} / {{ MAX_ACTIVE_GENERATION_IMAGES }}）
+                  </div>
                 </div>
                 <a-button
                   type="primary"
@@ -2053,8 +2097,8 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                   <a-slider
                     v-model:value="numImages"
                     :min="1"
-                    :max="5"
-                    :marks="{ 1: '1', 2: '2', 3: '3', 4: '4', 5: '5' }"
+                    :max="MAX_ACTIVE_GENERATION_IMAGES"
+                    :marks="{ 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8' }"
                     class="num-slider"
                   />
                 </div>
@@ -2065,15 +2109,20 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
               <div class="settings-footer">
                 <div class="generate-link-tip">
-                  解锁更多玩法，试试
-                  <a
-                    href="https://80ai.net/gptimage2-prompt"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="generate-link-tip-anchor"
-                  >
-                    提示词大全
-                  </a>
+                  <div class="generate-link-tip-left">
+                    <a
+                      href="https://80ai.net/gptimage2-prompt"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="generate-link-tip-anchor"
+                    >
+                      提示词灵感
+                    </a>
+                    (400+模版)
+                  </div>
+                  <div class="generate-link-tip-right">
+                    支持 <strong>8</strong> 张图片同时生成（{{ activeGenerationImageCount }} / {{ MAX_ACTIVE_GENERATION_IMAGES }}）
+                  </div>
                 </div>
                 <a-button
                   type="primary"
@@ -2163,15 +2212,17 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
               <div class="settings-footer">
                 <div class="generate-link-tip">
-                  解锁更多玩法，试试
-                  <a
-                    href="https://80ai.net/gptimage2-prompt"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="generate-link-tip-anchor"
-                  >
-                    提示词大全
-                  </a>
+                  <div class="generate-link-tip-left">
+                    <a
+                      href="https://80ai.net/gptimage2-prompt"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="generate-link-tip-anchor"
+                    >
+                      提示词灵感
+                    </a>
+                    (400+模版)
+                  </div>
                 </div>
                 <a-button
                   type="primary"
@@ -2891,10 +2942,24 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
 .generate-link-tip {
   margin-bottom: 8px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
   font-size: 12px;
   line-height: 1.5;
   color: var(--text-secondary);
+}
+
+.generate-link-tip-left,
+.generate-link-tip-right {
+  min-width: 0;
+}
+
+.generate-link-tip-right {
+  flex-shrink: 0;
+  text-align: right;
 }
 
 .generate-link-tip-anchor {
@@ -4731,8 +4796,49 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-mor
     padding-top: 0;
   }
 
+  .generate-link-tip {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+
+  .generate-link-tip-right {
+    text-align: left;
+  }
+
   .settings-row {
     flex-direction: column;
+  }
+
+  .settings-row-inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .settings-row-inline .setting-item-inline {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .settings-row-inline .setting-item-inline label {
+    min-width: auto;
+    white-space: nowrap;
+  }
+
+  .settings-row-inline .setting-item-inline .flat-select {
+    min-width: 0;
+  }
+
+  .settings-row-inline .setting-item-inline .flat-select :deep(.ant-select-selector) {
+    height: 42px !important;
+    padding: 0 10px !important;
+  }
+
+  .settings-row-inline .setting-item-inline .flat-select :deep(.ant-select-selection-item) {
+    line-height: 42px !important;
   }
 
   .generate-config-panel .upload-thumb,

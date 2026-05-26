@@ -323,7 +323,7 @@ def create_tasks(
         )
         unit_cost = get_scene_credit_cost(db, scene_key)
         task_count = 1 if mode == "inpaint" else num_images
-        ensure_task_submission_capacity(db, user_id=user_id, new_task_count=task_count)
+        task_count = ensure_task_submission_capacity(db, user_id=user_id, new_task_count=task_count)
         total_cost = task_count * unit_cost
         per_task_credit_cost = 0 if _is_credit_exempt_user(user) else unit_cost
         actual_total_cost = 0 if _is_credit_exempt_user(user) else total_cost
@@ -417,10 +417,10 @@ def create_tasks(
         release_redis_lock(submission_lock)
 
 
-def ensure_task_submission_capacity(db: Session, user_id: int, new_task_count: int) -> None:
+def ensure_task_submission_capacity(db: Session, user_id: int, new_task_count: int) -> int:
     normalized_new_task_count = max(int(new_task_count or 0), 0)
     if normalized_new_task_count <= 0:
-        return
+        return 0
 
     _expire_stale_processing_tasks(db, user_id=user_id)
 
@@ -435,7 +435,8 @@ def ensure_task_submission_capacity(db: Session, user_id: int, new_task_count: i
             )
             .count()
         )
-        if current_user_active_count + normalized_new_task_count > per_user_limit:
+        available_user_slots = per_user_limit - current_user_active_count
+        if available_user_slots <= 0:
             task_logger.warning(
                 "task submission exceeded per-user limit",
                 extra={
@@ -451,6 +452,7 @@ def ensure_task_submission_capacity(db: Session, user_id: int, new_task_count: i
                     "请等待部分任务完成后再试"
                 ),
             )
+        normalized_new_task_count = min(normalized_new_task_count, available_user_slots)
 
     global_limit = max(int(settings.MAX_ACTIVE_TASKS_GLOBAL or 0), 0)
     if global_limit:
@@ -459,7 +461,8 @@ def ensure_task_submission_capacity(db: Session, user_id: int, new_task_count: i
             .filter(Task.status.in_(ACTIVE_TASK_STATUSES), Task.is_deleted.is_(False))
             .count()
         )
-        if current_global_active_count + normalized_new_task_count > global_limit:
+        available_global_slots = global_limit - current_global_active_count
+        if available_global_slots <= 0:
             task_logger.warning(
                 "task submission exceeded global limit",
                 extra={
@@ -472,6 +475,9 @@ def ensure_task_submission_capacity(db: Session, user_id: int, new_task_count: i
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="当前排队任务较多，请稍后再试",
             )
+        normalized_new_task_count = min(normalized_new_task_count, available_global_slots)
+
+    return normalized_new_task_count
 
 
 def mark_tasks_queued(db: Session, task_ids: list[int]) -> None:

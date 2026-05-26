@@ -110,6 +110,8 @@ export function listRedeemKeys(params: {
   status?: RedeemKeyStatus;
   is_used?: boolean;
   used_by?: string;
+  start_date?: string;
+  end_date?: string;
 }): Promise<{ total: number; items: AdminRedeemKey[] }> {
   return client.get("/admin/redeem-keys", { params });
 }

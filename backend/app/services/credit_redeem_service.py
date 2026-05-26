@@ -104,6 +104,8 @@ def list_redeem_keys(
     status_filter: str | None = None,
     is_used: bool | None = None,
     used_by: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
 ) -> dict:
     query = (
         db.query(CreditRedeemKey)
@@ -130,6 +132,10 @@ def list_redeem_keys(
             query.join(CreditRedeemKey.used_by_user, isouter=True)
             .filter((User.username.ilike(keyword)) | (User.email.ilike(keyword)))
         )
+    if start_date:
+        query = query.filter(CreditRedeemKey.created_at >= start_date)
+    if end_date:
+        query = query.filter(CreditRedeemKey.created_at <= end_date)
 
     total = query.count()
     rows = (

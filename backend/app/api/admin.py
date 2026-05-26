@@ -142,6 +142,8 @@ def admin_list_redeem_keys(
     status_filter: Optional[str] = Query(None, alias="status", pattern="^(enabled|disabled)$"),
     is_used: Optional[bool] = Query(None),
     used_by: Optional[str] = Query(None),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -155,6 +157,8 @@ def admin_list_redeem_keys(
         status_filter=status_filter,
         is_used=is_used,
         used_by=used_by,
+        start_date=start_date,
+        end_date=end_date,
     )
 
 

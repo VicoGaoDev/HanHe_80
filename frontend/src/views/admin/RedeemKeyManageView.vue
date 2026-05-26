@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
 import { message } from "ant-design-vue";
+import dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
 import { CopyOutlined, GiftOutlined } from "@ant-design/icons-vue";
 import { createRedeemKeysBatch, listRedeemKeys, updateRedeemKeyStatus } from "@/api/admin";
 import type { AdminRedeemKey, AdminRedeemKeyBatchResult, RedeemKeyStatus } from "@/types";
@@ -10,6 +12,8 @@ const generating = ref(false);
 const statusLoadingId = ref<number | null>(null);
 const latestBatch = ref<AdminRedeemKeyBatchResult | null>(null);
 const items = ref<AdminRedeemKey[]>([]);
+type DateShortcut = "today" | "last7Days" | "thisWeek";
+const dateShortcut = ref<DateShortcut | undefined>();
 
 const batchForm = reactive({
   count: 10,
@@ -23,6 +27,7 @@ const filters = reactive({
   status: undefined as RedeemKeyStatus | undefined,
   isUsed: undefined as boolean | undefined,
   usedBy: "",
+  dateRange: null as [Dayjs, Dayjs] | null,
 });
 
 const pagination = reactive({
@@ -54,6 +59,8 @@ async function load() {
       status: filters.status,
       is_used: filters.isUsed,
       used_by: filters.usedBy.trim() || undefined,
+      start_date: formatQueryDate(filters.dateRange?.[0].startOf("day")),
+      end_date: formatQueryDate(filters.dateRange?.[1].endOf("day")),
     });
     items.value = res.items;
     pagination.total = res.total;
@@ -100,8 +107,31 @@ function handleReset() {
   filters.status = undefined;
   filters.isUsed = undefined;
   filters.usedBy = "";
+  filters.dateRange = null;
+  dateShortcut.value = undefined;
   pagination.page = 1;
   load();
+}
+
+function applyDateShortcut(type: DateShortcut) {
+  const now = dayjs();
+  dateShortcut.value = type;
+  if (type === "today") {
+    filters.dateRange = [now.startOf("day"), now.endOf("day")];
+  } else if (type === "last7Days") {
+    filters.dateRange = [now.subtract(6, "day").startOf("day"), now.endOf("day")];
+  } else {
+    filters.dateRange = [now.startOf("week"), now.endOf("week")];
+  }
+  handleFilter();
+}
+
+function handleDateShortcutChange(event: { target: { value: DateShortcut } }) {
+  applyDateShortcut(event.target.value);
+}
+
+function handleDateRangeChange() {
+  dateShortcut.value = undefined;
 }
 
 function handlePageChange(page: number, pageSize?: number) {
@@ -145,6 +175,10 @@ async function toggleStatus(item: AdminRedeemKey) {
 
 function fmtTime(t?: string | null) {
   return t ? new Date(t).toLocaleString("zh-CN") : "-";
+}
+
+function formatQueryDate(value?: Dayjs) {
+  return value ? value.format("YYYY-MM-DDTHH:mm:ss") : undefined;
 }
 </script>
 
@@ -225,6 +259,23 @@ function fmtTime(t?: string | null) {
         placeholder="按使用人/邮箱筛选"
         class="warm-input redeem-filter-input"
       />
+      <a-range-picker
+        v-model:value="filters.dateRange"
+        :placeholder="['开始日期', '结束日期']"
+        class="redeem-filter-date"
+        @change="handleDateRangeChange"
+      />
+      <a-radio-group
+        v-model:value="dateShortcut"
+        button-style="solid"
+        size="small"
+        class="redeem-date-shortcuts"
+        @change="handleDateShortcutChange"
+      >
+        <a-radio-button value="today">今日</a-radio-button>
+        <a-radio-button value="last7Days">近7天</a-radio-button>
+        <a-radio-button value="thisWeek">本周</a-radio-button>
+      </a-radio-group>
       <a-button type="primary" class="warm-primary-btn action-btn" @click="handleFilter">筛选</a-button>
       <a-button class="filter-reset-btn action-btn" @click="handleReset">重置</a-button>
     </div>
@@ -312,8 +363,7 @@ function fmtTime(t?: string | null) {
 .redeem-filter-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .redeem-create-form {
@@ -334,12 +384,15 @@ function fmtTime(t?: string | null) {
 }
 
 .redeem-filter-bar {
-  padding: 16px 20px;
+  padding: 12px 14px;
   margin-bottom: 16px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .redeem-filter-input {
-  width: 196px;
+  width: 148px;
+  flex: 0 0 148px;
 }
 
 .redeem-half-number {
@@ -347,16 +400,64 @@ function fmtTime(t?: string | null) {
 }
 
 .redeem-filter-number {
-  width: 156px;
+  width: 112px;
+  flex: 0 0 112px;
 }
 
 .redeem-filter-select {
-  width: 128px;
+  width: 104px;
+  flex: 0 0 104px;
+}
+
+.redeem-filter-date {
+  width: 218px;
+  flex: 0 0 218px;
+}
+
+.redeem-date-shortcuts {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+
+  :deep(.ant-radio-button-wrapper) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    line-height: 28px;
+    padding-inline: 8px;
+    color: #a9772e;
+    border-color: #efc784;
+    background: #fffaf2;
+  }
+
+  :deep(.ant-radio-button-wrapper:first-child) {
+    border-start-start-radius: 9px;
+    border-end-start-radius: 9px;
+  }
+
+  :deep(.ant-radio-button-wrapper:last-child) {
+    border-start-end-radius: 9px;
+    border-end-end-radius: 9px;
+  }
+
+  :deep(.ant-radio-button-wrapper:hover) {
+    color: #c7770d;
+    background: #fff0d3;
+  }
+
+  :deep(.ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)) {
+    color: #fff;
+    border-color: #d48806;
+    background: #d48806;
+  }
 }
 
 .action-btn {
-  min-width: 96px;
+  min-width: 72px;
   height: 36px;
+  padding-inline: 12px;
+  flex: 0 0 auto;
 }
 
 .pagination-summary {
@@ -491,8 +592,19 @@ function fmtTime(t?: string | null) {
   .redeem-filter-input,
   .redeem-half-number,
   .redeem-filter-number,
-  .redeem-filter-select {
+  .redeem-filter-select,
+  .redeem-filter-date {
     width: 100%;
+    flex-basis: auto;
+  }
+
+  .redeem-date-shortcuts {
+    width: 100%;
+  }
+
+  .redeem-date-shortcuts :deep(.ant-radio-button-wrapper) {
+    flex: 1;
+    text-align: center;
   }
 
   :deep(.admin-mobile-table .ant-table-content) {
