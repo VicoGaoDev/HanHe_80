@@ -107,15 +107,15 @@ a {
 .hero-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 28px;
+  gap: 10px;
+  margin-top: 24px;
 }
 
 .stat-card {
-  min-width: 140px;
-  padding: 16px 18px;
+  min-width: 112px;
+  padding: 12px 14px;
   border: 1px solid #efcf93;
-  border-radius: 18px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.72);
 }
 
@@ -144,16 +144,16 @@ a {
 
 .stat-value {
   display: block;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
   line-height: 1;
 }
 
 .stat-label {
   display: block;
-  margin-top: 8px;
+  margin-top: 6px;
   color: var(--text-soft);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .stat-hint {
@@ -301,14 +301,14 @@ a {
 
 .sidebar-stats {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
   margin-top: 10px;
 }
 
 .sidebar-panel .stat-card {
   min-width: 0;
-  padding: 9px 9px 7px;
+  padding: 7px 7px 6px;
   border-radius: 11px;
 }
 
@@ -960,6 +960,11 @@ a {
 .tag.scene {
   color: #b26c04;
   background: rgba(255, 240, 200, 0.92);
+}
+
+.tag.input {
+  color: #8b4d18;
+  background: rgba(255, 226, 183, 0.95);
 }
 
 .empty-state {

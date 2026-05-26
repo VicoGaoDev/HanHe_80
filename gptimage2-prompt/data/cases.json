@@ -71,7 +71,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-469"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-469",
+      "requiresReferenceImage": false
     },
     {
       "id": 468,
@@ -92,7 +93,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-468"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-468",
+      "requiresReferenceImage": false
     },
     {
       "id": 467,
@@ -111,7 +113,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-467"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-467",
+      "requiresReferenceImage": true
     },
     {
       "id": 466,
@@ -134,7 +137,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-466"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-466",
+      "requiresReferenceImage": true
     },
     {
       "id": 465,
@@ -157,7 +161,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-465"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-465",
+      "requiresReferenceImage": true
     },
     {
       "id": 464,
@@ -180,7 +185,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-464"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-464",
+      "requiresReferenceImage": false
     },
     {
       "id": 463,
@@ -202,7 +208,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-463"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-463",
+      "requiresReferenceImage": true
     },
     {
       "id": 462,
@@ -223,7 +230,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-462"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-462",
+      "requiresReferenceImage": true
     },
     {
       "id": 461,
@@ -246,7 +254,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-461"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-461",
+      "requiresReferenceImage": false
     },
     {
       "id": 460,
@@ -269,7 +278,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-460"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-460",
+      "requiresReferenceImage": false
     },
     {
       "id": 459,
@@ -292,7 +302,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-459"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-459",
+      "requiresReferenceImage": true
     },
     {
       "id": 458,
@@ -315,7 +326,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-458"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-458",
+      "requiresReferenceImage": true
     },
     {
       "id": 457,
@@ -337,7 +349,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-457"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-457",
+      "requiresReferenceImage": false
     },
     {
       "id": 456,
@@ -360,7 +373,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-456"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-456",
+      "requiresReferenceImage": false
     },
     {
       "id": 455,
@@ -383,7 +397,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-455"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-455",
+      "requiresReferenceImage": false
     },
     {
       "id": 454,
@@ -405,7 +420,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-454"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-454",
+      "requiresReferenceImage": false
     },
     {
       "id": 453,
@@ -427,7 +443,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-453"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-453",
+      "requiresReferenceImage": true
     },
     {
       "id": 452,
@@ -450,7 +467,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-452"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-452",
+      "requiresReferenceImage": false
     },
     {
       "id": 451,
@@ -469,7 +487,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-451"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-451",
+      "requiresReferenceImage": false
     },
     {
       "id": 450,
@@ -491,7 +510,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-450"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-450",
+      "requiresReferenceImage": false
     },
     {
       "id": 449,
@@ -514,7 +534,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-449"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-449",
+      "requiresReferenceImage": true
     },
     {
       "id": 448,
@@ -536,7 +557,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-448"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-448",
+      "requiresReferenceImage": false
     },
     {
       "id": 447,
@@ -559,7 +581,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-447"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-447",
+      "requiresReferenceImage": false
     },
     {
       "id": 446,
@@ -581,7 +604,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-446"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-446",
+      "requiresReferenceImage": false
     },
     {
       "id": 445,
@@ -603,7 +627,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-445"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-445",
+      "requiresReferenceImage": true
     },
     {
       "id": 444,
@@ -625,7 +650,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-444"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-444",
+      "requiresReferenceImage": false
     },
     {
       "id": 443,
@@ -648,7 +674,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-443"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-443",
+      "requiresReferenceImage": false
     },
     {
       "id": 442,
@@ -670,7 +697,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-442"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-442",
+      "requiresReferenceImage": false
     },
     {
       "id": 441,
@@ -693,7 +721,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-441"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-441",
+      "requiresReferenceImage": true
     },
     {
       "id": 440,
@@ -715,7 +744,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-440"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-440",
+      "requiresReferenceImage": false
     },
     {
       "id": 439,
@@ -738,7 +768,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-439"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-439",
+      "requiresReferenceImage": true
     },
     {
       "id": 438,
@@ -761,7 +792,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-438"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-438",
+      "requiresReferenceImage": false
     },
     {
       "id": 437,
@@ -784,7 +816,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-437"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-437",
+      "requiresReferenceImage": true
     },
     {
       "id": 436,
@@ -806,7 +839,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-436"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-436",
+      "requiresReferenceImage": false
     },
     {
       "id": 435,
@@ -829,7 +863,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-435"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-435",
+      "requiresReferenceImage": false
     },
     {
       "id": 434,
@@ -852,7 +887,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-434"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-434",
+      "requiresReferenceImage": false
     },
     {
       "id": 433,
@@ -875,7 +911,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-433"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-433",
+      "requiresReferenceImage": false
     },
     {
       "id": 432,
@@ -897,7 +934,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-432"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-432",
+      "requiresReferenceImage": false
     },
     {
       "id": 431,
@@ -920,7 +958,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-431"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-431",
+      "requiresReferenceImage": false
     },
     {
       "id": 430,
@@ -941,7 +980,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-430"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-430",
+      "requiresReferenceImage": false
     },
     {
       "id": 429,
@@ -963,7 +1003,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-429"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-429",
+      "requiresReferenceImage": false
     },
     {
       "id": 428,
@@ -986,7 +1027,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-428"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-428",
+      "requiresReferenceImage": true
     },
     {
       "id": 427,
@@ -1008,7 +1050,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-427"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-427",
+      "requiresReferenceImage": false
     },
     {
       "id": 426,
@@ -1031,7 +1074,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-426"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-426",
+      "requiresReferenceImage": false
     },
     {
       "id": 425,
@@ -1054,7 +1098,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-425"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-425",
+      "requiresReferenceImage": false
     },
     {
       "id": 424,
@@ -1077,7 +1122,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-424"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-424",
+      "requiresReferenceImage": true
     },
     {
       "id": 423,
@@ -1099,7 +1145,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-423"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-423",
+      "requiresReferenceImage": false
     },
     {
       "id": 422,
@@ -1122,7 +1169,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-422"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-422",
+      "requiresReferenceImage": false
     },
     {
       "id": 421,
@@ -1144,7 +1192,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-421"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-421",
+      "requiresReferenceImage": true
     },
     {
       "id": 420,
@@ -1167,7 +1216,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-420"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-420",
+      "requiresReferenceImage": true
     },
     {
       "id": 419,
@@ -1190,7 +1240,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-419"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-419",
+      "requiresReferenceImage": false
     },
     {
       "id": 418,
@@ -1211,7 +1262,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-418"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-418",
+      "requiresReferenceImage": false
     },
     {
       "id": 417,
@@ -1233,7 +1285,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-417"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-417",
+      "requiresReferenceImage": false
     },
     {
       "id": 416,
@@ -1256,7 +1309,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-416"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-416",
+      "requiresReferenceImage": true
     },
     {
       "id": 415,
@@ -1279,7 +1333,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-415"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-415",
+      "requiresReferenceImage": true
     },
     {
       "id": 414,
@@ -1301,7 +1356,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-414"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-414",
+      "requiresReferenceImage": false
     },
     {
       "id": 413,
@@ -1324,7 +1380,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-413"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-413",
+      "requiresReferenceImage": true
     },
     {
       "id": 412,
@@ -1347,7 +1404,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-412"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-412",
+      "requiresReferenceImage": true
     },
     {
       "id": 411,
@@ -1369,7 +1427,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-411"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-411",
+      "requiresReferenceImage": false
     },
     {
       "id": 410,
@@ -1390,7 +1449,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-410"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-410",
+      "requiresReferenceImage": false
     },
     {
       "id": 409,
@@ -1410,7 +1470,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-409"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-409",
+      "requiresReferenceImage": true
     },
     {
       "id": 408,
@@ -1432,7 +1493,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-408"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-408",
+      "requiresReferenceImage": false
     },
     {
       "id": 407,
@@ -1455,7 +1517,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-407"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-407",
+      "requiresReferenceImage": false
     },
     {
       "id": 406,
@@ -1478,7 +1541,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-406"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-406",
+      "requiresReferenceImage": false
     },
     {
       "id": 405,
@@ -1498,7 +1562,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-405"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-405",
+      "requiresReferenceImage": true
     },
     {
       "id": 404,
@@ -1520,7 +1585,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-404"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-404",
+      "requiresReferenceImage": true
     },
     {
       "id": 403,
@@ -1540,7 +1606,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-403"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-403",
+      "requiresReferenceImage": false
     },
     {
       "id": 402,
@@ -1560,7 +1627,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-402"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-402",
+      "requiresReferenceImage": false
     },
     {
       "id": 401,
@@ -1583,7 +1651,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-401"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-401",
+      "requiresReferenceImage": true
     },
     {
       "id": 400,
@@ -1604,7 +1673,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-400"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-400",
+      "requiresReferenceImage": true
     },
     {
       "id": 399,
@@ -1627,7 +1697,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-399"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-399",
+      "requiresReferenceImage": false
     },
     {
       "id": 398,
@@ -1647,7 +1718,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-398"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-398",
+      "requiresReferenceImage": true
     },
     {
       "id": 397,
@@ -1667,7 +1739,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-397"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-397",
+      "requiresReferenceImage": true
     },
     {
       "id": 396,
@@ -1690,7 +1763,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-396"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-396",
+      "requiresReferenceImage": false
     },
     {
       "id": 395,
@@ -1712,7 +1786,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-395"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-395",
+      "requiresReferenceImage": false
     },
     {
       "id": 394,
@@ -1735,7 +1810,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-394"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-394",
+      "requiresReferenceImage": false
     },
     {
       "id": 393,
@@ -1756,7 +1832,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-393"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-393",
+      "requiresReferenceImage": false
     },
     {
       "id": 392,
@@ -1779,7 +1856,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-392"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-392",
+      "requiresReferenceImage": false
     },
     {
       "id": 391,
@@ -1799,7 +1877,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-391"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-391",
+      "requiresReferenceImage": false
     },
     {
       "id": 390,
@@ -1822,7 +1901,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-390"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-390",
+      "requiresReferenceImage": false
     },
     {
       "id": 389,
@@ -1845,7 +1925,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-389"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-389",
+      "requiresReferenceImage": true
     },
     {
       "id": 388,
@@ -1868,7 +1949,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-388"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-388",
+      "requiresReferenceImage": false
     },
     {
       "id": 387,
@@ -1889,7 +1971,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-387"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-387",
+      "requiresReferenceImage": false
     },
     {
       "id": 386,
@@ -1912,7 +1995,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-386"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-386",
+      "requiresReferenceImage": false
     },
     {
       "id": 385,
@@ -1932,7 +2016,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-385"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-385",
+      "requiresReferenceImage": false
     },
     {
       "id": 384,
@@ -1954,7 +2039,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-384"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-384",
+      "requiresReferenceImage": true
     },
     {
       "id": 383,
@@ -1973,7 +2059,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-383"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-383",
+      "requiresReferenceImage": false
     },
     {
       "id": 382,
@@ -1995,7 +2082,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-382"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-382",
+      "requiresReferenceImage": false
     },
     {
       "id": 381,
@@ -2018,7 +2106,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-381"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-381",
+      "requiresReferenceImage": true
     },
     {
       "id": 380,
@@ -2040,7 +2129,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-380"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-380",
+      "requiresReferenceImage": false
     },
     {
       "id": 379,
@@ -2063,7 +2153,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-379"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-379",
+      "requiresReferenceImage": true
     },
     {
       "id": 378,
@@ -2085,7 +2176,8 @@
         "Commerce"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-378"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-378",
+      "requiresReferenceImage": true
     },
     {
       "id": 377,
@@ -2108,7 +2200,8 @@
         "Food"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-377"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-377",
+      "requiresReferenceImage": true
     },
     {
       "id": 376,
@@ -2131,7 +2224,8 @@
         "Food"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-376"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-376",
+      "requiresReferenceImage": true
     },
     {
       "id": 375,
@@ -2151,7 +2245,8 @@
         "History"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-375"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-375",
+      "requiresReferenceImage": false
     },
     {
       "id": 374,
@@ -2170,7 +2265,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-374"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-374",
+      "requiresReferenceImage": false
     },
     {
       "id": 373,
@@ -2190,7 +2286,8 @@
         "Food"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-373"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-373",
+      "requiresReferenceImage": false
     },
     {
       "id": 372,
@@ -2213,7 +2310,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-372"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-372",
+      "requiresReferenceImage": true
     },
     {
       "id": 371,
@@ -2236,7 +2334,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-371"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-371",
+      "requiresReferenceImage": true
     },
     {
       "id": 370,
@@ -2259,7 +2358,8 @@
         "Education"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-370"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-370",
+      "requiresReferenceImage": false
     },
     {
       "id": 369,
@@ -2278,7 +2378,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-369"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-369",
+      "requiresReferenceImage": false
     },
     {
       "id": 368,
@@ -2297,7 +2398,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-368"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-368",
+      "requiresReferenceImage": true
     },
     {
       "id": 367,
@@ -2320,7 +2422,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-367"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-367",
+      "requiresReferenceImage": true
     },
     {
       "id": 366,
@@ -2342,7 +2445,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-366"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-366",
+      "requiresReferenceImage": false
     },
     {
       "id": 365,
@@ -2365,7 +2469,8 @@
         "Education"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-365"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-365",
+      "requiresReferenceImage": false
     },
     {
       "id": 364,
@@ -2388,7 +2493,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-364"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-364",
+      "requiresReferenceImage": false
     },
     {
       "id": 363,
@@ -2411,7 +2517,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-363"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-363",
+      "requiresReferenceImage": true
     },
     {
       "id": 362,
@@ -2434,7 +2541,8 @@
         "Food"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-362"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-362",
+      "requiresReferenceImage": false
     },
     {
       "id": 361,
@@ -2453,7 +2561,8 @@
         "Tech"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-361"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-361",
+      "requiresReferenceImage": false
     },
     {
       "id": 360,
@@ -2476,7 +2585,8 @@
         "Education"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-360"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-360",
+      "requiresReferenceImage": false
     },
     {
       "id": 359,
@@ -2499,7 +2609,8 @@
         "Story"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-359"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-359",
+      "requiresReferenceImage": false
     },
     {
       "id": 358,
@@ -2522,7 +2633,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-358"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-358",
+      "requiresReferenceImage": false
     },
     {
       "id": 357,
@@ -2541,7 +2653,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-357"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-357",
+      "requiresReferenceImage": true
     },
     {
       "id": 356,
@@ -2564,7 +2677,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-356"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-356",
+      "requiresReferenceImage": false
     },
     {
       "id": 355,
@@ -2587,7 +2701,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-355"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-355",
+      "requiresReferenceImage": true
     },
     {
       "id": 354,
@@ -2608,7 +2723,8 @@
         "Commerce"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-354"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-354",
+      "requiresReferenceImage": true
     },
     {
       "id": 353,
@@ -2631,7 +2747,8 @@
         "Story"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-353"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-353",
+      "requiresReferenceImage": true
     },
     {
       "id": 352,
@@ -2650,7 +2767,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-352"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-352",
+      "requiresReferenceImage": false
     },
     {
       "id": 351,
@@ -2671,7 +2789,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-351"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-351",
+      "requiresReferenceImage": false
     },
     {
       "id": 350,
@@ -2694,7 +2813,8 @@
         "Social"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-350"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-350",
+      "requiresReferenceImage": false
     },
     {
       "id": 349,
@@ -2717,7 +2837,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-349"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-349",
+      "requiresReferenceImage": false
     },
     {
       "id": 348,
@@ -2739,7 +2860,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-348"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-348",
+      "requiresReferenceImage": true
     },
     {
       "id": 347,
@@ -2762,7 +2884,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-347"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-347",
+      "requiresReferenceImage": false
     },
     {
       "id": 346,
@@ -2781,7 +2904,8 @@
         "Creative"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-346"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-346",
+      "requiresReferenceImage": false
     },
     {
       "id": 345,
@@ -2804,7 +2928,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-345"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-345",
+      "requiresReferenceImage": false
     },
     {
       "id": 344,
@@ -2827,7 +2952,8 @@
         "Fashion"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-344"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-344",
+      "requiresReferenceImage": false
     },
     {
       "id": 343,
@@ -2850,7 +2976,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-343"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-343",
+      "requiresReferenceImage": false
     },
     {
       "id": 342,
@@ -2872,7 +2999,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-342"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-342",
+      "requiresReferenceImage": false
     },
     {
       "id": 341,
@@ -2895,7 +3023,8 @@
         "Education"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-341"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-341",
+      "requiresReferenceImage": false
     },
     {
       "id": 340,
@@ -2914,7 +3043,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-340"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-340",
+      "requiresReferenceImage": false
     },
     {
       "id": 339,
@@ -2935,7 +3065,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-339"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-339",
+      "requiresReferenceImage": true
     },
     {
       "id": 338,
@@ -2954,7 +3085,8 @@
         "Creative"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-338"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-338",
+      "requiresReferenceImage": false
     },
     {
       "id": 337,
@@ -2973,7 +3105,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-337"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-337",
+      "requiresReferenceImage": false
     },
     {
       "id": 336,
@@ -2992,7 +3125,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-336"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-336",
+      "requiresReferenceImage": false
     },
     {
       "id": 335,
@@ -3012,7 +3146,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-335"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-335",
+      "requiresReferenceImage": false
     },
     {
       "id": 334,
@@ -3031,7 +3166,8 @@
         "Tech"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-334"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-334",
+      "requiresReferenceImage": false
     },
     {
       "id": 333,
@@ -3050,7 +3186,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-333"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-333",
+      "requiresReferenceImage": false
     },
     {
       "id": 332,
@@ -3069,7 +3206,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-332"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-332",
+      "requiresReferenceImage": false
     },
     {
       "id": 331,
@@ -3088,7 +3226,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-331"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-331",
+      "requiresReferenceImage": false
     },
     {
       "id": 330,
@@ -3107,7 +3246,8 @@
         "Creative"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-330"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-330",
+      "requiresReferenceImage": false
     },
     {
       "id": 329,
@@ -3128,7 +3268,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-329"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-329",
+      "requiresReferenceImage": false
     },
     {
       "id": 328,
@@ -3151,7 +3292,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-328"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-328",
+      "requiresReferenceImage": true
     },
     {
       "id": 327,
@@ -3174,7 +3316,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-327"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-327",
+      "requiresReferenceImage": false
     },
     {
       "id": 326,
@@ -3197,7 +3340,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-326"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-326",
+      "requiresReferenceImage": false
     },
     {
       "id": 325,
@@ -3219,7 +3363,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-325"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-325",
+      "requiresReferenceImage": false
     },
     {
       "id": 324,
@@ -3241,7 +3386,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-324"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-324",
+      "requiresReferenceImage": false
     },
     {
       "id": 323,
@@ -3264,7 +3410,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-323"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-323",
+      "requiresReferenceImage": true
     },
     {
       "id": 322,
@@ -3285,7 +3432,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-322"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-322",
+      "requiresReferenceImage": true
     },
     {
       "id": 321,
@@ -3307,7 +3455,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-321"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-321",
+      "requiresReferenceImage": false
     },
     {
       "id": 320,
@@ -3330,7 +3479,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-320"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-320",
+      "requiresReferenceImage": false
     },
     {
       "id": 319,
@@ -3351,7 +3501,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-319"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-319",
+      "requiresReferenceImage": false
     },
     {
       "id": 318,
@@ -3374,7 +3525,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-318"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-318",
+      "requiresReferenceImage": true
     },
     {
       "id": 317,
@@ -3397,7 +3549,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-317"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-317",
+      "requiresReferenceImage": true
     },
     {
       "id": 316,
@@ -3420,7 +3573,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-316"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-316",
+      "requiresReferenceImage": false
     },
     {
       "id": 315,
@@ -3443,7 +3597,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-315"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-315",
+      "requiresReferenceImage": false
     },
     {
       "id": 314,
@@ -3466,7 +3621,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-314"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-314",
+      "requiresReferenceImage": false
     },
     {
       "id": 313,
@@ -3488,7 +3644,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-313"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-313",
+      "requiresReferenceImage": false
     },
     {
       "id": 312,
@@ -3510,7 +3667,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-312"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-312",
+      "requiresReferenceImage": false
     },
     {
       "id": 311,
@@ -3529,7 +3687,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-311"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-311",
+      "requiresReferenceImage": false
     },
     {
       "id": 310,
@@ -3552,7 +3711,8 @@
         "Social"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-310"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-310",
+      "requiresReferenceImage": true
     },
     {
       "id": 309,
@@ -3573,7 +3733,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-309"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-309",
+      "requiresReferenceImage": false
     },
     {
       "id": 308,
@@ -3592,7 +3753,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-308"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-308",
+      "requiresReferenceImage": false
     },
     {
       "id": 307,
@@ -3615,7 +3777,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-307"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-307",
+      "requiresReferenceImage": false
     },
     {
       "id": 306,
@@ -3638,7 +3801,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-306"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-306",
+      "requiresReferenceImage": false
     },
     {
       "id": 305,
@@ -3661,7 +3825,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-305"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-305",
+      "requiresReferenceImage": false
     },
     {
       "id": 304,
@@ -3684,7 +3849,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-304"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-304",
+      "requiresReferenceImage": false
     },
     {
       "id": 303,
@@ -3703,7 +3869,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-303"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-303",
+      "requiresReferenceImage": false
     },
     {
       "id": 302,
@@ -3722,7 +3889,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-302"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-302",
+      "requiresReferenceImage": false
     },
     {
       "id": 301,
@@ -3743,7 +3911,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-301"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-301",
+      "requiresReferenceImage": false
     },
     {
       "id": 300,
@@ -3762,7 +3931,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-300"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-300",
+      "requiresReferenceImage": false
     },
     {
       "id": 299,
@@ -3785,7 +3955,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-299"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-299",
+      "requiresReferenceImage": false
     },
     {
       "id": 298,
@@ -3808,7 +3979,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-298"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-298",
+      "requiresReferenceImage": false
     },
     {
       "id": 297,
@@ -3827,7 +3999,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-297"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-297",
+      "requiresReferenceImage": false
     },
     {
       "id": 296,
@@ -3850,7 +4023,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-296"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-296",
+      "requiresReferenceImage": true
     },
     {
       "id": 295,
@@ -3869,7 +4043,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-295"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-295",
+      "requiresReferenceImage": false
     },
     {
       "id": 294,
@@ -3888,7 +4063,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-294"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-294",
+      "requiresReferenceImage": false
     },
     {
       "id": 293,
@@ -3907,7 +4083,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-293"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-293",
+      "requiresReferenceImage": false
     },
     {
       "id": 292,
@@ -3927,7 +4104,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-292"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-292",
+      "requiresReferenceImage": false
     },
     {
       "id": 291,
@@ -3947,7 +4125,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-291"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-291",
+      "requiresReferenceImage": false
     },
     {
       "id": 290,
@@ -3970,7 +4149,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-290"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-290",
+      "requiresReferenceImage": false
     },
     {
       "id": 289,
@@ -3989,7 +4169,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-289"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-289",
+      "requiresReferenceImage": false
     },
     {
       "id": 288,
@@ -4008,7 +4189,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-288"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-288",
+      "requiresReferenceImage": false
     },
     {
       "id": 287,
@@ -4027,7 +4209,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-287"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-287",
+      "requiresReferenceImage": false
     },
     {
       "id": 286,
@@ -4049,7 +4232,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-286"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-286",
+      "requiresReferenceImage": false
     },
     {
       "id": 285,
@@ -4068,7 +4252,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-285"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-285",
+      "requiresReferenceImage": true
     },
     {
       "id": 284,
@@ -4087,7 +4272,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-284"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-284",
+      "requiresReferenceImage": true
     },
     {
       "id": 283,
@@ -4106,7 +4292,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-283"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-283",
+      "requiresReferenceImage": false
     },
     {
       "id": 282,
@@ -4129,7 +4316,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-282"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-282",
+      "requiresReferenceImage": false
     },
     {
       "id": 281,
@@ -4149,7 +4337,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-281"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-281",
+      "requiresReferenceImage": true
     },
     {
       "id": 280,
@@ -4172,7 +4361,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-280"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-280",
+      "requiresReferenceImage": false
     },
     {
       "id": 279,
@@ -4195,7 +4385,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-279"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-279",
+      "requiresReferenceImage": false
     },
     {
       "id": 278,
@@ -4217,7 +4408,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-278"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-278",
+      "requiresReferenceImage": false
     },
     {
       "id": 277,
@@ -4237,7 +4429,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-277"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-277",
+      "requiresReferenceImage": false
     },
     {
       "id": 276,
@@ -4260,7 +4453,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-276"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-276",
+      "requiresReferenceImage": false
     },
     {
       "id": 275,
@@ -4283,7 +4477,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-275"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-275",
+      "requiresReferenceImage": false
     },
     {
       "id": 274,
@@ -4305,7 +4500,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-274"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-274",
+      "requiresReferenceImage": true
     },
     {
       "id": 273,
@@ -4326,7 +4522,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-273"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-273",
+      "requiresReferenceImage": false
     },
     {
       "id": 272,
@@ -4349,7 +4546,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-272"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-272",
+      "requiresReferenceImage": false
     },
     {
       "id": 271,
@@ -4368,7 +4566,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-271"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-271",
+      "requiresReferenceImage": true
     },
     {
       "id": 270,
@@ -4391,7 +4590,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-270"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-270",
+      "requiresReferenceImage": true
     },
     {
       "id": 269,
@@ -4410,7 +4610,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-269"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-269",
+      "requiresReferenceImage": false
     },
     {
       "id": 268,
@@ -4430,7 +4631,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-268"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-268",
+      "requiresReferenceImage": false
     },
     {
       "id": 267,
@@ -4453,7 +4655,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-267"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-267",
+      "requiresReferenceImage": true
     },
     {
       "id": 266,
@@ -4472,7 +4675,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-266"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-266",
+      "requiresReferenceImage": false
     },
     {
       "id": 265,
@@ -4491,7 +4695,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-265"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-265",
+      "requiresReferenceImage": false
     },
     {
       "id": 264,
@@ -4510,7 +4715,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-264"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-264",
+      "requiresReferenceImage": false
     },
     {
       "id": 263,
@@ -4530,7 +4736,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-263"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-263",
+      "requiresReferenceImage": false
     },
     {
       "id": 262,
@@ -4549,7 +4756,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-262"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-262",
+      "requiresReferenceImage": false
     },
     {
       "id": 261,
@@ -4569,7 +4777,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-261"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-261",
+      "requiresReferenceImage": false
     },
     {
       "id": 260,
@@ -4589,7 +4798,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-260"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-260",
+      "requiresReferenceImage": false
     },
     {
       "id": 259,
@@ -4608,7 +4818,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-259"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-259",
+      "requiresReferenceImage": false
     },
     {
       "id": 258,
@@ -4627,7 +4838,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-258"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-258",
+      "requiresReferenceImage": false
     },
     {
       "id": 257,
@@ -4647,7 +4859,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-257"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-257",
+      "requiresReferenceImage": false
     },
     {
       "id": 256,
@@ -4666,7 +4879,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-256"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-256",
+      "requiresReferenceImage": false
     },
     {
       "id": 255,
@@ -4685,7 +4899,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-255"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-255",
+      "requiresReferenceImage": false
     },
     {
       "id": 254,
@@ -4705,7 +4920,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-254"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-254",
+      "requiresReferenceImage": false
     },
     {
       "id": 253,
@@ -4724,7 +4940,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-253"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-253",
+      "requiresReferenceImage": false
     },
     {
       "id": 252,
@@ -4743,7 +4960,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-252"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-252",
+      "requiresReferenceImage": false
     },
     {
       "id": 251,
@@ -4762,7 +4980,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-251"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-251",
+      "requiresReferenceImage": false
     },
     {
       "id": 250,
@@ -4781,7 +5000,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-250"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-250",
+      "requiresReferenceImage": false
     },
     {
       "id": 249,
@@ -4800,7 +5020,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-249"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-249",
+      "requiresReferenceImage": false
     },
     {
       "id": 248,
@@ -4819,7 +5040,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-248"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-248",
+      "requiresReferenceImage": false
     },
     {
       "id": 247,
@@ -4838,7 +5060,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-247"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-247",
+      "requiresReferenceImage": false
     },
     {
       "id": 246,
@@ -4857,7 +5080,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-246"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-246",
+      "requiresReferenceImage": false
     },
     {
       "id": 245,
@@ -4876,7 +5100,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-245"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-245",
+      "requiresReferenceImage": false
     },
     {
       "id": 244,
@@ -4898,7 +5123,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-244"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-244",
+      "requiresReferenceImage": false
     },
     {
       "id": 243,
@@ -4917,7 +5143,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-243"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-243",
+      "requiresReferenceImage": false
     },
     {
       "id": 242,
@@ -4936,7 +5163,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-242"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-242",
+      "requiresReferenceImage": false
     },
     {
       "id": 241,
@@ -4956,7 +5184,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-241"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-241",
+      "requiresReferenceImage": false
     },
     {
       "id": 240,
@@ -4979,7 +5208,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-240"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-240",
+      "requiresReferenceImage": false
     },
     {
       "id": 239,
@@ -4998,7 +5228,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-239"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-239",
+      "requiresReferenceImage": false
     },
     {
       "id": 238,
@@ -5018,7 +5249,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-238"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-238",
+      "requiresReferenceImage": false
     },
     {
       "id": 237,
@@ -5040,7 +5272,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-237"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-237",
+      "requiresReferenceImage": false
     },
     {
       "id": 236,
@@ -5063,7 +5296,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-236"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-236",
+      "requiresReferenceImage": false
     },
     {
       "id": 235,
@@ -5086,7 +5320,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-235"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-235",
+      "requiresReferenceImage": false
     },
     {
       "id": 234,
@@ -5106,7 +5341,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-234"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-234",
+      "requiresReferenceImage": false
     },
     {
       "id": 233,
@@ -5126,7 +5362,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-233"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-233",
+      "requiresReferenceImage": false
     },
     {
       "id": 232,
@@ -5145,7 +5382,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-232"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-232",
+      "requiresReferenceImage": false
     },
     {
       "id": 231,
@@ -5165,7 +5403,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-231"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-231",
+      "requiresReferenceImage": false
     },
     {
       "id": 230,
@@ -5188,7 +5427,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-230"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-230",
+      "requiresReferenceImage": false
     },
     {
       "id": 229,
@@ -5211,7 +5451,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-229"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-229",
+      "requiresReferenceImage": true
     },
     {
       "id": 228,
@@ -5230,7 +5471,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-228"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-228",
+      "requiresReferenceImage": false
     },
     {
       "id": 227,
@@ -5249,7 +5491,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-227"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-227",
+      "requiresReferenceImage": false
     },
     {
       "id": 226,
@@ -5270,7 +5513,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-226"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-226",
+      "requiresReferenceImage": true
     },
     {
       "id": 225,
@@ -5289,7 +5533,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-225"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-225",
+      "requiresReferenceImage": false
     },
     {
       "id": 224,
@@ -5312,7 +5557,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-224"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-224",
+      "requiresReferenceImage": false
     },
     {
       "id": 223,
@@ -5335,7 +5581,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-223"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-223",
+      "requiresReferenceImage": true
     },
     {
       "id": 222,
@@ -5358,7 +5605,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-222"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-222",
+      "requiresReferenceImage": false
     },
     {
       "id": 221,
@@ -5379,7 +5627,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-221"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-221",
+      "requiresReferenceImage": false
     },
     {
       "id": 220,
@@ -5402,7 +5651,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-220"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-220",
+      "requiresReferenceImage": false
     },
     {
       "id": 219,
@@ -5424,7 +5674,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-219"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-219",
+      "requiresReferenceImage": true
     },
     {
       "id": 218,
@@ -5447,7 +5698,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-218"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-218",
+      "requiresReferenceImage": true
     },
     {
       "id": 217,
@@ -5469,7 +5721,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-217"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-217",
+      "requiresReferenceImage": false
     },
     {
       "id": 216,
@@ -5488,7 +5741,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-216"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-216",
+      "requiresReferenceImage": true
     },
     {
       "id": 215,
@@ -5511,7 +5765,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-215"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-215",
+      "requiresReferenceImage": false
     },
     {
       "id": 214,
@@ -5534,7 +5789,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-214"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-214",
+      "requiresReferenceImage": false
     },
     {
       "id": 213,
@@ -5555,7 +5811,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-213"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-213",
+      "requiresReferenceImage": false
     },
     {
       "id": 212,
@@ -5577,7 +5834,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-212"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-212",
+      "requiresReferenceImage": false
     },
     {
       "id": 211,
@@ -5596,7 +5854,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-211"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-211",
+      "requiresReferenceImage": false
     },
     {
       "id": 210,
@@ -5615,7 +5874,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-210"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-210",
+      "requiresReferenceImage": false
     },
     {
       "id": 209,
@@ -5634,7 +5894,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-209"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-209",
+      "requiresReferenceImage": false
     },
     {
       "id": 208,
@@ -5656,7 +5917,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-208"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-208",
+      "requiresReferenceImage": false
     },
     {
       "id": 207,
@@ -5676,7 +5938,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-207"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-207",
+      "requiresReferenceImage": false
     },
     {
       "id": 206,
@@ -5699,7 +5962,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-206"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-206",
+      "requiresReferenceImage": true
     },
     {
       "id": 205,
@@ -5718,7 +5982,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-205"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-205",
+      "requiresReferenceImage": false
     },
     {
       "id": 204,
@@ -5737,7 +6002,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-204"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-204",
+      "requiresReferenceImage": false
     },
     {
       "id": 203,
@@ -5756,7 +6022,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-203"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-203",
+      "requiresReferenceImage": false
     },
     {
       "id": 202,
@@ -5775,7 +6042,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-202"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-202",
+      "requiresReferenceImage": false
     },
     {
       "id": 201,
@@ -5795,7 +6063,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-201"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-201",
+      "requiresReferenceImage": false
     },
     {
       "id": 200,
@@ -5814,7 +6083,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-200"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-200",
+      "requiresReferenceImage": false
     },
     {
       "id": 199,
@@ -5837,7 +6107,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-199"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-199",
+      "requiresReferenceImage": false
     },
     {
       "id": 198,
@@ -5858,7 +6129,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-198"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-198",
+      "requiresReferenceImage": false
     },
     {
       "id": 197,
@@ -5877,7 +6149,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-197"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-197",
+      "requiresReferenceImage": false
     },
     {
       "id": 196,
@@ -5897,7 +6170,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-196"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-196",
+      "requiresReferenceImage": false
     },
     {
       "id": 195,
@@ -5920,7 +6194,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-195"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-195",
+      "requiresReferenceImage": false
     },
     {
       "id": 194,
@@ -5939,7 +6214,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-194"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-194",
+      "requiresReferenceImage": false
     },
     {
       "id": 193,
@@ -5960,7 +6236,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-193"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-193",
+      "requiresReferenceImage": false
     },
     {
       "id": 192,
@@ -5980,7 +6257,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-192"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-192",
+      "requiresReferenceImage": false
     },
     {
       "id": 191,
@@ -5999,7 +6277,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-191"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-191",
+      "requiresReferenceImage": false
     },
     {
       "id": 190,
@@ -6019,7 +6298,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-190"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-190",
+      "requiresReferenceImage": false
     },
     {
       "id": 189,
@@ -6038,7 +6318,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-189"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-189",
+      "requiresReferenceImage": false
     },
     {
       "id": 188,
@@ -6059,7 +6340,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-188"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-188",
+      "requiresReferenceImage": false
     },
     {
       "id": 187,
@@ -6082,7 +6364,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-187"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-187",
+      "requiresReferenceImage": false
     },
     {
       "id": 186,
@@ -6103,7 +6386,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-186"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-186",
+      "requiresReferenceImage": false
     },
     {
       "id": 185,
@@ -6122,7 +6406,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-185"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-185",
+      "requiresReferenceImage": false
     },
     {
       "id": 184,
@@ -6142,7 +6427,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-184"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-184",
+      "requiresReferenceImage": false
     },
     {
       "id": 183,
@@ -6161,7 +6447,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-183"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-183",
+      "requiresReferenceImage": false
     },
     {
       "id": 182,
@@ -6181,7 +6468,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-182"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-182",
+      "requiresReferenceImage": false
     },
     {
       "id": 181,
@@ -6202,7 +6490,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-181"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-181",
+      "requiresReferenceImage": false
     },
     {
       "id": 180,
@@ -6223,7 +6512,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-180"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-180",
+      "requiresReferenceImage": false
     },
     {
       "id": 179,
@@ -6246,7 +6536,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-179"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-179",
+      "requiresReferenceImage": false
     },
     {
       "id": 178,
@@ -6265,7 +6556,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-178"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-178",
+      "requiresReferenceImage": false
     },
     {
       "id": 177,
@@ -6284,7 +6576,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-177"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-177",
+      "requiresReferenceImage": false
     },
     {
       "id": 176,
@@ -6303,7 +6596,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-176"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-176",
+      "requiresReferenceImage": false
     },
     {
       "id": 175,
@@ -6326,7 +6620,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-175"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-175",
+      "requiresReferenceImage": true
     },
     {
       "id": 174,
@@ -6348,7 +6643,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-174"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-174",
+      "requiresReferenceImage": false
     },
     {
       "id": 173,
@@ -6370,7 +6666,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-173"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-173",
+      "requiresReferenceImage": false
     },
     {
       "id": 172,
@@ -6391,7 +6688,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-172"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-172",
+      "requiresReferenceImage": false
     },
     {
       "id": 171,
@@ -6410,7 +6708,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-171"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-171",
+      "requiresReferenceImage": false
     },
     {
       "id": 168,
@@ -6429,7 +6728,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-168"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-168",
+      "requiresReferenceImage": false
     },
     {
       "id": 167,
@@ -6449,7 +6749,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-167"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-167",
+      "requiresReferenceImage": false
     },
     {
       "id": 166,
@@ -6468,7 +6769,8 @@
         "Tech"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-166"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-2.md#case-166",
+      "requiresReferenceImage": false
     },
     {
       "id": 165,
@@ -6489,7 +6791,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-165"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-165",
+      "requiresReferenceImage": false
     },
     {
       "id": 164,
@@ -6509,7 +6812,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-164"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-164",
+      "requiresReferenceImage": false
     },
     {
       "id": 163,
@@ -6528,7 +6832,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-163"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-163",
+      "requiresReferenceImage": false
     },
     {
       "id": 162,
@@ -6547,7 +6852,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-162"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-162",
+      "requiresReferenceImage": false
     },
     {
       "id": 161,
@@ -6569,7 +6875,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-161"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-161",
+      "requiresReferenceImage": false
     },
     {
       "id": 160,
@@ -6589,7 +6896,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-160"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-160",
+      "requiresReferenceImage": false
     },
     {
       "id": 159,
@@ -6612,7 +6920,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-159"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-159",
+      "requiresReferenceImage": false
     },
     {
       "id": 158,
@@ -6635,7 +6944,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-158"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-158",
+      "requiresReferenceImage": false
     },
     {
       "id": 157,
@@ -6658,7 +6968,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-157"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-157",
+      "requiresReferenceImage": true
     },
     {
       "id": 156,
@@ -6681,7 +6992,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-156"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-156",
+      "requiresReferenceImage": false
     },
     {
       "id": 155,
@@ -6700,7 +7012,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-155"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-155",
+      "requiresReferenceImage": false
     },
     {
       "id": 154,
@@ -6721,7 +7034,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-154"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-154",
+      "requiresReferenceImage": false
     },
     {
       "id": 153,
@@ -6743,7 +7057,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-153"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-153",
+      "requiresReferenceImage": false
     },
     {
       "id": 152,
@@ -6766,7 +7081,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-152"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-152",
+      "requiresReferenceImage": true
     },
     {
       "id": 151,
@@ -6788,7 +7104,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-151"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-151",
+      "requiresReferenceImage": false
     },
     {
       "id": 150,
@@ -6811,7 +7128,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-150"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-150",
+      "requiresReferenceImage": true
     },
     {
       "id": 149,
@@ -6834,7 +7152,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-149"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-149",
+      "requiresReferenceImage": true
     },
     {
       "id": 148,
@@ -6855,7 +7174,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-148"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-148",
+      "requiresReferenceImage": false
     },
     {
       "id": 147,
@@ -6876,7 +7196,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-147"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-147",
+      "requiresReferenceImage": false
     },
     {
       "id": 146,
@@ -6897,7 +7218,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-146"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-146",
+      "requiresReferenceImage": false
     },
     {
       "id": 145,
@@ -6918,7 +7240,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-145"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-145",
+      "requiresReferenceImage": false
     },
     {
       "id": 144,
@@ -6940,7 +7263,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-144"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-144",
+      "requiresReferenceImage": false
     },
     {
       "id": 143,
@@ -6963,7 +7287,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-143"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-143",
+      "requiresReferenceImage": true
     },
     {
       "id": 142,
@@ -6986,7 +7311,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-142"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-142",
+      "requiresReferenceImage": true
     },
     {
       "id": 141,
@@ -7008,7 +7334,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-141"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-141",
+      "requiresReferenceImage": false
     },
     {
       "id": 140,
@@ -7030,7 +7357,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-140"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-140",
+      "requiresReferenceImage": false
     },
     {
       "id": 139,
@@ -7051,7 +7379,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-139"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-139",
+      "requiresReferenceImage": false
     },
     {
       "id": 138,
@@ -7073,7 +7402,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-138"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-138",
+      "requiresReferenceImage": false
     },
     {
       "id": 137,
@@ -7095,7 +7425,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-137"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-137",
+      "requiresReferenceImage": true
     },
     {
       "id": 136,
@@ -7117,7 +7448,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-136"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-136",
+      "requiresReferenceImage": true
     },
     {
       "id": 135,
@@ -7140,7 +7472,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-135"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-135",
+      "requiresReferenceImage": true
     },
     {
       "id": 134,
@@ -7162,7 +7495,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-134"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-134",
+      "requiresReferenceImage": true
     },
     {
       "id": 133,
@@ -7185,7 +7519,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-133"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-133",
+      "requiresReferenceImage": true
     },
     {
       "id": 132,
@@ -7208,7 +7543,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-132"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-132",
+      "requiresReferenceImage": true
     },
     {
       "id": 131,
@@ -7231,7 +7567,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-131"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-131",
+      "requiresReferenceImage": true
     },
     {
       "id": 130,
@@ -7254,7 +7591,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-130"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-130",
+      "requiresReferenceImage": true
     },
     {
       "id": 129,
@@ -7276,7 +7614,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-129"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-129",
+      "requiresReferenceImage": false
     },
     {
       "id": 128,
@@ -7298,7 +7637,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-128"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-128",
+      "requiresReferenceImage": false
     },
     {
       "id": 127,
@@ -7320,7 +7660,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-127"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-127",
+      "requiresReferenceImage": false
     },
     {
       "id": 126,
@@ -7343,7 +7684,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-126"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-126",
+      "requiresReferenceImage": false
     },
     {
       "id": 125,
@@ -7365,7 +7707,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-125"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-125",
+      "requiresReferenceImage": false
     },
     {
       "id": 124,
@@ -7388,7 +7731,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-124"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-124",
+      "requiresReferenceImage": true
     },
     {
       "id": 123,
@@ -7410,7 +7754,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-123"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-123",
+      "requiresReferenceImage": false
     },
     {
       "id": 122,
@@ -7432,7 +7777,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-122"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-122",
+      "requiresReferenceImage": false
     },
     {
       "id": 121,
@@ -7454,7 +7800,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-121"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-121",
+      "requiresReferenceImage": false
     },
     {
       "id": 120,
@@ -7476,7 +7823,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-120"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-120",
+      "requiresReferenceImage": false
     },
     {
       "id": 119,
@@ -7499,7 +7847,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-119"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-119",
+      "requiresReferenceImage": false
     },
     {
       "id": 118,
@@ -7521,7 +7870,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-118"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-118",
+      "requiresReferenceImage": false
     },
     {
       "id": 117,
@@ -7544,7 +7894,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-117"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-117",
+      "requiresReferenceImage": false
     },
     {
       "id": 116,
@@ -7566,7 +7917,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-116"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-116",
+      "requiresReferenceImage": false
     },
     {
       "id": 115,
@@ -7589,7 +7941,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-115"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-115",
+      "requiresReferenceImage": true
     },
     {
       "id": 114,
@@ -7612,7 +7965,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-114"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-114",
+      "requiresReferenceImage": false
     },
     {
       "id": 113,
@@ -7634,7 +7988,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-113"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-113",
+      "requiresReferenceImage": false
     },
     {
       "id": 112,
@@ -7653,7 +8008,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-112"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-112",
+      "requiresReferenceImage": false
     },
     {
       "id": 111,
@@ -7676,7 +8032,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-111"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-111",
+      "requiresReferenceImage": false
     },
     {
       "id": 110,
@@ -7696,7 +8053,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-110"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-110",
+      "requiresReferenceImage": false
     },
     {
       "id": 109,
@@ -7715,7 +8073,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-109"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-109",
+      "requiresReferenceImage": false
     },
     {
       "id": 108,
@@ -7734,7 +8093,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-108"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-108",
+      "requiresReferenceImage": false
     },
     {
       "id": 107,
@@ -7757,7 +8117,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-107"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-107",
+      "requiresReferenceImage": true
     },
     {
       "id": 106,
@@ -7780,7 +8141,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-106"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-106",
+      "requiresReferenceImage": true
     },
     {
       "id": 105,
@@ -7802,7 +8164,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-105"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-105",
+      "requiresReferenceImage": false
     },
     {
       "id": 104,
@@ -7822,7 +8185,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-104"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-104",
+      "requiresReferenceImage": true
     },
     {
       "id": 103,
@@ -7842,7 +8206,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-103"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-103",
+      "requiresReferenceImage": false
     },
     {
       "id": 102,
@@ -7861,7 +8226,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-102"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-102",
+      "requiresReferenceImage": false
     },
     {
       "id": 101,
@@ -7882,7 +8248,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-101"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-101",
+      "requiresReferenceImage": true
     },
     {
       "id": 100,
@@ -7905,7 +8272,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-100"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-100",
+      "requiresReferenceImage": false
     },
     {
       "id": 99,
@@ -7927,7 +8295,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-99"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-99",
+      "requiresReferenceImage": false
     },
     {
       "id": 98,
@@ -7948,7 +8317,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-98"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-98",
+      "requiresReferenceImage": true
     },
     {
       "id": 97,
@@ -7968,7 +8338,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-97"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-97",
+      "requiresReferenceImage": false
     },
     {
       "id": 96,
@@ -7990,7 +8361,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-96"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-96",
+      "requiresReferenceImage": false
     },
     {
       "id": 95,
@@ -8012,7 +8384,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-95"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-95",
+      "requiresReferenceImage": false
     },
     {
       "id": 94,
@@ -8033,7 +8406,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-94"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-94",
+      "requiresReferenceImage": false
     },
     {
       "id": 93,
@@ -8054,7 +8428,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-93"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-93",
+      "requiresReferenceImage": false
     },
     {
       "id": 92,
@@ -8075,7 +8450,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-92"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-92",
+      "requiresReferenceImage": false
     },
     {
       "id": 91,
@@ -8098,7 +8474,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-91"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-91",
+      "requiresReferenceImage": true
     },
     {
       "id": 90,
@@ -8121,7 +8498,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-90"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-90",
+      "requiresReferenceImage": false
     },
     {
       "id": 89,
@@ -8144,7 +8522,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-89"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-89",
+      "requiresReferenceImage": false
     },
     {
       "id": 88,
@@ -8167,7 +8546,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-88"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-88",
+      "requiresReferenceImage": false
     },
     {
       "id": 87,
@@ -8190,7 +8570,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-87"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-87",
+      "requiresReferenceImage": false
     },
     {
       "id": 86,
@@ -8213,7 +8594,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-86"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-86",
+      "requiresReferenceImage": false
     },
     {
       "id": 85,
@@ -8236,7 +8618,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-85"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-85",
+      "requiresReferenceImage": false
     },
     {
       "id": 84,
@@ -8259,7 +8642,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-84"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-84",
+      "requiresReferenceImage": false
     },
     {
       "id": 83,
@@ -8282,7 +8666,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-83"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-83",
+      "requiresReferenceImage": true
     },
     {
       "id": 82,
@@ -8304,7 +8689,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-82"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-82",
+      "requiresReferenceImage": false
     },
     {
       "id": 81,
@@ -8326,7 +8712,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-81"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-81",
+      "requiresReferenceImage": false
     },
     {
       "id": 80,
@@ -8349,7 +8736,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-80"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-80",
+      "requiresReferenceImage": true
     },
     {
       "id": 79,
@@ -8372,7 +8760,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-79"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-79",
+      "requiresReferenceImage": true
     },
     {
       "id": 78,
@@ -8395,7 +8784,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-78"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-78",
+      "requiresReferenceImage": true
     },
     {
       "id": 77,
@@ -8418,7 +8808,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-77"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-77",
+      "requiresReferenceImage": false
     },
     {
       "id": 76,
@@ -8441,7 +8832,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-76"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-76",
+      "requiresReferenceImage": false
     },
     {
       "id": 75,
@@ -8464,7 +8856,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-75"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-75",
+      "requiresReferenceImage": false
     },
     {
       "id": 74,
@@ -8487,7 +8880,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-74"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-74",
+      "requiresReferenceImage": false
     },
     {
       "id": 73,
@@ -8510,7 +8904,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-73"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-73",
+      "requiresReferenceImage": false
     },
     {
       "id": 72,
@@ -8533,7 +8928,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-72"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-72",
+      "requiresReferenceImage": false
     },
     {
       "id": 71,
@@ -8556,7 +8952,8 @@
         "Education"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-71"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-71",
+      "requiresReferenceImage": false
     },
     {
       "id": 70,
@@ -8579,7 +8976,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-70"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-70",
+      "requiresReferenceImage": false
     },
     {
       "id": 69,
@@ -8602,7 +9000,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-69"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-69",
+      "requiresReferenceImage": false
     },
     {
       "id": 68,
@@ -8625,7 +9024,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-68"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-68",
+      "requiresReferenceImage": false
     },
     {
       "id": 67,
@@ -8647,7 +9047,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-67"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-67",
+      "requiresReferenceImage": false
     },
     {
       "id": 66,
@@ -8669,7 +9070,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-66"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-66",
+      "requiresReferenceImage": true
     },
     {
       "id": 65,
@@ -8692,7 +9094,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-65"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-65",
+      "requiresReferenceImage": false
     },
     {
       "id": 64,
@@ -8714,7 +9117,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-64"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-64",
+      "requiresReferenceImage": false
     },
     {
       "id": 63,
@@ -8735,7 +9139,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-63"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-63",
+      "requiresReferenceImage": false
     },
     {
       "id": 62,
@@ -8757,7 +9162,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-62"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-62",
+      "requiresReferenceImage": false
     },
     {
       "id": 61,
@@ -8779,7 +9185,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-61"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-61",
+      "requiresReferenceImage": false
     },
     {
       "id": 60,
@@ -8802,7 +9209,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-60"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-60",
+      "requiresReferenceImage": false
     },
     {
       "id": 59,
@@ -8825,7 +9233,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-59"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-59",
+      "requiresReferenceImage": false
     },
     {
       "id": 58,
@@ -8848,7 +9257,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-58"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-58",
+      "requiresReferenceImage": false
     },
     {
       "id": 57,
@@ -8871,7 +9281,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-57"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-57",
+      "requiresReferenceImage": false
     },
     {
       "id": 56,
@@ -8891,7 +9302,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-56"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-56",
+      "requiresReferenceImage": false
     },
     {
       "id": 55,
@@ -8913,7 +9325,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-55"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-55",
+      "requiresReferenceImage": false
     },
     {
       "id": 54,
@@ -8933,7 +9346,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-54"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-54",
+      "requiresReferenceImage": false
     },
     {
       "id": 53,
@@ -8956,7 +9370,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-53"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-53",
+      "requiresReferenceImage": false
     },
     {
       "id": 52,
@@ -8977,7 +9392,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-52"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-52",
+      "requiresReferenceImage": false
     },
     {
       "id": 51,
@@ -8999,7 +9415,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-51"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-51",
+      "requiresReferenceImage": false
     },
     {
       "id": 50,
@@ -9020,7 +9437,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-50"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-50",
+      "requiresReferenceImage": false
     },
     {
       "id": 49,
@@ -9039,7 +9457,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-49"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-49",
+      "requiresReferenceImage": false
     },
     {
       "id": 48,
@@ -9058,7 +9477,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-48"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-48",
+      "requiresReferenceImage": false
     },
     {
       "id": 47,
@@ -9080,7 +9500,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-47"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-47",
+      "requiresReferenceImage": false
     },
     {
       "id": 46,
@@ -9102,7 +9523,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-46"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-46",
+      "requiresReferenceImage": false
     },
     {
       "id": 45,
@@ -9124,7 +9546,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-45"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-45",
+      "requiresReferenceImage": false
     },
     {
       "id": 44,
@@ -9145,7 +9568,8 @@
         "History"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-44"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-44",
+      "requiresReferenceImage": true
     },
     {
       "id": 43,
@@ -9166,7 +9590,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-43"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-43",
+      "requiresReferenceImage": false
     },
     {
       "id": 42,
@@ -9189,7 +9614,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-42"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-42",
+      "requiresReferenceImage": false
     },
     {
       "id": 41,
@@ -9212,7 +9638,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-41"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-41",
+      "requiresReferenceImage": true
     },
     {
       "id": 40,
@@ -9233,7 +9660,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-40"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-40",
+      "requiresReferenceImage": false
     },
     {
       "id": 39,
@@ -9254,7 +9682,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-39"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-39",
+      "requiresReferenceImage": false
     },
     {
       "id": 38,
@@ -9275,7 +9704,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-38"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-38",
+      "requiresReferenceImage": false
     },
     {
       "id": 37,
@@ -9296,7 +9726,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-37"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-37",
+      "requiresReferenceImage": false
     },
     {
       "id": 36,
@@ -9318,7 +9749,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-36"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-36",
+      "requiresReferenceImage": true
     },
     {
       "id": 35,
@@ -9339,7 +9771,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-35"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-35",
+      "requiresReferenceImage": false
     },
     {
       "id": 34,
@@ -9361,7 +9794,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-34"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-34",
+      "requiresReferenceImage": false
     },
     {
       "id": 33,
@@ -9383,7 +9817,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-33"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-33",
+      "requiresReferenceImage": false
     },
     {
       "id": 32,
@@ -9406,7 +9841,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-32"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-32",
+      "requiresReferenceImage": false
     },
     {
       "id": 31,
@@ -9427,7 +9863,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-31"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-31",
+      "requiresReferenceImage": false
     },
     {
       "id": 30,
@@ -9450,7 +9887,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-30"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-30",
+      "requiresReferenceImage": false
     },
     {
       "id": 29,
@@ -9471,7 +9909,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-29"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-29",
+      "requiresReferenceImage": false
     },
     {
       "id": 28,
@@ -9494,7 +9933,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-28"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-28",
+      "requiresReferenceImage": true
     },
     {
       "id": 27,
@@ -9515,7 +9955,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-27"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-27",
+      "requiresReferenceImage": false
     },
     {
       "id": 26,
@@ -9536,7 +9977,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-26"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-26",
+      "requiresReferenceImage": false
     },
     {
       "id": 25,
@@ -9555,7 +9997,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-25"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-25",
+      "requiresReferenceImage": false
     },
     {
       "id": 24,
@@ -9574,7 +10017,8 @@
         "Tech"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-24"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-24",
+      "requiresReferenceImage": false
     },
     {
       "id": 23,
@@ -9596,7 +10040,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-23"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-23",
+      "requiresReferenceImage": false
     },
     {
       "id": 22,
@@ -9618,7 +10063,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-22"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-22",
+      "requiresReferenceImage": false
     },
     {
       "id": 21,
@@ -9641,7 +10087,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-21"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-21",
+      "requiresReferenceImage": true
     },
     {
       "id": 20,
@@ -9661,7 +10108,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-20"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-20",
+      "requiresReferenceImage": false
     },
     {
       "id": 19,
@@ -9681,7 +10129,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-19"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-19",
+      "requiresReferenceImage": false
     },
     {
       "id": 18,
@@ -9704,7 +10153,8 @@
         "Food"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-18"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-18",
+      "requiresReferenceImage": false
     },
     {
       "id": 17,
@@ -9726,7 +10176,8 @@
         "Commerce"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-17"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-17",
+      "requiresReferenceImage": true
     },
     {
       "id": 16,
@@ -9745,7 +10196,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-16"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-16",
+      "requiresReferenceImage": false
     },
     {
       "id": 15,
@@ -9765,7 +10217,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-15"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-15",
+      "requiresReferenceImage": false
     },
     {
       "id": 14,
@@ -9784,7 +10237,8 @@
         "Commerce"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-14"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-14",
+      "requiresReferenceImage": false
     },
     {
       "id": 13,
@@ -9806,7 +10260,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-13"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-13",
+      "requiresReferenceImage": false
     },
     {
       "id": 11,
@@ -9825,7 +10280,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-11"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-11",
+      "requiresReferenceImage": true
     },
     {
       "id": 10,
@@ -9845,7 +10301,8 @@
         "Creative"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-10"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-10",
+      "requiresReferenceImage": false
     },
     {
       "id": 9,
@@ -9865,7 +10322,8 @@
         "Travel"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-9"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-9",
+      "requiresReferenceImage": false
     },
     {
       "id": 8,
@@ -9888,7 +10346,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-8"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-8",
+      "requiresReferenceImage": false
     },
     {
       "id": 7,
@@ -9911,7 +10370,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-7"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-7",
+      "requiresReferenceImage": true
     },
     {
       "id": 6,
@@ -9931,7 +10391,8 @@
         "Creative"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-6"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-6",
+      "requiresReferenceImage": true
     },
     {
       "id": 5,
@@ -9952,7 +10413,8 @@
         "Story"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-5"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-5",
+      "requiresReferenceImage": true
     },
     {
       "id": 4,
@@ -9971,7 +10433,8 @@
         "Social"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-4"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-4",
+      "requiresReferenceImage": false
     },
     {
       "id": 3,
@@ -9992,7 +10455,8 @@
         "Fashion"
       ],
       "featured": false,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-3"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-3",
+      "requiresReferenceImage": false
     },
     {
       "id": 2,
@@ -10013,7 +10477,8 @@
         "Social"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-2"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-2",
+      "requiresReferenceImage": false
     },
     {
       "id": 1,
@@ -10035,7 +10500,8 @@
         "Travel"
       ],
       "featured": true,
-      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-1"
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-1",
+      "requiresReferenceImage": false
     }
   ]
 }

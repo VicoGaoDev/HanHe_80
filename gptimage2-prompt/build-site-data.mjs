@@ -22,6 +22,7 @@ const compactCases = casesData.cases.map((item) => ({
   styles: item.styles || [],
   scenes: item.scenes || [],
   featured: Boolean(item.featured),
+  requiresReferenceImage: Boolean(item.requiresReferenceImage),
   githubUrl: item.githubUrl,
 }));
 

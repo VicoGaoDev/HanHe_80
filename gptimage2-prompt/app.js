@@ -14,6 +14,7 @@ const state = {
   category: initialFilterState.category,
   scene: initialFilterState.scene,
   featured: initialFilterState.featured,
+  referenceImage: initialFilterState.referenceImage,
   sidebarCollapsed: readSidebarPreference(),
   mobileDrawerOpen: false,
   mobileSearchOpen: false,
@@ -83,6 +84,7 @@ function bindEvents() {
     state.category = "all";
     state.scene = "all";
     state.featured = false;
+    state.referenceImage = false;
     elements.searchInput.value = "";
     syncFilterStateToUrl();
     renderHeroStats();
@@ -97,11 +99,11 @@ function bindEvents() {
     }
 
     const filterKey = clearButton.dataset.clearFilter;
-    if (!["style", "category", "scene", "featured"].includes(filterKey)) {
+    if (!["style", "category", "scene", "featured", "referenceImage"].includes(filterKey)) {
       return;
     }
 
-    state[filterKey] = filterKey === "featured" ? false : "all";
+    state[filterKey] = ["featured", "referenceImage"].includes(filterKey) ? false : "all";
     syncFilterStateToUrl();
     renderHeroStats();
     renderFilters();
@@ -116,11 +118,12 @@ function bindEvents() {
     }
 
     const statButton = event.target.closest("[data-stat-filter]");
-    if (!statButton || statButton.dataset.statFilter !== "featured") {
+    if (!statButton || !["featured", "referenceImage"].includes(statButton.dataset.statFilter)) {
       return;
     }
 
-    state.featured = !state.featured;
+    const filterKey = statButton.dataset.statFilter;
+    state[filterKey] = !state[filterKey];
     syncFilterStateToUrl();
     renderHeroStats();
     renderResults();
@@ -299,14 +302,10 @@ function bindEvents() {
 }
 
 function renderHeroStats() {
-  const totalCases = casesData.totalCases ?? allCases.length;
   const featuredCount = allCases.filter((item) => item.featured).length;
+  const referenceImageCount = allCases.filter((item) => item.requiresReferenceImage).length;
 
   const stats = [
-    {
-      label: "条提示词",
-      value: totalCases,
-    },
     {
       label: "个风格标签",
       value: styleLibrary.styles.length,
@@ -331,6 +330,13 @@ function renderHeroStats() {
       key: "featured",
       action: "filter",
       active: state.featured,
+    },
+    {
+      label: "条需参考图",
+      value: referenceImageCount,
+      key: "referenceImage",
+      action: "filter",
+      active: state.referenceImage,
     },
   ];
 
@@ -565,6 +571,7 @@ function renderResults() {
     categoryLabel,
     sceneLabel,
     featuredLabel: state.featured ? "精选案例" : "",
+    referenceImageLabel: state.referenceImage ? "需要参考图" : "",
     searchLabel: state.search ? `搜索 “${state.search}”` : "",
   });
 
@@ -581,7 +588,11 @@ function renderResults() {
   elements.resultsGrid.innerHTML = filteredCases
     .map((item) => {
       const preview = item.promptPreview || item.prompt;
-      const previewTags = [...item.styles.slice(0, 3), ...item.scenes.slice(0, 2).map((scene) => `scene:${scene}`)];
+      const previewTags = [
+        ...(item.requiresReferenceImage ? ["input:referenceImage"] : []),
+        ...item.styles.slice(0, 3),
+        ...item.scenes.slice(0, 2).map((scene) => `scene:${scene}`),
+      ];
       return `
         <article class="case-card" data-case-id="${item.id}">
           <div class="case-image-wrap">
@@ -609,6 +620,9 @@ function renderResults() {
                   if (tag.startsWith("scene:")) {
                     return `<span class="tag scene">${escapeHtml(getSceneLabel(tag.slice(6)))}</span>`;
                   }
+                  if (tag === "input:referenceImage") {
+                    return `<span class="tag input">需参考图</span>`;
+                  }
                   return `<span class="tag">${escapeHtml(getStyleLabel(tag))}</span>`;
                 })
                 .join("")}
@@ -623,6 +637,10 @@ function renderResults() {
 function getFilteredCases() {
   return allCases.filter((item) => {
     if (state.featured && !item.featured) {
+      return false;
+    }
+
+    if (state.referenceImage && !item.requiresReferenceImage) {
       return false;
     }
 
@@ -648,6 +666,7 @@ function getFilteredCases() {
       item.promptPreview,
       item.category,
       item.sourceLabel,
+      item.requiresReferenceImage ? "需要参考图 参考图 上传图 模板图 reference image" : "",
       ...(item.styles || []),
       ...(item.scenes || []),
     ]
@@ -669,6 +688,7 @@ function openModal(item) {
   elements.detailPrompt.textContent = item.prompt;
 
   const detailTags = [
+    ...(item.requiresReferenceImage ? [`<span class="tag input">需参考图</span>`] : []),
     ...item.styles.map((style) => `<span class="tag">${escapeHtml(getStyleLabel(style))}</span>`),
     ...item.scenes.map((scene) => `<span class="tag scene">${escapeHtml(getSceneLabel(scene))}</span>`),
   ];
@@ -783,7 +803,14 @@ function getShortLabel(label) {
   return compact.length <= 4 ? compact : compact.slice(0, 4);
 }
 
-function renderResultsMeta({ styleLabel, categoryLabel, sceneLabel, featuredLabel, searchLabel }) {
+function renderResultsMeta({
+  styleLabel,
+  categoryLabel,
+  sceneLabel,
+  featuredLabel,
+  referenceImageLabel,
+  searchLabel,
+}) {
   const parts = [
     featuredLabel
       ? renderResultsMetaItem({ key: "featured", label: featuredLabel, isActive: true })
@@ -792,6 +819,10 @@ function renderResultsMeta({ styleLabel, categoryLabel, sceneLabel, featuredLabe
     renderResultsMetaItem({ key: "category", label: categoryLabel, isActive: state.category !== "all" }),
     renderResultsMetaItem({ key: "scene", label: sceneLabel, isActive: state.scene !== "all" }),
   ];
+
+  if (referenceImageLabel) {
+    parts.push(renderResultsMetaItem({ key: "referenceImage", label: referenceImageLabel, isActive: true }));
+  }
 
   if (searchLabel) {
     parts.push(`<span class="results-meta-item">${escapeHtml(searchLabel)}</span>`);
@@ -824,6 +855,7 @@ function readFilterStateFromUrl() {
     ),
     scene: getValidUrlFilterValue(searchParams.get("scene"), styleLibrary.scenes.map((item) => item.value)),
     featured: searchParams.get("featured") === "1",
+    referenceImage: searchParams.get("referenceImage") === "1",
   };
 }
 
@@ -842,6 +874,7 @@ function syncFilterStateToUrl() {
   updateUrlFilterParam(url.searchParams, "category", state.category);
   updateUrlFilterParam(url.searchParams, "scene", state.scene);
   updateUrlBooleanParam(url.searchParams, "featured", state.featured);
+  updateUrlBooleanParam(url.searchParams, "referenceImage", state.referenceImage);
 
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
 }
