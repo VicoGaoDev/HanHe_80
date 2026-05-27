@@ -88,6 +88,7 @@ def on_startup():
         Base.metadata.create_all(bind=engine)
     _ensure_user_credit_schema()
     _ensure_credit_redeem_key_schema()
+    _ensure_user_api_key_schema()
     _drop_legacy_user_credits_column()
     _ensure_user_whitelist_column()
     _ensure_user_identity_schema()
@@ -643,6 +644,70 @@ def _ensure_credit_redeem_key_schema():
                 """
             )
         )
+
+
+def _ensure_user_api_key_schema():
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "users" not in table_names:
+        return
+
+    if "user_api_key" not in table_names:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE user_api_key (
+                        id INTEGER NOT NULL AUTO_INCREMENT,
+                        user_id INTEGER NOT NULL,
+                        subs_type VARCHAR(50) NOT NULL DEFAULT '',
+                        expire_time DATETIME NULL,
+                        api_key VARCHAR(35) NOT NULL,
+                        key_name VARCHAR(100) NOT NULL DEFAULT '',
+                        status VARCHAR(20) NOT NULL DEFAULT 'enabled',
+                        is_delete BOOLEAN NOT NULL DEFAULT 0,
+                        key_prefix VARCHAR(8) NOT NULL DEFAULT '',
+                        key_last4 VARCHAR(4) NOT NULL DEFAULT '',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (id),
+                        UNIQUE KEY uq_user_api_key_api_key (api_key),
+                        INDEX ix_user_api_key_user_id (user_id),
+                        INDEX ix_user_api_key_status (status),
+                        INDEX ix_user_api_key_is_delete (is_delete),
+                        CONSTRAINT fk_user_api_key_user_id FOREIGN KEY (user_id) REFERENCES users (id)
+                    )
+                    """
+                )
+            )
+        return
+
+    user_api_key_columns = {col["name"] for col in inspector.get_columns("user_api_key")}
+    with engine.begin() as conn:
+        if "last_used_at" in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key DROP COLUMN last_used_at"))
+        if "last_used_ip" in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key DROP COLUMN last_used_ip"))
+        if "subs_type" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN subs_type VARCHAR(50) NOT NULL DEFAULT '' AFTER user_id"))
+        if "expire_time" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN expire_time DATETIME NULL AFTER subs_type"))
+        if "api_key" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN api_key VARCHAR(35) NOT NULL AFTER expire_time"))
+        if "key_name" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN key_name VARCHAR(100) NOT NULL DEFAULT '' AFTER api_key"))
+        if "status" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'enabled' AFTER key_name"))
+        if "is_delete" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN is_delete BOOLEAN NOT NULL DEFAULT 0 AFTER status"))
+        if "key_prefix" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN key_prefix VARCHAR(8) NOT NULL DEFAULT '' AFTER is_delete"))
+        if "key_last4" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN key_last4 VARCHAR(4) NOT NULL DEFAULT '' AFTER key_prefix"))
+        if "created_at" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+        if "updated_at" not in user_api_key_columns:
+            conn.execute(text("ALTER TABLE user_api_key ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
 
 
 def _drop_legacy_user_credits_column():
@@ -1230,8 +1295,9 @@ upload_path = Path(settings.UPLOAD_DIR)
 upload_path.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
 
-from app.api import auth, tasks, images, history, admin, upload, api_key, templates, prompt_reverse, external_api_config, feedback, system_messages  # noqa: E402
+from app.api import auth, tasks, images, history, admin, upload, api_key, templates, prompt_reverse, external_api_config, feedback, system_messages, user_api_keys  # noqa: E402
 app.include_router(auth.router)
+app.include_router(user_api_keys.router)
 app.include_router(templates.router)
 app.include_router(tasks.router)
 app.include_router(images.router)

@@ -145,6 +145,17 @@
 - `announcement_enabled` / `announcement_content` / `announcement_updated_at`: 公告配置。
 - `updated_at`: 配置最后更新时间。
 
+### `user_api_key`
+
+- `user_id`: API Key 所属用户。
+- `subs_type`: 订阅/套餐类型预留字段。
+- `expire_time`: 过期时间，允许为空；为空表示永不过期。
+- `api_key`: 用户实际调用 Key，格式为 `sk-` + 32 位大小写字母数字。
+- `key_name`: 用户可编辑的 Key 名称。
+- `status`: 是否可用，常见为 `enabled` / `disabled`。
+- `is_delete`: 软删除标记。
+- `created_at` / `updated_at`: 创建时间、更新时间。
+
 ### `external_api_configs`
 
 - `name`: 配置名称，唯一。
@@ -533,6 +544,27 @@ CREATE TABLE credit_redeem_keys (
   KEY ix_credit_redeem_keys_used_by_user_id (used_by_user_id),
   CONSTRAINT fk_credit_redeem_keys_created_by FOREIGN KEY (created_by) REFERENCES users (id),
   CONSTRAINT fk_credit_redeem_keys_used_by_user_id FOREIGN KEY (used_by_user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE user_api_key (
+  id INT NOT NULL AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  subs_type VARCHAR(50) NOT NULL DEFAULT '',
+  expire_time DATETIME DEFAULT NULL,
+  api_key VARCHAR(35) NOT NULL,
+  key_name VARCHAR(100) NOT NULL DEFAULT '',
+  status VARCHAR(20) NOT NULL DEFAULT 'enabled',
+  is_delete TINYINT(1) NOT NULL DEFAULT 0,
+  key_prefix VARCHAR(8) NOT NULL DEFAULT '',
+  key_last4 VARCHAR(4) NOT NULL DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_user_api_key_api_key (api_key),
+  KEY ix_user_api_key_user_id (user_id),
+  KEY ix_user_api_key_status (status),
+  KEY ix_user_api_key_is_delete (is_delete),
+  CONSTRAINT fk_user_api_key_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE images (

@@ -13,6 +13,21 @@ export interface LoginResponse {
   user: UserInfo;
 }
 
+export type UserApiKeyStatus = "enabled" | "disabled";
+
+export interface UserApiKey {
+  id: number;
+  expire_time?: string | null;
+  api_key: string;
+  key_name: string;
+  status: UserApiKeyStatus;
+  is_delete: boolean;
+  key_prefix: string;
+  key_last4: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export interface PromptHistoryItem {
   id: number;
   prompt: string;
@@ -35,7 +50,7 @@ export interface ImageResult {
 
 export type TaskMode = "generate" | "inpaint" | "promptReverse";
 export type TaskType = "text_generate" | "image_edit" | "inpaint" | "promptReverse";
-export type TaskSource = "web" | "app";
+export type TaskSource = "web" | "app" | "api";
 
 export interface TaskResult {
   id: string;

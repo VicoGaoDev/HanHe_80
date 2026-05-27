@@ -71,7 +71,9 @@ function statusLabel(status: UserHistoryCard["status"]) {
 }
 
 function sourceLabel(source: UserHistoryCard["source"]) {
-  return source === "app" ? "App" : "Web";
+  if (source === "app") return "App";
+  if (source === "api") return "API";
+  return "Web";
 }
 
 function modeLabel(taskType: UserHistoryCard["task_type"]) {

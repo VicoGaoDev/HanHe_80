@@ -41,6 +41,12 @@ const router = createRouter({
           component: () => import("@/views/CreditLogsView.vue"),
         },
         {
+          path: "api-keys",
+          name: "ApiKeys",
+          meta: { requiresAuth: true },
+          component: () => import("@/views/ApiKeysView.vue"),
+        },
+        {
           path: "feedbacks",
           name: "FeedbackList",
           meta: { requiresAuth: true },

@@ -53,7 +53,7 @@ def _extract_prompt_text(payload: dict) -> str:
     raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="提示词反推返回内容为空")
 
 
-def reverse_prompt_from_image(db: Session, user_id: int, image_url: str) -> str:
+def reverse_prompt_from_image(db: Session, user_id: int, image_url: str, *, source: str = "web") -> str:
     api_config = require_scene_config(db, SCENE_PROMPT_REVERSE)
     credit_cost = get_scene_credit_cost(db, SCENE_PROMPT_REVERSE)
 
@@ -104,12 +104,15 @@ def reverse_prompt_from_image(db: Session, user_id: int, image_url: str) -> str:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="提示词反推服务异常，请稍后重试")
 
     if not _is_credit_exempt_user(user):
+        credit_description = PROMPT_REVERSE_CREDIT_LOG_DESCRIPTION
+        if (source or "").strip().lower() == "api":
+            credit_description = f"API {credit_description}"
         change_user_credit_balance(
             db,
             user_id,
             delta=-credit_cost,
             log_type="consume",
-            description=PROMPT_REVERSE_CREDIT_LOG_DESCRIPTION,
+            description=credit_description,
         )
     db.add(PromptHistory(
         user_id=user_id,

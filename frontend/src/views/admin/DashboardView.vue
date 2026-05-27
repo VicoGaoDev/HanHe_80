@@ -449,6 +449,7 @@ function modeLabel(value: string) {
 
 function sourceLabel(value: string) {
   if (value === "app") return "App";
+  if (value === "api") return "API";
   return "Web";
 }
 

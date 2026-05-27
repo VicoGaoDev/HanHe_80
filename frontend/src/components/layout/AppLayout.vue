@@ -70,23 +70,24 @@ const routeOrder = new Map<string, number>([
   ["/generate", 2],
   ["/history", 3],
   ["/profile", 4],
-  ["/system-messages", 5],
-  ["/system-messages/:messageId", 6],
-  ["/settings", 7],
-  ["/credit-logs", 8],
-  ["/feedbacks", 9],
-  ["/feedbacks/:feedbackId", 10],
-  ["/admin/templates", 11],
-  ["/admin/users", 12],
-  ["/admin/redeem-keys", 13],
-  ["/admin/dashboard", 14],
-  ["/admin/user-tasks", 15],
-  ["/admin/feedbacks", 16],
-  ["/admin/feedbacks/:feedbackId", 17],
-  ["/admin/system-messages", 18],
-  ["/admin/api-key", 19],
-  ["/admin/cos-config", 20],
-  ["/admin/external-api-configs", 21],
+  ["/api-keys", 5],
+  ["/system-messages", 6],
+  ["/system-messages/:messageId", 7],
+  ["/settings", 8],
+  ["/credit-logs", 9],
+  ["/feedbacks", 10],
+  ["/feedbacks/:feedbackId", 11],
+  ["/admin/templates", 12],
+  ["/admin/users", 13],
+  ["/admin/redeem-keys", 14],
+  ["/admin/dashboard", 15],
+  ["/admin/user-tasks", 16],
+  ["/admin/feedbacks", 17],
+  ["/admin/feedbacks/:feedbackId", 18],
+  ["/admin/system-messages", 19],
+  ["/admin/api-key", 20],
+  ["/admin/cos-config", 21],
+  ["/admin/external-api-configs", 22],
 ]);
 
 const currentTheme = ref<AppThemeName>(getCurrentTheme());
@@ -147,12 +148,13 @@ const hasUserUnreadNotice = computed(() => hasUserUnreadFeedback.value || hasUse
 const userMenuItems = [
   { key: "profile", label: "个人主页", icon: UserOutlined, danger: false },
   { key: "credits", label: "积分记录", icon: ThunderboltOutlined, danger: false },
+  { key: "api-keys", label: "API Key", icon: KeyOutlined, danger: false },
   { key: "settings", label: "设置", icon: SettingOutlined, danger: false },
   { key: "my-feedback", label: "我的反馈", icon: MessageOutlined, danger: false },
   { key: "system-messages", label: "系统消息", icon: MailOutlined, danger: false },
   { key: "logout", label: "退出登录", icon: LogoutOutlined, danger: true },
 ];
-const userMenuAccountItems = userMenuItems.filter((item) => ["profile", "credits", "settings"].includes(item.key));
+const userMenuAccountItems = userMenuItems.filter((item) => ["profile", "credits", "api-keys", "settings"].includes(item.key));
 const userMenuNoticeItems = userMenuItems.filter((item) => ["my-feedback", "system-messages"].includes(item.key));
 const userMenuDangerItems = userMenuItems.filter((item) => item.danger);
 
@@ -170,7 +172,7 @@ const selectedKeys = computed(() => {
   if (p === "/") return [];
   if (p === "/templates") return ["templates"];
   if (p === "/history") return ["history"];
-  if (p === "/profile" || p === "/settings" || p === "/credit-logs" || p.startsWith("/feedbacks") || p.startsWith("/system-messages")) return [];
+  if (p === "/profile" || p === "/settings" || p === "/credit-logs" || p === "/api-keys" || p.startsWith("/feedbacks") || p.startsWith("/system-messages")) return [];
   return ["generate"];
 });
 
@@ -224,6 +226,7 @@ function handleUserMenu({ key }: { key: string }) {
   else if (key === "my-feedback") router.push("/feedbacks");
   else if (key === "settings") router.push("/settings");
   else if (key === "credits") router.push("/credit-logs");
+  else if (key === "api-keys") router.push("/api-keys");
   else if (key === "logout") {
     resetUserUnreadSystemMessageNotificationState();
     auth.logout();

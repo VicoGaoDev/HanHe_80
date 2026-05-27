@@ -50,7 +50,9 @@ function modeLabel(value: string) {
 }
 
 function sourceLabel(value: string) {
-  return value === "app" ? "App" : "Web";
+  if (value === "app") return "App";
+  if (value === "api") return "API";
+  return "Web";
 }
 
 const statusPieOption = computed(() => ({

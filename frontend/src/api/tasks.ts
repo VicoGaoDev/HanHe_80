@@ -8,7 +8,7 @@ export interface CreateTaskResponse {
 
 export function createTask(data: {
   model?: string;
-  source?: "web" | "app";
+  source?: "web" | "app" | "api";
   prompt: string;
   num_images: number;
   size: string;

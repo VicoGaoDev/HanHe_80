@@ -825,6 +825,7 @@ function handleEditImage(item: UserHistoryCard) {
       <a-select v-model:value="sourceFilter" placeholder="全部来源" class="history-filter-control history-filter-select history-filter-select-sm" allow-clear>
         <a-select-option value="web">Web</a-select-option>
         <a-select-option value="app">App</a-select-option>
+        <a-select-option value="api">API</a-select-option>
       </a-select>
       <a-select v-model:value="modelFilter" placeholder="全部模型" class="history-filter-control history-filter-select history-filter-select-lg" allow-clear>
         <a-select-option v-for="option in modelOptions" :key="option.value" :value="option.value">

@@ -139,6 +139,7 @@ const presetOptions = computed(() => {
       >
         <a-select-option value="web">Web</a-select-option>
         <a-select-option value="app">App</a-select-option>
+        <a-select-option value="api">API</a-select-option>
       </a-select>
 
       <a-select

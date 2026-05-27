@@ -6,7 +6,7 @@ from datetime import datetime
 class TaskCreate(BaseModel):
     mode: str = "generate"
     model: str = ""
-    source: Literal["web", "app"] = "web"
+    source: Literal["web", "app", "api"] = "web"
     prompt: str
     num_images: int = Field(default=4, ge=1, le=8)
     size: str = "3:4"
@@ -39,7 +39,7 @@ class TaskOut(BaseModel):
     id: str
     mode: str = "generate"
     model: str = ""
-    source: Literal["web", "app"] = "web"
+    source: Literal["web", "app", "api"] = "web"
     prompt: str = ""
     num_images: int = 4
     size: str
