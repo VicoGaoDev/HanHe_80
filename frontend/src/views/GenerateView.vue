@@ -154,6 +154,10 @@ interface UploadPreviewItem {
 const DEFAULT_MAX_REFERENCE_IMAGES = 6;
 const referenceItems = ref<UploadPreviewItem[]>([]);
 const fileInput = ref<HTMLInputElement | null>(null);
+const referenceUploadBlockRef = ref<HTMLElement | null>(null);
+const referenceDragActive = ref(false);
+const referenceDragCounter = ref(0);
+let unbindReferenceDragHandlers: (() => void) | null = null;
 const sourceImageUrl = ref("");
 const sourcePreviewUrl = ref("");
 const repaintMaskUrl = ref("");
@@ -786,20 +790,23 @@ function updateReferenceItem(id: string, patch: Partial<UploadPreviewItem>) {
   };
 }
 
-async function handleFileChange(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const files = Array.from(input.files || []);
-  if (!files.length) return;
+async function uploadReferenceFiles(files: File[]) {
+  const imageFiles = files.filter((file) => isReferenceImageFile(file));
+  if (!imageFiles.length) {
+    if (files.length) {
+      message.warning("仅支持上传图片文件");
+    }
+    return;
+  }
 
   const remainingSlots = Math.max(0, maxReferenceImages.value - referenceItems.value.length);
   if (!remainingSlots) {
     message.warning(`当前模型最多上传 ${maxReferenceImages.value} 张参考图`);
-    input.value = "";
     return;
   }
 
-  const acceptedFiles = files.slice(0, remainingSlots);
-  const skippedDueToLimit = files.length - acceptedFiles.length;
+  const acceptedFiles = imageFiles.slice(0, remainingSlots);
+  const skippedDueToLimit = imageFiles.length - acceptedFiles.length;
 
   if (skippedDueToLimit > 0) {
     message.warning(`当前模型最多支持 ${maxReferenceImages.value} 张参考图，本次仅上传前 ${acceptedFiles.length} 张`);
@@ -809,40 +816,36 @@ async function handleFileChange(e: Event) {
   let failedCount = 0;
   let oversizedCount = 0;
 
-  try {
-    for (const file of acceptedFiles) {
-      if (file.size > 10 * 1024 * 1024) {
-        oversizedCount += 1;
-        continue;
-      }
-
-      const objectUrl = URL.createObjectURL(file);
-      const item: UploadPreviewItem = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        localUrl: objectUrl,
-        remoteUrl: "",
-        status: "uploading",
-        objectUrl,
-      };
-      referenceItems.value.push(item);
-
-      try {
-        const res = await uploadReferenceImage(file, "ref");
-        revokeObjectUrl(objectUrl);
-        updateReferenceItem(item.id, {
-          objectUrl: undefined,
-          localUrl: res.url,
-          remoteUrl: res.url,
-          status: "success",
-        });
-        uploadedCount += 1;
-      } catch {
-        updateReferenceItem(item.id, { status: "failed" });
-        failedCount += 1;
-      }
+  for (const file of acceptedFiles) {
+    if (file.size > 10 * 1024 * 1024) {
+      oversizedCount += 1;
+      continue;
     }
-  } finally {
-    input.value = "";
+
+    const objectUrl = URL.createObjectURL(file);
+    const item: UploadPreviewItem = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      localUrl: objectUrl,
+      remoteUrl: "",
+      status: "uploading",
+      objectUrl,
+    };
+    referenceItems.value.push(item);
+
+    try {
+      const res = await uploadReferenceImage(file, "ref");
+      revokeObjectUrl(objectUrl);
+      updateReferenceItem(item.id, {
+        objectUrl: undefined,
+        localUrl: res.url,
+        remoteUrl: res.url,
+        status: "success",
+      });
+      uploadedCount += 1;
+    } catch {
+      updateReferenceItem(item.id, { status: "failed" });
+      failedCount += 1;
+    }
   }
 
   if (uploadedCount > 0) {
@@ -853,6 +856,96 @@ async function handleFileChange(e: Event) {
   }
   if (failedCount > 0) {
     message.error(`${failedCount} 张参考图上传失败，请重试`);
+  }
+}
+
+function resetReferenceDragState() {
+  referenceDragCounter.value = 0;
+  referenceDragActive.value = false;
+}
+
+function isReferenceFileDragEvent(event: DragEvent) {
+  const types = Array.from(event.dataTransfer?.types || []);
+  return types.includes("Files");
+}
+
+function isReferenceImageFile(file: File) {
+  if (file.type.startsWith("image/")) return true;
+  return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(file.name);
+}
+
+async function processReferenceDropFiles(files: File[]) {
+  if (!(await ensureAuthenticated())) return;
+  if (!files.length) return;
+  await uploadReferenceFiles(files);
+}
+
+function bindReferenceDragHandlers(element: HTMLElement) {
+  const handleDragEnter = (event: DragEvent) => {
+    if (!isReferenceFileDragEvent(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    referenceDragCounter.value += 1;
+    referenceDragActive.value = true;
+  };
+
+  const handleDragOver = (event: DragEvent) => {
+    if (!isReferenceFileDragEvent(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleDragLeave = (event: DragEvent) => {
+    if (!isReferenceFileDragEvent(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    referenceDragCounter.value = Math.max(0, referenceDragCounter.value - 1);
+    if (referenceDragCounter.value === 0) {
+      referenceDragActive.value = false;
+    }
+  };
+
+  const handleDrop = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    resetReferenceDragState();
+
+    const files = Array.from(event.dataTransfer?.files || []);
+    if (!files.length) return;
+    void processReferenceDropFiles(files);
+  };
+
+  element.addEventListener("dragenter", handleDragEnter);
+  element.addEventListener("dragover", handleDragOver);
+  element.addEventListener("dragleave", handleDragLeave);
+  element.addEventListener("drop", handleDrop);
+
+  return () => {
+    element.removeEventListener("dragenter", handleDragEnter);
+    element.removeEventListener("dragover", handleDragOver);
+    element.removeEventListener("dragleave", handleDragLeave);
+    element.removeEventListener("drop", handleDrop);
+  };
+}
+
+watch(referenceUploadBlockRef, (element) => {
+  unbindReferenceDragHandlers?.();
+  unbindReferenceDragHandlers = element ? bindReferenceDragHandlers(element) : null;
+}, { flush: "post" });
+
+async function handleFileChange(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+
+  try {
+    await uploadReferenceFiles(files);
+  } finally {
+    input.value = "";
   }
 }
 
@@ -1559,6 +1652,8 @@ onActivated(() => {
 onBeforeUnmount(() => {
   stopAllTaskPolling();
   window.removeEventListener("resize", syncViewportWidth);
+  unbindReferenceDragHandlers?.();
+  unbindReferenceDragHandlers = null;
   referenceItems.value.forEach((item) => revokeObjectUrl(item.objectUrl));
   revokeObjectUrl(sourcePreviewUrl.value);
 });
@@ -1984,10 +2079,14 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                 </div>
               </div>
 
-              <div class="field-block ref-upload-block config-section">
+              <div
+                ref="referenceUploadBlockRef"
+                class="field-block ref-upload-block config-section"
+                :class="{ 'is-reference-drag-over': referenceDragActive }"
+              >
                 <div class="panel-head">
                   <h3>参考图</h3>
-                  <span class="panel-hint">(最多 {{ maxReferenceImages }} 张)</span>
+                  <span class="panel-hint">(最多 {{ maxReferenceImages }} 张，支持拖拽上传)</span>
                 </div>
 
                 <input
@@ -2035,7 +2134,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                     />
                     <template v-else>
                       <CloudUploadOutlined style="font-size: 22px; color: var(--theme-accent)" />
-                      <span>上传</span>
+                      <span>{{ referenceDragActive ? "松开上传" : "拖拽或点击" }}</span>
                     </template>
                   </div>
                 </div>
@@ -3243,6 +3342,20 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 }
 
 /* --- Upload (compact) --- */
+.generate-config-panel .ref-upload-block {
+  position: relative;
+  border-radius: 18px;
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft),
+    background var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.generate-config-panel .ref-upload-block.is-reference-drag-over {
+  background: color-mix(in srgb, var(--theme-accent) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-accent) 28%, transparent);
+}
+
 .generate-config-panel .upload-grid {
   display: flex;
   gap: 8px;
@@ -3379,6 +3492,15 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   &:active {
     transform: scale(0.96);
   }
+}
+
+.generate-config-panel .ref-upload-block.is-reference-drag-over .upload-add {
+  border-color: var(--theme-accent);
+  color: var(--theme-accent-text);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 14px 24px var(--theme-shadow-medium);
 }
 
 /* --- Fields --- */
