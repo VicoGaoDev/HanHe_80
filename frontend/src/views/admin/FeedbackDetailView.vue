@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ArrowLeftOutlined, CopyOutlined, LoadingOutlined, MessageOutlined } from "@ant-design/icons-vue";
+import { ArrowLeftOutlined, CopyOutlined, MessageOutlined } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
 import dayjs from "dayjs";
-import { getDisplayImageUrl, getPreviewImageUrl } from "@/api/images";
+import FeedbackTaskResultGrid from "@/components/feedback/FeedbackTaskResultGrid.vue";
 import { getGenerationModels } from "@/api/config";
 import { getAdminFeedbackDetail, getAdminUnresolvedFeedbackCount, updateAdminFeedback } from "@/api/admin";
 import { setStoredAdminUnresolvedFeedbackCount } from "@/lib/adminFeedbackNotice";
-import type { FeedbackDetail, FeedbackStatus, GenerationModelOption, ImageResult } from "@/types";
+import type { FeedbackDetail, FeedbackStatus, GenerationModelOption } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -30,7 +30,6 @@ const form = reactive<{
 });
 
 const feedbackId = computed(() => String(route.params.feedbackId || ""));
-const taskImages = computed(() => detail.value?.task.images || []);
 const taskReferenceImages = computed(() => detail.value?.task.reference_images || []);
 const taskReferenceThumbs = computed(() => detail.value?.task.reference_image_thumbs || []);
 
@@ -79,14 +78,6 @@ function getModelLabel(model?: string) {
   if (!model) return "未设置";
   const matched = generationModels.value.find((item) => item.model_key === model);
   return matched?.model_label || matched?.display_name || model;
-}
-
-function getTaskImageSrc(image: ImageResult) {
-  return getDisplayImageUrl(image);
-}
-
-function getTaskPreviewSrc(image: ImageResult) {
-  return getPreviewImageUrl(image);
 }
 
 function getReferenceThumbSrc(url: string, index: number) {
@@ -280,40 +271,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="detail-block task-result-block">
-              <div class="detail-label detail-label-inline">
-                <span>任务结果图</span>
-                <small>{{ taskImages.length ? "点击缩略图可放大" : "" }}</small>
-              </div>
-              <div v-if="taskImages.length" class="task-result-grid task-result-grid-compact">
-                <button
-                  v-for="(image, index) in taskImages"
-                  :key="image.id"
-                  type="button"
-                  class="task-result-thumb"
-                  :class="{
-                    clickable: !!getTaskPreviewSrc(image),
-                    pending: !getTaskImageSrc(image) && image.status !== 'failed',
-                    failed: image.status === 'failed',
-                  }"
-                  @click="getTaskPreviewSrc(image) && openPreview(getTaskPreviewSrc(image))"
-                >
-                  <img
-                    v-if="getTaskImageSrc(image)"
-                    :src="getTaskImageSrc(image)"
-                    :alt="`任务结果图 ${index + 1}`"
-                    loading="lazy"
-                  />
-                  <div v-else-if="image.status === 'failed'" class="task-result-state task-result-state-failed compact">
-                    <LoadingOutlined />
-                  </div>
-                  <div v-else class="task-result-state compact">
-                    <a-spin size="small" />
-                  </div>
-                </button>
-              </div>
-              <a-empty v-else description="任务结果图暂未生成或已不可用" />
-            </div>
+            <FeedbackTaskResultGrid v-if="detail" :task="detail.task" @preview="openPreview" />
           </div>
         </div>
       </template>
@@ -471,11 +429,6 @@ onMounted(() => {
   gap: 16px;
 }
 
-.task-result-grid-compact {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
 .task-reference-grid {
   grid-template-columns: repeat(auto-fill, minmax(72px, 72px));
   gap: 8px;
@@ -522,31 +475,6 @@ onMounted(() => {
   }
 }
 
-.task-result-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 96px;
-  width: 100%;
-  padding: 12px;
-  border-radius: 0;
-  background: var(--theme-empty-bg);
-  color: var(--theme-text-secondary);
-  text-align: center;
-  line-height: 1.6;
-}
-
-.task-result-state.compact {
-  min-height: 96px;
-  padding: 8px;
-}
-
-.task-result-state-failed {
-  color: #b85d47;
-}
-
 @media (max-width: 900px) {
   .detail-grid {
     grid-template-columns: 1fr;
@@ -557,14 +485,5 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 
-  .task-result-grid-compact {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .task-result-grid-compact {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 </style>

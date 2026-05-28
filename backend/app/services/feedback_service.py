@@ -16,6 +16,7 @@ from app.services.business_id_service import (
     task_external_id,
     user_external_id,
 )
+from app.services.task_service import is_task_generation_failure_credit_refunded
 from app.services.task_type_service import get_task_scene_type_map, resolve_task_type_for_task
 from app.utils.datetime_utils import now_local
 
@@ -93,6 +94,10 @@ def _serialize_feedback(item: Feedback, *, db: Session, include_task_images: boo
     handler = item.handler
     scene_type_map = get_task_scene_type_map(db)
     reference_assets = _serialize_task_reference_images(task, db=db) if include_task_images else []
+    task_credit_cost = int(task.credit_cost or 0) if task else 0
+    task_credit_refunded = False
+    if task and task.status == "failed" and task_credit_cost > 0:
+        task_credit_refunded = bool(is_task_generation_failure_credit_refunded(db, task.id))
     return {
         "feedback_id": feedback_external_id(item),
         "user_id": user_external_id(item.user),
@@ -117,6 +122,8 @@ def _serialize_feedback(item: Feedback, *, db: Session, include_task_images: boo
             "source": task.source if task else "web",
             "prompt": task.prompt if task else "",
             "status": task.status if task else "",
+            "error_message": task.error_message if task else "",
+            "credit_refunded": task_credit_refunded,
             "created_at": task.created_at if task else None,
             "reference_images": [asset["image_url"] for asset in reference_assets],
             "reference_image_thumbs": [asset["thumb_url"] for asset in reference_assets],
@@ -125,14 +132,16 @@ def _serialize_feedback(item: Feedback, *, db: Session, include_task_images: boo
     }
 
 
-def create_feedback(db: Session, user: User, task_id: str, content: str) -> dict:
-    task = get_task_by_business_id(db, task_id)
-    if not task or task.user_id != user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="任务不存在")
+def create_feedback(db: Session, user: User, task_id: str | None, content: str) -> dict:
+    task = None
+    if task_id:
+        task = get_task_by_business_id(db, task_id)
+        if not task or task.user_id != user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="任务不存在")
 
     item = Feedback(
         user_id=user.id,
-        task_id=task.id,
+        task_id=task.id if task else None,
         content=_validate_feedback_content(content),
         status="pending",
     )

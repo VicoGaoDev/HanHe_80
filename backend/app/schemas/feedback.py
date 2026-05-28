@@ -5,13 +5,15 @@ from app.schemas.task import ImageOut
 
 
 class FeedbackTaskSummary(BaseModel):
-    task_id: str
+    task_id: str = ""
     model: str = ""
     mode: str = "generate"
     task_type: str = "text_generate"
     source: str = "web"
     prompt: str = ""
     status: str = ""
+    error_message: str = ""
+    credit_refunded: bool = False
     created_at: datetime | None = None
     reference_images: list[str] = []
     reference_image_thumbs: list[str] = []
@@ -22,7 +24,7 @@ class FeedbackListItem(BaseModel):
     feedback_id: str
     user_id: str
     username: str = ""
-    task_id: str
+    task_id: str = ""
     status: str
     is_read: bool = False
     content: str
@@ -54,7 +56,7 @@ class FeedbackReadCountResponse(BaseModel):
 
 
 class FeedbackCreateRequest(BaseModel):
-    task_id: str
+    task_id: str | None = None
     content: str
 
 

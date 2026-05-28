@@ -187,6 +187,8 @@ export interface FeedbackTaskSummary {
   source: TaskSource;
   prompt: string;
   status: string;
+  error_message?: string;
+  credit_refunded?: boolean;
   created_at?: string | null;
   reference_images: string[];
   reference_image_thumbs: string[];
