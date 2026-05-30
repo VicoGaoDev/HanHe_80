@@ -90,8 +90,8 @@ const geminiKey = ref("");
 const tongyiKey = ref("");
 
 const configColumns = [
-  { title: "名称", dataIndex: "name", width: 180 },
-  { title: "分组", dataIndex: "group_name", width: 140 },
+  { title: "名称", dataIndex: "name", width: 280 },
+  { title: "分组", dataIndex: "group_name", width: 100 },
   { title: "请求格式", dataIndex: "request_format", width: 120 },
   { title: "请求地址", dataIndex: "request_url", ellipsis: true },
   { title: "状态", dataIndex: "status", width: 100 },
