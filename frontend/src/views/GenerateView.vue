@@ -38,6 +38,9 @@ import { getMe, getPromptHistory, deletePromptHistory } from "@/api/auth";
 import { getMyCompletedUnreadFeedbackCount } from "@/api/feedback";
 import { useAuthStore } from "@/stores/auth";
 import RepaintCanvas from "@/components/generate/RepaintCanvas.vue";
+import AspectRatioPicker from "@/components/generate/AspectRatioPicker.vue";
+import OptionGridPicker from "@/components/generate/OptionGridPicker.vue";
+import PromptInterceptionTip from "@/components/generate/PromptInterceptionTip.vue";
 import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
 import { withBaseUrl } from "@/lib/assets";
 import {
@@ -1833,7 +1836,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                     <label>选择模型</label>
                     <div class="model-help-group">
                       <div class="model-help">
-                        <a-popover trigger="hover" placement="bottomRight" overlay-class-name="model-help-popover">
+                        <a-popover trigger="click" placement="bottomRight" overlay-class-name="model-help-popover">
                           <template #content>
                             <div class="model-help-tip batch-mode-tip">
                               <div class="batch-mode-tip-title">如何连续生成多张图？</div>
@@ -1855,7 +1858,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                         </a-popover>
                       </div>
                       <div class="model-help">
-                        <a-popover trigger="hover" placement="bottomRight" overlay-class-name="model-help-popover">
+                        <a-popover trigger="click" placement="bottomRight" overlay-class-name="model-help-popover">
                           <template #content>
                             <div class="model-help-tip">
                               <div class="model-help-grid model-help-grid-head">
@@ -1929,9 +1932,12 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
               <div class="prompt-block config-section">
                 <div class="prompt-label-row">
                   <label>提示词</label>
-                  <a-button type="text" class="history-btn" @click="openHistory">
-                    <template #icon><ClockCircleOutlined /></template>
-                  </a-button>
+                  <div class="prompt-label-actions">
+                    <PromptInterceptionTip />
+                    <a-button type="text" class="history-btn" @click="openHistory">
+                      <template #icon><ClockCircleOutlined /></template>
+                    </a-button>
+                  </div>
                 </div>
                 <a-textarea
                   v-model:value="prompt"
@@ -1946,32 +1952,25 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
               <div class="settings-row settings-row-inline config-section compact-config-section">
                 <div v-if="!hideAspectRatio" class="setting-item setting-item-inline">
                   <label>宽高比</label>
-                  <a-select
-                    v-model:value="size"
-                    :bordered="false"
-                    class="flat-select"
-                    popup-class-name="generate-dropdown"
-                    :options="sizeOptions"
-                  />
+                  <AspectRatioPicker v-model="size" :options="sizeOptions" />
                 </div>
                 <div v-if="!hideResolution" class="setting-item setting-item-inline">
                   <label>分辨率</label>
-                  <a-select
-                    v-model:value="resolution"
-                    :bordered="false"
-                    class="flat-select"
-                    popup-class-name="generate-dropdown"
+                  <OptionGridPicker
+                    v-model="resolution"
                     :options="resolutionOptions"
+                    panel-title="选择分辨率"
+                    placeholder="选择分辨率"
                   />
                 </div>
                 <div v-if="!hideCustomSize" class="setting-item setting-item-inline">
                   <label>分辨率</label>
-                  <a-select
-                    v-model:value="customSize"
-                    :bordered="false"
-                    class="flat-select"
-                    popup-class-name="generate-dropdown"
+                  <OptionGridPicker
+                    v-model="customSize"
                     :options="customSizeOptions"
+                    panel-title="选择分辨率"
+                    placeholder="选择分辨率"
+                    show-preview
                   />
                 </div>
               </div>
@@ -2057,7 +2056,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                     <label>选择模型</label>
                     <div class="model-help-group">
                       <div class="model-help">
-                        <a-popover trigger="hover" placement="bottomRight" overlay-class-name="model-help-popover">
+                        <a-popover trigger="click" placement="bottomRight" overlay-class-name="model-help-popover">
                           <template #content>
                             <div class="model-help-tip batch-mode-tip">
                               <div class="batch-mode-tip-title">如何连续生成多张图？</div>
@@ -2079,7 +2078,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                         </a-popover>
                       </div>
                       <div class="model-help">
-                        <a-popover trigger="hover" placement="bottomRight" overlay-class-name="model-help-popover">
+                        <a-popover trigger="click" placement="bottomRight" overlay-class-name="model-help-popover">
                           <template #content>
                             <div class="model-help-tip">
                               <div class="model-help-grid model-help-grid-head">
@@ -2214,9 +2213,12 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
               <div class="prompt-block config-section">
                 <div class="prompt-label-row">
                   <label>提示词</label>
-                  <a-button type="text" class="history-btn" @click="openHistory">
-                    <template #icon><ClockCircleOutlined /></template>
-                  </a-button>
+                  <div class="prompt-label-actions">
+                    <PromptInterceptionTip />
+                    <a-button type="text" class="history-btn" @click="openHistory">
+                      <template #icon><ClockCircleOutlined /></template>
+                    </a-button>
+                  </div>
                 </div>
                 <a-textarea
                   v-model:value="prompt"
@@ -2231,32 +2233,25 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
               <div class="settings-row settings-row-inline config-section compact-config-section">
                 <div v-if="!hideAspectRatio" class="setting-item setting-item-inline">
                   <label>宽高比</label>
-                  <a-select
-                    v-model:value="size"
-                    :bordered="false"
-                    class="flat-select"
-                    popup-class-name="generate-dropdown"
-                    :options="sizeOptions"
-                  />
+                  <AspectRatioPicker v-model="size" :options="sizeOptions" />
                 </div>
                 <div v-if="!hideResolution" class="setting-item setting-item-inline">
                   <label>分辨率</label>
-                  <a-select
-                    v-model:value="resolution"
-                    :bordered="false"
-                    class="flat-select"
-                    popup-class-name="generate-dropdown"
+                  <OptionGridPicker
+                    v-model="resolution"
                     :options="resolutionOptions"
+                    panel-title="选择分辨率"
+                    placeholder="选择分辨率"
                   />
                 </div>
                 <div v-if="!hideCustomSize" class="setting-item setting-item-inline">
                   <label>分辨率</label>
-                  <a-select
-                    v-model:value="customSize"
-                    :bordered="false"
-                    class="flat-select"
-                    popup-class-name="generate-dropdown"
+                  <OptionGridPicker
+                    v-model="customSize"
                     :options="customSizeOptions"
+                    panel-title="选择分辨率"
+                    placeholder="选择分辨率"
+                    show-preview
                   />
                 </div>
               </div>
@@ -3187,6 +3182,13 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   }
 }
 
+.prompt-label-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .history-btn {
   width: 32px;
   height: 32px;
@@ -3289,12 +3291,20 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
   label {
     margin: 0;
-    min-width: 62px;
+    min-width: auto;
     flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .flat-select {
     flex: 1;
+  }
+
+  .aspect-ratio-picker,
+  .option-grid-picker {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
   }
 }
 
@@ -3443,8 +3453,8 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
 .generate-config-panel .upload-thumb {
   position: relative;
-  width: 72px;
-  height: 72px;
+  width: 77px;
+  height: 77px;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--theme-panel-border);
@@ -3533,8 +3543,8 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 }
 
 .generate-config-panel .upload-add {
-  width: 72px;
-  height: 72px;
+  width: 77px;
+  height: 77px;
   border-radius: 16px;
   border: 1px dashed var(--theme-panel-border-strong);
   display: flex;
@@ -3619,6 +3629,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
+  cursor: pointer;
 }
 
 .model-help-trigger {
@@ -3633,7 +3644,7 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   font-size: 12px;
   font-weight: 600;
   line-height: 1.4;
-  cursor: help;
+  cursor: pointer;
   transition: color var(--motion-duration-fast) var(--motion-ease-soft);
 }
 
@@ -5091,8 +5102,8 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-mor
 
   .generate-config-panel .upload-thumb,
   .generate-config-panel .upload-add {
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
   }
 
   .result-head-meta {
