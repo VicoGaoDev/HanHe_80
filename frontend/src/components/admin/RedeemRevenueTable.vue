@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { PropType } from "vue";
-import type { AdminAnalyticsRedeemRevenue } from "@/types";
+import type { AdminAnalyticsRedeemRevenue, AdminAnalyticsRedeemRevenueItem } from "@/types";
 
 const props = defineProps({
   data: {
@@ -30,6 +30,10 @@ const tableData = computed(() => props.data?.items ?? []);
 function formatMoney(value: number) {
   return value.toFixed(2);
 }
+
+function rowKey(record: AdminAnalyticsRedeemRevenueItem) {
+  return String(record.credit_amount);
+}
 </script>
 
 <template>
@@ -51,7 +55,7 @@ function formatMoney(value: number) {
         :columns="columns"
         :data-source="tableData"
         :pagination="false"
-        :row-key="(record: { credit_amount: number }) => String(record.credit_amount)"
+        :row-key="rowKey"
         size="middle"
         class="redeem-revenue-table admin-mobile-table"
       >
