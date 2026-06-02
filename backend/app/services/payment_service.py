@@ -5,7 +5,7 @@ import json
 import secrets
 from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from urllib.parse import urlencode
 
 from cryptography.exceptions import InvalidSignature
@@ -22,6 +22,8 @@ from app.utils.datetime_utils import now_local
 
 ONLINE_PURCHASE_DESCRIPTION_PREFIX = "在线支付订单 "
 ALIPAY_TRADE_SUCCESS_STATUSES = {"TRADE_SUCCESS", "TRADE_FINISHED"}
+ALIPAY_TRADE_WAITING_STATUS = "WAIT_BUYER_PAY"
+ALIPAY_TRADE_CLOSED_STATUS = "TRADE_CLOSED"
 PAYMENT_STATUS_CREATED = "created"
 PAYMENT_STATUS_PENDING_PAY = "pending_pay"
 PAYMENT_STATUS_PAID = "paid"
@@ -45,6 +47,14 @@ class PaymentPlan:
         return format(normalized.normalize(), "f")
 
 
+@dataclass(frozen=True)
+class AlipayTradeQueryResult:
+    trade_status: str
+    trade_no: str = ""
+    total_amount: str = ""
+    buyer_id: str = ""
+
+
 # 商品数值后续可直接在这里调整，前端只使用后端返回结果。
 PLAN_CATALOG: tuple[PaymentPlan, ...] = (
     PaymentPlan(key="starter", title="体验包", amount_fen=180, credits=50, tag="尝鲜推荐"),
@@ -56,6 +66,7 @@ PLAN_CATALOG_MAP = {plan.key: plan for plan in PLAN_CATALOG}
 STARTER_PLAN_KEY = "starter"
 SUCCESSFUL_PURCHASE_STATUSES = {PAYMENT_STATUS_PAID, PAYMENT_STATUS_CREDITED}
 ACTIVE_PURCHASE_STATUSES = {PAYMENT_STATUS_CREATED, PAYMENT_STATUS_PENDING_PAY, PAYMENT_STATUS_PAID, PAYMENT_STATUS_CREDITED}
+ALIPAY_QUERYABLE_STATUSES = {PAYMENT_STATUS_PENDING_PAY, PAYMENT_STATUS_PAID}
 
 
 def _serialize_payment_plan(plan: PaymentPlan) -> dict:
@@ -224,6 +235,102 @@ def get_payment_order_for_user(db: Session, *, order_no: str, user: User) -> Pay
     return order
 
 
+def get_payment_order_for_user_with_sync(
+    db: Session,
+    *,
+    order_no: str,
+    user: User,
+    alipay_app_id: str,
+    gateway: str,
+    private_key: str,
+    sign_type: str,
+    alipay_public_key: str,
+) -> PaymentOrder:
+    order = get_payment_order_for_user(db, order_no=order_no, user=user)
+    if order.status not in ALIPAY_QUERYABLE_STATUSES:
+        return order
+
+    try:
+        query_result = query_alipay_trade_status(
+            app_id=alipay_app_id,
+            gateway=gateway,
+            out_trade_no=order.out_trade_no,
+            private_key=private_key,
+            sign_type=sign_type,
+        )
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_502_BAD_GATEWAY:
+            return order
+        raise
+    if not query_result or not query_result.trade_status:
+        return order
+
+    if query_result.trade_status == ALIPAY_TRADE_WAITING_STATUS:
+        order.trade_status = query_result.trade_status
+        order.alipay_trade_no = query_result.trade_no or order.alipay_trade_no
+        order.buyer_id = query_result.buyer_id or order.buyer_id
+        order.notify_payload = json.dumps(
+            {
+                "app_id": alipay_app_id,
+                "out_trade_no": order.out_trade_no,
+                "trade_no": query_result.trade_no,
+                "trade_status": query_result.trade_status,
+                "total_amount": query_result.total_amount,
+                "buyer_id": query_result.buyer_id,
+                "query_source": "alipay.trade.query",
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        db.add(order)
+        db.flush()
+        return order
+
+    if query_result.trade_status == ALIPAY_TRADE_CLOSED_STATUS:
+        if query_result.total_amount:
+            _assert_payment_amount_matches_order(order, query_result.total_amount, detail="支付宝查单金额与订单不一致")
+        order.trade_status = query_result.trade_status
+        order.alipay_trade_no = query_result.trade_no or order.alipay_trade_no
+        order.buyer_id = query_result.buyer_id or order.buyer_id
+        order.notify_payload = json.dumps(
+            {
+                "app_id": alipay_app_id,
+                "out_trade_no": order.out_trade_no,
+                "trade_no": query_result.trade_no,
+                "trade_status": query_result.trade_status,
+                "total_amount": query_result.total_amount,
+                "buyer_id": query_result.buyer_id,
+                "query_source": "alipay.trade.query",
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+        order.status = PAYMENT_STATUS_CLOSED
+        order.closed_at = now_local()
+        db.add(order)
+        db.flush()
+        return order
+
+    payload = {
+        "app_id": alipay_app_id,
+        "out_trade_no": order.out_trade_no,
+        "trade_no": query_result.trade_no,
+        "trade_status": query_result.trade_status,
+        "total_amount": query_result.total_amount,
+        "buyer_id": query_result.buyer_id,
+        "query_source": "alipay.trade.query",
+    }
+    process_alipay_notification(
+        db,
+        payload=payload,
+        alipay_public_key=alipay_public_key,
+        alipay_app_id=alipay_app_id,
+        skip_signature_verify=True,
+    )
+    db.flush()
+    return order
+
+
 def get_payment_order_by_order_no(
     db: Session,
     *,
@@ -296,6 +403,74 @@ def build_alipay_precreate_qr_code(
     if not qr_code:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="支付宝未返回二维码内容")
     return qr_code
+
+
+def query_alipay_trade_status(
+    *,
+    app_id: str,
+    gateway: str,
+    out_trade_no: str,
+    private_key: str,
+    sign_type: str,
+) -> AlipayTradeQueryResult | None:
+    biz_content = {
+        "out_trade_no": out_trade_no,
+    }
+    params = {
+        "app_id": app_id,
+        "method": "alipay.trade.query",
+        "format": "JSON",
+        "charset": "utf-8",
+        "sign_type": sign_type,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "version": "1.0",
+        "biz_content": json.dumps(biz_content, ensure_ascii=False, separators=(",", ":")),
+    }
+    params["sign"] = sign_alipay_params(params, private_key=private_key, sign_type=sign_type)
+    try:
+        response = httpx.post(
+            gateway,
+            data=params,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=20,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"支付宝查单请求失败: {exc}",
+        ) from exc
+
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="支付宝查单返回了无法解析的响应",
+        ) from exc
+
+    result = payload.get("alipay_trade_query_response") or {}
+    result_code = str(result.get("code") or "").strip()
+    if result_code == "40004":
+        return None
+    if result_code != "10000":
+        sub_msg = str(result.get("sub_msg") or result.get("msg") or "支付宝查单失败").strip()
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=sub_msg)
+    return AlipayTradeQueryResult(
+        trade_status=str(result.get("trade_status") or "").strip(),
+        trade_no=str(result.get("trade_no") or "").strip(),
+        total_amount=str(result.get("total_amount") or "").strip(),
+        buyer_id=str(result.get("buyer_id") or "").strip(),
+    )
+
+
+def _assert_payment_amount_matches_order(order: PaymentOrder, raw_amount: str, *, detail: str) -> None:
+    try:
+        amount = Decimal(str(raw_amount or "0")).quantize(Decimal("0.01"))
+    except InvalidOperation as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from exc
+    if int(amount * 100) != int(order.amount_fen or 0):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 
 def _build_sign_content(payload: dict[str, str]) -> str:
@@ -380,8 +555,9 @@ def process_alipay_notification(
     payload: dict[str, str],
     alipay_public_key: str,
     alipay_app_id: str,
+    skip_signature_verify: bool = False,
 ) -> PaymentOrder:
-    if not verify_alipay_notification_signature(payload, alipay_public_key=alipay_public_key):
+    if not skip_signature_verify and not verify_alipay_notification_signature(payload, alipay_public_key=alipay_public_key):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="支付宝回调验签失败")
 
     order_no = (payload.get("out_trade_no") or "").strip()
@@ -394,15 +570,15 @@ def process_alipay_notification(
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
 
-    raw_amount = Decimal(str(payload.get("total_amount") or "0")).quantize(Decimal("0.01"))
-    if int(raw_amount * 100) != int(order.amount_fen or 0):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="回调金额与订单不一致")
+    _assert_payment_amount_matches_order(order, payload.get("total_amount") or "0", detail="回调金额与订单不一致")
 
     trade_status = (payload.get("trade_status") or "").strip()
     alipay_trade_no = (payload.get("trade_no") or "").strip()
+    buyer_id = (payload.get("buyer_id") or "").strip()
 
     order.notify_payload = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
     order.alipay_trade_no = alipay_trade_no or order.alipay_trade_no
+    order.buyer_id = buyer_id or order.buyer_id
     order.trade_status = trade_status
 
     if order.status == PAYMENT_STATUS_CREDITED or order.credited_at:
@@ -428,7 +604,14 @@ def process_alipay_notification(
         db.flush()
         return order
 
-    if trade_status == "TRADE_CLOSED":
+    if trade_status == ALIPAY_TRADE_WAITING_STATUS:
+        if order.status == PAYMENT_STATUS_CREATED:
+            order.status = PAYMENT_STATUS_PENDING_PAY
+        db.add(order)
+        db.flush()
+        return order
+
+    if trade_status == ALIPAY_TRADE_CLOSED_STATUS:
         order.status = PAYMENT_STATUS_CLOSED
         order.closed_at = now_local()
     else:

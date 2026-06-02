@@ -162,6 +162,8 @@ ALIPAY_TIMEOUT_EXPRESS=15m
 
 - `GET /api/payment/orders/{order_no}`
 
+当本地订单仍处于 `pending_pay` / `paid` 状态时，后端会主动调用支付宝 `alipay.trade.query` 查单作为兜底，避免因异步通知延迟导致前端长时间停留在处理中状态。
+
 订单状态说明：
 
 - `pending_pay`：待支付
