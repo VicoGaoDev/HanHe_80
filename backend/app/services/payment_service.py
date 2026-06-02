@@ -372,12 +372,7 @@ def build_alipay_precreate_qr_code(
     }
     params["sign"] = sign_alipay_params(params, private_key=private_key, sign_type=sign_type)
     try:
-        response = httpx.post(
-            gateway,
-            data=params,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            timeout=20,
-        )
+        response = _post_alipay_gateway(gateway=gateway, params=params)
         response.raise_for_status()
     except httpx.HTTPError as exc:
         raise HTTPException(
@@ -422,12 +417,7 @@ def query_alipay_trade_status(
     }
     params["sign"] = sign_alipay_params(params, private_key=private_key, sign_type=sign_type)
     try:
-        response = httpx.post(
-            gateway,
-            data=params,
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-            timeout=20,
-        )
+        response = _post_alipay_gateway(gateway=gateway, params=params)
         response.raise_for_status()
     except httpx.HTTPError as exc:
         raise HTTPException(
@@ -461,21 +451,52 @@ def _assert_payment_amount_matches_order(order: PaymentOrder, raw_amount: str, *
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 
+def _post_alipay_gateway(*, gateway: str, params: dict[str, str]) -> httpx.Response:
+    # Alipay verifies charset from the URL query string for self-signed POST requests.
+    return httpx.post(
+        gateway,
+        params=params,
+        headers={"Accept": "application/json"},
+        timeout=20,
+    )
+
+
 def _parse_alipay_json_response(response: httpx.Response, *, action: str) -> dict:
     try:
         payload = response.json()
     except ValueError as exc:
-        content_type = response.headers.get("content-type", "")
-        body_preview = " ".join(response.text.strip().split())[:300]
-        detail = f"{action}返回了无法解析的响应"
-        if content_type:
-            detail = f"{detail}，Content-Type: {content_type}"
-        if body_preview:
-            detail = f"{detail}，响应片段: {body_preview}"
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail) from exc
+        payload = _parse_alipay_json_body(response)
+        if payload is None:
+            content_type = response.headers.get("content-type", "")
+            body_preview = " ".join(response.text.strip().split())[:300]
+            detail = f"{action}返回了无法解析的响应"
+            if content_type:
+                detail = f"{detail}，Content-Type: {content_type}"
+            if body_preview:
+                detail = f"{detail}，响应片段: {body_preview}"
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail) from exc
     if not isinstance(payload, dict):
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"{action}返回格式异常")
     return payload
+
+
+def _parse_alipay_json_body(response: httpx.Response) -> dict | None:
+    for encoding in ("utf-8", "gbk"):
+        try:
+            text = response.content.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+        start = text.find("{")
+        end = text.rfind("}")
+        if start < 0 or end <= start:
+            continue
+        try:
+            payload = json.loads(text[start:end + 1])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            return payload
+    return None
 
 
 def _build_sign_content(payload: dict[str, str]) -> str:
