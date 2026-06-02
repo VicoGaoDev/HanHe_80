@@ -385,13 +385,7 @@ def build_alipay_precreate_qr_code(
             detail=f"支付宝预下单请求失败: {exc}",
         ) from exc
 
-    try:
-        payload = response.json()
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="支付宝预下单返回了无法解析的响应",
-        ) from exc
+    payload = _parse_alipay_json_response(response, action="支付宝预下单")
 
     result = payload.get("alipay_trade_precreate_response") or {}
     result_code = str(result.get("code") or "").strip()
@@ -441,13 +435,7 @@ def query_alipay_trade_status(
             detail=f"支付宝查单请求失败: {exc}",
         ) from exc
 
-    try:
-        payload = response.json()
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="支付宝查单返回了无法解析的响应",
-        ) from exc
+    payload = _parse_alipay_json_response(response, action="支付宝查单")
 
     result = payload.get("alipay_trade_query_response") or {}
     result_code = str(result.get("code") or "").strip()
@@ -471,6 +459,23 @@ def _assert_payment_amount_matches_order(order: PaymentOrder, raw_amount: str, *
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail) from exc
     if int(amount * 100) != int(order.amount_fen or 0):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+
+
+def _parse_alipay_json_response(response: httpx.Response, *, action: str) -> dict:
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        content_type = response.headers.get("content-type", "")
+        body_preview = " ".join(response.text.strip().split())[:300]
+        detail = f"{action}返回了无法解析的响应"
+        if content_type:
+            detail = f"{detail}，Content-Type: {content_type}"
+        if body_preview:
+            detail = f"{detail}，响应片段: {body_preview}"
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail) from exc
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"{action}返回格式异常")
+    return payload
 
 
 def _build_sign_content(payload: dict[str, str]) -> str:
