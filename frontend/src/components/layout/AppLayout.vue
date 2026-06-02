@@ -805,10 +805,18 @@ async function handlePurchaseCredits() {
   const selectedPlan = creditPurchasePlans.value.find((item) => item.key === selectedPurchasePlanKey.value);
   if (!selectedPlan) return;
   purchaseLoading.value = true;
+  const payWindow = window.open("", "_blank");
   try {
     const res = await createPaymentOrder(selectedPlan.key);
+    if (payWindow) {
+      payWindow.location.href = res.pay_url;
+      purchaseDialogOpen.value = false;
+      await router.push(`/payment-result?order_no=${encodeURIComponent(res.order_no)}`);
+      return;
+    }
     window.location.href = res.pay_url;
   } catch (err: any) {
+    payWindow?.close();
     message.error(err.response?.data?.detail || "创建支付订单失败");
   } finally {
     purchaseLoading.value = false;
