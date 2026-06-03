@@ -147,8 +147,8 @@ def _send_feedback_created_notification(db: Session, item: Feedback, *, user: Us
         "## 💬 用户提交新反馈\n"
         f"> 🧾 反馈单号: `{feedback_external_id(item)}`\n"
         f"> 👤 用户: **{user_label}**\n"
-        f"> 📉 已使用积分: **{used_credit}**\n"
-        f"> 🪙 剩余积分: **{remain_credit}**\n"
+        f"> ⚡ 已使用积分: **{used_credit}**\n"
+        f"> ⚡ 剩余积分: **{remain_credit}**\n"
         f"> ⏰ 提交时间: {now_local().strftime('%Y-%m-%d %H:%M:%S')}\n"
         f"> 📝 反馈内容: {content_preview}"
     )

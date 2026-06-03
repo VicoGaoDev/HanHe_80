@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.models.payment_order import PaymentOrder
 from app.models.user import User
-from app.services.user_credit_service import change_user_credit_balance, get_user_credit_balance
+from app.services.user_credit_service import change_user_credit_balance, get_user_credit_account
 from app.services.wecom_notify_service import send_wecom_markdown
 from app.utils.datetime_utils import now_local
 
@@ -350,15 +350,18 @@ def _send_payment_success_notification(db: Session, order: PaymentOrder) -> None
     email = (user.email or "").strip() if user else ""
     user_label = f"{username} ({email})" if email else username
     amount_yuan = f"{Decimal(int(order.amount_fen or 0)) / Decimal('100'):.2f}"
-    remain_credit = get_user_credit_balance(db, order.user_id)
+    credit_account = get_user_credit_account(db, order.user_id, create_if_missing=False)
+    remain_credit = int(credit_account.remain_credit or 0) if credit_account else 0
+    used_credit = int(credit_account.used_credit or 0) if credit_account else 0
     send_wecom_markdown(
         "## 💰 订单购买成功\n"
         f"> 🧾 订单号: `{order.order_no}`\n"
         f"> 👤 用户: **{user_label}**\n"
         f"> 📦 套餐: **{order.subject or order.plan_key}**\n"
         f"> 💵 金额: <font color=\"warning\">¥{amount_yuan}</font>\n"
-        f"> ✨ 积分到账: **{int(order.credits or 0)}**\n"
-        f"> 🪙 当前剩余积分: **{remain_credit}**\n"
+        f"> ⚡ 积分到账: **{int(order.credits or 0)}**\n"
+        f"> ⚡ 已使用积分: **{used_credit}**\n"
+        f"> ⚡ 剩余积分: **{remain_credit}**\n"
         f"> ⏰ 时间: {now_local().strftime('%Y-%m-%d %H:%M:%S')}"
     )
 

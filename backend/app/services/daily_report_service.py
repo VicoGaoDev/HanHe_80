@@ -137,7 +137,7 @@ def build_daily_report_markdown(stats: DailyReportStats) -> str:
         f"> 🖼️ 任务总数: **{stats.task_total_count}**\n"
         f"> 🟢 成功任务数: **{stats.task_success_count}**\n"
         f"> 🔴 失败任务数: **{stats.task_failed_count}**\n"
-        f"> 🪙 积分消耗: **{stats.credit_consumed}**"
+        f"> ⚡ 积分消耗: **{stats.credit_consumed}**"
     )
 
 

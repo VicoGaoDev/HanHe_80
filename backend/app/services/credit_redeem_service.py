@@ -58,9 +58,9 @@ def _send_redeem_success_notification(db: Session, *, row: CreditRedeemKey, user
         "## 🎁 兑换码兑换成功\n"
         f"> 👤 用户: **{user_label}**\n"
         f"> 🔑 兑换码: `{row.redeem_key}`\n"
-        f"> ✨ 兑换积分: **{int(row.credit_amount or 0)}**\n"
-        f"> 📉 已使用积分: **{used_credit}**\n"
-        f"> 🪙 剩余积分: **{remain_credit}**\n"
+        f"> ⚡ 兑换积分: **{int(row.credit_amount or 0)}**\n"
+        f"> ⚡ 已使用积分: **{used_credit}**\n"
+        f"> ⚡ 剩余积分: **{remain_credit}**\n"
         f"> ⏰ 兑换时间: {now_local().strftime('%Y-%m-%d %H:%M:%S')}"
     )
 
