@@ -146,18 +146,70 @@ def _read_value_by_path(payload: object, field_path: str) -> tuple[object | None
     return current, parent
 
 
+def _extract_image_from_url_value(image_url: object) -> tuple[tuple[bytes, str] | None, str]:
+    if not isinstance(image_url, str) or not image_url.strip():
+        return None, ""
+
+    result = load_image_bytes(image_url.strip())
+    if not result:
+        return None, _clip_error_message(f"生图接口返回了结果图地址，但图片下载失败：{image_url}")
+    return result, ""
+
+
+def _extract_configured_image_url_data(
+    payload: dict,
+    field_path: str,
+    parent: object | None = None,
+) -> tuple[tuple[bytes, str] | None, str]:
+    candidate_paths: list[str] = []
+    if isinstance(parent, dict):
+        candidate_paths.append(f"{field_path.rsplit('.', 1)[0]}.url" if "." in field_path else "url")
+    candidate_paths.append("data.0.url")
+
+    seen_paths: set[str] = set()
+    last_error_message = ""
+    for candidate_path in candidate_paths:
+        normalized_path = candidate_path.strip()
+        if not normalized_path or normalized_path in seen_paths:
+            continue
+        seen_paths.add(normalized_path)
+        image_url, _ = _read_value_by_path(payload, normalized_path)
+        result, error_message = _extract_image_from_url_value(image_url)
+        if result:
+            logger.info(
+                "Generation API fallback to image url succeeded: configured_field=%s, url_field=%s",
+                field_path,
+                normalized_path,
+            )
+            return result, ""
+        if error_message:
+            logger.warning(
+                "Generation API fallback image url download failed: configured_field=%s, url_field=%s, error=%s",
+                field_path,
+                normalized_path,
+                error_message,
+            )
+            last_error_message = error_message
+    return None, last_error_message
+
+
 def _extract_configured_image_data(
     payload: dict,
     field_path: str,
 ) -> tuple[tuple[bytes, str] | None, str]:
     image_b64, parent = _read_value_by_path(payload, field_path)
     if not isinstance(image_b64, str) or not image_b64.strip():
+        fallback_result, fallback_error = _extract_configured_image_url_data(payload, field_path, parent)
+        if fallback_result:
+            return fallback_result, ""
         preview = _clip_response_preview(payload)
         logger.warning(
             "Generation API configured field missing: path=%s, response_preview=%s",
             field_path,
             preview,
         )
+        if fallback_error:
+            return None, fallback_error
         return None, _clip_error_message(
             f"生图接口返回内容缺少配置路径 {field_path} 对应的 base64 数据；响应摘要：{preview}"
         )
