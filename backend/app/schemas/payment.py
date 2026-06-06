@@ -10,6 +10,8 @@ class PaymentPlanOut(BaseModel):
     display_amount: str
     credits: int
     tag: str = ""
+    purchasable: bool = True
+    disabled_reason: str = ""
 
 
 class CreatePaymentOrderRequest(BaseModel):

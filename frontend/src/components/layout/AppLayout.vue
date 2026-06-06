@@ -375,7 +375,7 @@ const redeemForm = reactive({ key: "" });
 const purchaseDialogOpen = ref(false);
 const selectedPurchasePlanKey = ref("");
 const selectedPurchasePlan = computed(() =>
-  creditPurchasePlans.value.find((item) => item.key === selectedPurchasePlanKey.value) || null
+  creditPurchasePlans.value.find((item) => item.key === selectedPurchasePlanKey.value && item.purchasable) || null
 );
 const purchasePlansLoading = ref(false);
 const purchaseLoading = ref(false);
@@ -595,7 +595,7 @@ async function handleRegisterSubmit() {
     message.success("注册成功");
     notification.success({
       message: "赠送积分已到账",
-      description: "新用户注册赠送的 10 个试用积分已到账。",
+      description: "新用户注册赠送的 30 个试用积分已到账。",
       placement: "topRight",
       duration: 6,
     });
@@ -702,11 +702,12 @@ async function loadPaymentPlans() {
   try {
     const res = await listPaymentPlans();
     creditPurchasePlans.value = res.items;
-    if (!res.items.some((item) => item.key === selectedPurchasePlanKey.value)) {
+    if (!res.items.some((item) => item.key === selectedPurchasePlanKey.value && item.purchasable)) {
       selectedPurchasePlanKey.value = "";
     }
-    if (!selectedPurchasePlanKey.value && res.items.length > 0) {
-      selectedPurchasePlanKey.value = res.items[0].key;
+    const firstPurchasablePlan = res.items.find((item) => item.purchasable);
+    if (!selectedPurchasePlanKey.value && firstPurchasablePlan) {
+      selectedPurchasePlanKey.value = firstPurchasablePlan.key;
     }
   } catch {
     creditPurchasePlans.value = [];
@@ -714,6 +715,11 @@ async function loadPaymentPlans() {
   } finally {
     purchasePlansLoading.value = false;
   }
+}
+
+function handleSelectPurchasePlan(plan: PaymentPlan) {
+  if (!plan.purchasable) return;
+  selectedPurchasePlanKey.value = plan.key;
 }
 
 function resetPurchaseState() {
@@ -1329,8 +1335,15 @@ watch(purchaseDialogOpen, (open) => {
             :key="plan.key"
             type="button"
             class="credits-purchase-card"
-            :class="[`credits-purchase-card-${plan.key}`, { 'credits-purchase-card-active': selectedPurchasePlanKey === plan.key }]"
-            @click="selectedPurchasePlanKey = plan.key"
+            :class="[
+              `credits-purchase-card-${plan.key}`,
+              {
+                'credits-purchase-card-active': plan.purchasable && selectedPurchasePlanKey === plan.key,
+                'credits-purchase-card-disabled': !plan.purchasable,
+              },
+            ]"
+            :disabled="!plan.purchasable"
+            @click="handleSelectPurchasePlan(plan)"
           >
             <span v-if="plan.tag" class="credits-purchase-tag" :class="`credits-purchase-tag-${plan.key}`">{{ plan.tag }}</span>
             <div class="credits-purchase-price">
@@ -1340,9 +1353,14 @@ watch(purchaseDialogOpen, (open) => {
             <div class="credits-purchase-points">
               {{ plan.credits }} 积分
             </div>
-            <div class="credits-purchase-name">{{ plan.title }}</div>
-            <div class="credits-purchase-check" :class="{ 'credits-purchase-check-active': selectedPurchasePlanKey === plan.key }">
-              <CheckOutlined v-if="selectedPurchasePlanKey === plan.key" />
+            <div class="credits-purchase-name">
+              <span>{{ plan.title }}</span>
+              <span v-if="!plan.purchasable && plan.disabled_reason" class="credits-purchase-disabled-text">
+                {{ plan.disabled_reason }}
+              </span>
+            </div>
+            <div class="credits-purchase-check" :class="{ 'credits-purchase-check-active': plan.purchasable && selectedPurchasePlanKey === plan.key }">
+              <CheckOutlined v-if="plan.purchasable && selectedPurchasePlanKey === plan.key" />
             </div>
           </button>
         </div>
@@ -2328,6 +2346,26 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .warm-dropdown .ant-dropdo
     0 14px 30px var(--credits-purchase-accent-shadow);
 }
 
+.credits-purchase-card-disabled {
+  border-color: rgba(183, 176, 168, 0.42);
+  background:
+    linear-gradient(180deg, rgba(248, 246, 243, 0.98), rgba(240, 237, 233, 0.96)),
+    radial-gradient(circle at top, rgba(205, 205, 205, 0.16), transparent 62%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 6px 18px rgba(110, 104, 96, 0.08);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.credits-purchase-card-disabled:hover {
+  transform: none;
+  border-color: rgba(183, 176, 168, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 6px 18px rgba(110, 104, 96, 0.08);
+}
+
 .credits-purchase-tag {
   position: absolute;
   top: -9px;
@@ -2411,10 +2449,21 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .warm-dropdown .ant-dropdo
 }
 
 .credits-purchase-name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   font-size: 12px;
   font-weight: 600;
   color: #76614f;
   white-space: nowrap;
+}
+
+.credits-purchase-disabled-text {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #9a9188;
+  white-space: normal;
 }
 
 .credits-purchase-check {
@@ -2441,6 +2490,23 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .warm-dropdown .ant-dropdo
   background: linear-gradient(180deg, var(--credits-purchase-accent-start), var(--credits-purchase-accent-end));
   color: #fff;
   box-shadow: 0 10px 20px var(--credits-purchase-accent-shadow);
+}
+
+.credits-purchase-card-disabled .credits-purchase-price,
+.credits-purchase-card-disabled .credits-purchase-points,
+.credits-purchase-card-disabled .credits-purchase-name,
+.credits-purchase-card-disabled .credits-purchase-check {
+  color: #9a9188;
+}
+
+.credits-purchase-card-disabled .credits-purchase-check {
+  border-color: #d8d0c7;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.credits-purchase-card-disabled .credits-purchase-tag {
+  background: linear-gradient(180deg, #c9c3bc, #afa79f);
+  box-shadow: 0 8px 16px rgba(150, 142, 133, 0.18);
 }
 
 .credits-purchase-safe-tip {

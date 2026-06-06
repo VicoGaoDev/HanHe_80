@@ -328,6 +328,8 @@ export interface PaymentPlan {
   display_amount: string;
   credits: number;
   tag: string;
+  purchasable: boolean;
+  disabled_reason: string;
 }
 
 export interface PaymentOrder {

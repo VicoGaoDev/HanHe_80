@@ -12,7 +12,7 @@ from app.utils.security import create_access_token, hash_password, verify_passwo
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 CLOUDBASE_AUTH_PATH = "/auth"
-NEW_USER_TRIAL_CREDITS = 10
+NEW_USER_TRIAL_CREDITS = 30
 
 
 def _normalize_email(email: str) -> str:

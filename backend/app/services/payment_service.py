@@ -78,6 +78,8 @@ def _serialize_payment_plan(plan: PaymentPlan) -> dict:
         "display_amount": plan.display_amount,
         "credits": plan.credits,
         "tag": plan.tag,
+        "purchasable": True,
+        "disabled_reason": "",
     }
 
 
@@ -108,13 +110,20 @@ def _has_active_plan_order(db: Session, *, user_id: int, plan_key: str) -> bool:
 
 
 def list_payment_plans(db: Session, *, user: User) -> list[dict]:
-    plans = list(PLAN_CATALOG)
-    if _has_successful_plan_purchase(db, user_id=user.id, plan_key=STARTER_PLAN_KEY):
-        plans = [plan for plan in plans if plan.key != STARTER_PLAN_KEY]
-    return [
-        _serialize_payment_plan(plan)
-        for plan in plans
-    ]
+    purchased_starter = _has_successful_plan_purchase(db, user_id=user.id, plan_key=STARTER_PLAN_KEY)
+    active_starter_order = _has_active_plan_order(db, user_id=user.id, plan_key=STARTER_PLAN_KEY)
+    serialized_plans: list[dict] = []
+    for plan in PLAN_CATALOG:
+        item = _serialize_payment_plan(plan)
+        if plan.key == STARTER_PLAN_KEY:
+            if purchased_starter:
+                item["purchasable"] = False
+                item["disabled_reason"] = "该套餐一个用户只能购买一次"
+            elif active_starter_order:
+                item["purchasable"] = False
+                item["disabled_reason"] = "该套餐已有订单处理中，请勿重复下单"
+        serialized_plans.append(item)
+    return serialized_plans
 
 
 def get_payment_plan(plan_key: str) -> PaymentPlan:
