@@ -317,6 +317,15 @@ function getModelLabel(model?: string) {
   return modelLabelMap.value.get(model) || model;
 }
 
+function formatRunTime(seconds?: number | null) {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds)) return "";
+  const normalizedSeconds = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(normalizedSeconds / 60);
+  const remainSeconds = normalizedSeconds % 60;
+  if (minutes <= 0) return `${remainSeconds}秒`;
+  return `${minutes}分${remainSeconds}秒`;
+}
+
 function statusLabel(status: UserHistoryCard["status"]) {
   const mapping: Record<string, string> = {
     pending: "等待中",
@@ -1012,6 +1021,13 @@ function handleEditImage(item: UserHistoryCard) {
             <div v-if="getModelLabel(item.model)" class="result-card-model-badge" :title="getModelLabel(item.model)">
               {{ getModelLabel(item.model) }}
             </div>
+            <div
+              v-if="isAdminHistoryView && formatRunTime(item.run_time)"
+              class="result-card-run-time"
+              :title="formatRunTime(item.run_time)"
+            >
+              {{ formatRunTime(item.run_time) }}
+            </div>
 
             <a-tooltip v-if="canPinHistoryItem(item) && item.is_pinned" title="取消置顶">
               <a-button
@@ -1617,7 +1633,8 @@ function handleEditImage(item: UserHistoryCard) {
     transform: scale(1.02);
   }
 
-  &:hover .result-card-model-badge {
+  &:hover .result-card-model-badge,
+  &:hover .result-card-run-time {
     opacity: 0;
     transform: translateY(6px);
   }
@@ -1791,7 +1808,8 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
   box-shadow: 0 10px 20px var(--theme-shadow-soft);
 }
 
-html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-model-badge {
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-model-badge,
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-run-time {
   border-color: var(--theme-panel-border);
   background: rgba(var(--theme-surface-strong-rgb), 0.9);
   color: var(--theme-accent-text);
@@ -1811,10 +1829,9 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
   backdrop-filter: blur(8px);
 }
 
-.result-card-model-badge {
+.result-card-model-badge,
+.result-card-run-time {
   position: absolute;
-  left: 12px;
-  bottom: 12px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
@@ -1837,6 +1854,16 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
   transition:
     opacity var(--motion-duration-fast) var(--motion-ease-soft),
     transform var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.result-card-model-badge {
+  left: 12px;
+  bottom: 12px;
+}
+
+.result-card-run-time {
+  top: 12px;
+  right: 12px;
 }
 
 .result-card-media {

@@ -157,6 +157,7 @@ export interface UserHistoryCard {
   credit_cost: number;
   credit_refunded?: boolean;
   created_at: string;
+  run_time?: number | null;
   error_message?: string;
   images: ImageResult[];
 }
