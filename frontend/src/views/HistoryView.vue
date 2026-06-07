@@ -122,6 +122,7 @@ const modelOptions = computed(() => {
   optionMap.set("提示词反推", "提示词反推");
   return Array.from(optionMap.entries()).map(([value, label]) => ({ value, label }));
 });
+const modelLabelMap = computed(() => new Map(modelOptions.value.map((item) => [item.value, item.label])));
 
 const activeFilterCount = computed(() => {
   let count = 0;
@@ -309,6 +310,11 @@ function modeLabel(taskType: UserHistoryCard["task_type"]) {
   if (taskType === "inpaint") return "局部重绘";
   if (taskType === "promptReverse") return "提示词反推";
   return taskType;
+}
+
+function getModelLabel(model?: string) {
+  if (!model) return "";
+  return modelLabelMap.value.get(model) || model;
 }
 
 function statusLabel(status: UserHistoryCard["status"]) {
@@ -1003,6 +1009,10 @@ function handleEditImage(item: UserHistoryCard) {
               <ClockCircleOutlined v-else />
             </div>
 
+            <div v-if="getModelLabel(item.model)" class="result-card-model-badge" :title="getModelLabel(item.model)">
+              {{ getModelLabel(item.model) }}
+            </div>
+
             <a-tooltip v-if="canPinHistoryItem(item) && item.is_pinned" title="取消置顶">
               <a-button
                 shape="circle"
@@ -1607,8 +1617,9 @@ function handleEditImage(item: UserHistoryCard) {
     transform: scale(1.02);
   }
 
-  &:hover .result-card-model {
-    color: var(--theme-accent-text-hover);
+  &:hover .result-card-model-badge {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }
 
@@ -1780,6 +1791,13 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
   box-shadow: 0 10px 20px var(--theme-shadow-soft);
 }
 
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-model-badge {
+  border-color: var(--theme-panel-border);
+  background: rgba(var(--theme-surface-strong-rgb), 0.9);
+  color: var(--theme-accent-text);
+  box-shadow: 0 10px 20px var(--theme-shadow-soft);
+}
+
 .result-card-select {
   position: absolute;
   top: 12px;
@@ -1791,6 +1809,34 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
   border: 1px solid var(--theme-panel-border);
   box-shadow: 0 6px 16px rgba(76, 52, 26, 0.08);
   backdrop-filter: blur(8px);
+}
+
+.result-card-model-badge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  max-width: calc(100% - 24px);
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 240, 214, 0.18);
+  border-radius: 999px;
+  background: rgba(76, 52, 26, 0.58);
+  color: #fff7ea;
+  box-shadow: 0 10px 20px rgba(34, 22, 10, 0.22);
+  backdrop-filter: blur(10px);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-soft),
+    transform var(--motion-duration-fast) var(--motion-ease-soft);
 }
 
 .result-card-media {
