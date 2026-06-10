@@ -1617,11 +1617,11 @@ watch(purchaseDialogOpen, (open) => {
                 @press-enter="handleRegisterSubmit"
               />
             </a-form-item>
-            <a-form-item label="推广码（选填）">
+            <a-form-item label="邀请码（选填）">
               <a-input
                 v-model:value="registerForm.promoCode"
                 size="large"
-                placeholder="填写推广码，可额外获得 20 积分"
+                placeholder="填写邀请码，可额外获得 20 积分"
                 :maxlength="32"
               />
             </a-form-item>
