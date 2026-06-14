@@ -1,0 +1,3458 @@
+<script setup lang="ts">
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
+import { useRouter } from "vue-router";
+import { message, Modal } from "ant-design-vue";
+import {
+  CheckCircleFilled,
+  CloseOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+  EditOutlined,
+  EyeOutlined,
+  MessageOutlined,
+  PlayCircleOutlined,
+  CopyOutlined,
+  UploadOutlined,
+} from "@ant-design/icons-vue";
+import { getMe } from "@/api/auth";
+import { getTaskScenes } from "@/api/config";
+import { fetchHistory } from "@/api/history";
+import { deleteImage, getDisplayImageUrl, getDownloadUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
+import { createTask, getTasks } from "@/api/tasks";
+import { uploadReferenceImage } from "@/api/upload";
+import AspectRatioPicker from "@/components/generate/AspectRatioPicker.vue";
+import OptionGridPicker from "@/components/generate/OptionGridPicker.vue";
+import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
+import {
+  formatGenerationErrorMessage,
+  getPreferredGenerationErrorMessage,
+} from "@/lib/generationErrors";
+import { withBaseUrl } from "@/lib/assets";
+import { useAuthStore } from "@/stores/auth";
+import type { GenerationModelOption, ImageResult, SceneOptionItem, TaskResult, TaskSceneConfig, UserHistoryCard } from "@/types";
+
+type BatchCardStatus = "idle" | "queued_local" | "submitting" | TaskResult["status"];
+type UploadItemStatus = "uploading" | "success" | "failed";
+type BatchSceneMode = "generate" | "image_edit";
+
+interface UploadPreviewItem {
+  id: string;
+  localUrl: string;
+  remoteUrl: string;
+  status: UploadItemStatus;
+  objectUrl?: string;
+}
+
+interface BatchGenerateCard {
+  id: string;
+  sceneType: BatchSceneMode;
+  prompt: string;
+  model: string;
+  size: string;
+  resolution: string;
+  customSize: string;
+  referenceItems: UploadPreviewItem[];
+  status: BatchCardStatus;
+  taskId: string | null;
+  images: ImageResult[];
+  errorMessage: string;
+  creditRefunded: boolean;
+  createdAt: string | null;
+  dragActive: boolean;
+  dragCounter: number;
+  highlighted: boolean;
+}
+
+interface GlobalBatchSettings {
+  sceneType: BatchSceneMode;
+  model: string;
+  prompt: string;
+  size: string;
+  resolution: string;
+  customSize: string;
+}
+
+interface BatchGenerateDraftCard {
+  sceneType: BatchSceneMode;
+  prompt: string;
+  model: string;
+  size: string;
+  resolution: string;
+  customSize: string;
+  referenceImages: string[];
+  status: BatchCardStatus;
+  taskId: string | null;
+  images: ImageResult[];
+  errorMessage: string;
+  creditRefunded: boolean;
+  createdAt: string | null;
+}
+
+interface BatchGenerateDraftState {
+  globalSettings: GlobalBatchSettings;
+  globalReferenceImages: string[];
+  cards: BatchGenerateDraftCard[];
+}
+
+const auth = useAuthStore();
+const router = useRouter();
+const loginModalVisible = inject<Ref<boolean>>("loginModalVisible")!;
+const openPurchaseEntry = inject<() => void>("openPurchaseEntry");
+
+const MAX_BATCH_CARDS = 8;
+const DEFAULT_BATCH_CARDS = 3;
+const MAX_REFERENCE_FILE_SIZE = 10 * 1024 * 1024;
+const POLL_INTERVAL_MS = 5000;
+const SUBMISSION_RETRY_DELAY_MS = 5200;
+const DEFAULT_IMAGE_SIZE_OPTIONS: SceneOptionItem[] = [
+  { label: "1K", value: "1K" },
+  { label: "2K", value: "2K" },
+  { label: "4K", value: "4K" },
+];
+const DEFAULT_CUSTOM_SIZE_OPTIONS: SceneOptionItem[] = [
+  { label: "1024 x 1024", value: "1024x1024" },
+  { label: "1152 x 896", value: "1152x896" },
+  { label: "896 x 1152", value: "896x1152" },
+  { label: "1280 x 720", value: "1280x720" },
+];
+const DEFAULT_ASPECT_RATIO_OPTIONS: SceneOptionItem[] = [
+  { label: "■  1:1", value: "1:1" },
+  { label: "▮  2:3", value: "2:3" },
+  { label: "▬  3:2", value: "3:2" },
+  { label: "▮  3:4", value: "3:4" },
+  { label: "▬  4:3", value: "4:3" },
+  { label: "▮  9:16", value: "9:16" },
+  { label: "▬  16:9", value: "16:9" },
+];
+const ACTIVE_BATCH_HISTORY_PAGE_SIZE = 20;
+const failedResultAsset = withBaseUrl("failed-result.svg");
+const BATCH_GENERATE_DRAFT_KEY = "batchGenerateDraft";
+
+const sceneConfigLoading = ref(true);
+const sceneConfigLoaded = ref(false);
+const taskScenes = ref<TaskSceneConfig[]>([]);
+const cards = ref<BatchGenerateCard[]>([]);
+const globalSettings = ref<GlobalBatchSettings>({
+  sceneType: "image_edit",
+  model: "",
+  prompt: "",
+  size: "",
+  resolution: "",
+  customSize: "",
+});
+const globalReferenceItems = ref<UploadPreviewItem[]>([]);
+const taskPollingInFlight = ref(false);
+const previewVisible = ref(false);
+const previewCurrent = ref("");
+const feedbackDialogOpen = ref(false);
+const feedbackTarget = ref<{
+  taskId: string;
+  model?: string;
+  prompt: string;
+  createdAt: string;
+} | null>(null);
+
+const globalFileInput = ref<HTMLInputElement | null>(null);
+const cardFileInputs = new Map<string, HTMLInputElement>();
+const cardReferenceUploadBlockRefs = new Map<string, HTMLElement>();
+const globalReferenceDragActive = ref(false);
+const globalReferenceDragCounter = ref(0);
+const draftHydrationReady = ref(false);
+
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+let queueTimer: ReturnType<typeof setTimeout> | null = null;
+let submissionInFlight = false;
+let unbindGlobalReferenceDragHandlers: (() => void) | null = null;
+const unbindCardReferenceDragHandlers = new Map<string, () => void>();
+
+function makeId(prefix = "batch") {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function revokeObjectUrl(url?: string) {
+  if (url?.startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function createPendingImages(count = 1): ImageResult[] {
+  return Array.from({ length: count }, (_, index) => ({
+    id: -(Date.now() + index),
+    image_url: "",
+    status: "pending",
+  }));
+}
+
+function createReferenceItemFromRemote(url: string): UploadPreviewItem {
+  return {
+    id: makeId("ref"),
+    localUrl: url,
+    remoteUrl: url,
+    status: "success",
+  };
+}
+
+function cloneSuccessReferenceItems(items: UploadPreviewItem[]) {
+  return items
+    .filter((item) => item.status === "success" && item.remoteUrl)
+    .map((item) => createReferenceItemFromRemote(item.remoteUrl));
+}
+
+function serializeCard(card: BatchGenerateCard): BatchGenerateDraftCard {
+  return {
+    sceneType: card.sceneType,
+    prompt: card.prompt,
+    model: card.model,
+    size: card.size,
+    resolution: card.resolution,
+    customSize: card.customSize,
+    referenceImages: card.referenceItems
+      .filter((item) => item.status === "success" && item.remoteUrl)
+      .map((item) => item.remoteUrl),
+    status: card.status,
+    taskId: card.taskId,
+    images: card.images,
+    errorMessage: card.errorMessage,
+    creditRefunded: card.creditRefunded,
+    createdAt: card.createdAt,
+  };
+}
+
+function hydrateCardFromDraft(draft: BatchGenerateDraftCard): BatchGenerateCard {
+  const card: BatchGenerateCard = {
+    id: makeId("draft-card"),
+    sceneType: draft.sceneType,
+    prompt: draft.prompt || "",
+    model: draft.model || getDefaultModelKey(draft.sceneType),
+    size: draft.size || "",
+    resolution: draft.resolution || "",
+    customSize: draft.customSize || "",
+    referenceItems: Array.isArray(draft.referenceImages)
+      ? draft.referenceImages.map((url) => createReferenceItemFromRemote(url))
+      : [],
+    status: draft.status,
+    taskId: draft.taskId,
+    images: Array.isArray(draft.images) && draft.images.length
+      ? draft.images
+      : (draft.status === "success" ? [] : createPendingImages(1)),
+    errorMessage: draft.errorMessage || "",
+    creditRefunded: Boolean(draft.creditRefunded),
+    createdAt: draft.createdAt || null,
+    dragActive: false,
+    dragCounter: 0,
+    highlighted: false,
+  };
+  normalizeCardSelections(card);
+  return card;
+}
+
+function highlightCard(card: BatchGenerateCard) {
+  card.highlighted = false;
+  window.setTimeout(() => {
+    card.highlighted = true;
+    window.setTimeout(() => {
+      card.highlighted = false;
+    }, 2400);
+  }, 0);
+}
+
+function isCardMeaningfulForDraft(card: BatchGenerateCard) {
+  return Boolean(
+    card.prompt.trim()
+    || card.referenceItems.some((item) => item.status === "success" && item.remoteUrl)
+    || card.taskId
+    || card.images.length
+    || card.errorMessage
+    || card.status !== "idle",
+  );
+}
+
+function shouldPersistBatchGenerateDraft() {
+  const hasMeaningfulGlobalSettings = Boolean(
+    globalSettings.value.prompt.trim()
+    || globalReferenceItems.value.some((item) => item.status === "success" && item.remoteUrl),
+  );
+
+  return hasMeaningfulGlobalSettings || cards.value.some(isCardMeaningfulForDraft);
+}
+
+function persistBatchGenerateDraft() {
+  try {
+    if (!shouldPersistBatchGenerateDraft()) {
+      localStorage.removeItem(BATCH_GENERATE_DRAFT_KEY);
+      return;
+    }
+
+    const payload: BatchGenerateDraftState = {
+      globalSettings: { ...globalSettings.value },
+      globalReferenceImages: globalReferenceItems.value
+        .filter((item) => item.status === "success" && item.remoteUrl)
+        .map((item) => item.remoteUrl),
+      cards: cards.value.filter(isCardMeaningfulForDraft).map(serializeCard),
+    };
+    localStorage.setItem(BATCH_GENERATE_DRAFT_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function restoreBatchGenerateDraft() {
+  try {
+    const raw = localStorage.getItem(BATCH_GENERATE_DRAFT_KEY);
+    if (!raw) return false;
+    const draft = JSON.parse(raw) as Partial<BatchGenerateDraftState>;
+    if (draft.globalSettings) {
+      globalSettings.value = {
+        sceneType: draft.globalSettings.sceneType || "image_edit",
+        model: draft.globalSettings.model || "",
+        prompt: draft.globalSettings.prompt || "",
+        size: draft.globalSettings.size || "",
+        resolution: draft.globalSettings.resolution || "",
+        customSize: draft.globalSettings.customSize || "",
+      };
+    }
+    globalReferenceItems.value = Array.isArray(draft.globalReferenceImages)
+      ? draft.globalReferenceImages.map((url) => createReferenceItemFromRemote(url))
+      : [];
+    cards.value = Array.isArray(draft.cards)
+      ? draft.cards.slice(0, MAX_BATCH_CARDS).map(hydrateCardFromDraft)
+      : [];
+    if (!shouldPersistBatchGenerateDraft()) {
+      localStorage.removeItem(BATCH_GENERATE_DRAFT_KEY);
+      cards.value = [];
+      globalReferenceItems.value = [];
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function toGenerationModelOption(scene: TaskSceneConfig): GenerationModelOption {
+  return {
+    model_key: scene.scene_key,
+    model_label: scene.scene_label,
+    model_description: scene.scene_description,
+    display_name: scene.display_name,
+    subtitle: scene.subtitle,
+    sort_order: scene.sort_order,
+    hide_aspect_ratio: scene.hide_aspect_ratio,
+    hide_resolution: scene.hide_resolution,
+    hide_custom_size: scene.hide_custom_size,
+    credit_cost: scene.credit_cost,
+    resolution_credit_costs: scene.resolution_credit_costs || {},
+    max_reference_images: scene.max_reference_images,
+    aspect_ratio_options: scene.aspect_ratio_options,
+    image_size_options: scene.image_size_options,
+    custom_size_options: scene.custom_size_options,
+  };
+}
+
+const generationModels = computed(() => (
+  taskScenes.value
+    .filter((item) => item.scene_type === "generate" || item.scene_type === "image_edit")
+    .filter((item) => item.scene_key !== "prompt_reverse" && item.scene_key !== "inpaint")
+    .map(toGenerationModelOption)
+    .sort((a, b) => a.sort_order - b.sort_order)
+));
+
+const sceneTypeOptions = [
+  { label: "文生图", value: "generate" },
+  { label: "图编辑", value: "image_edit" },
+] as const;
+
+function getSceneTypeLabel(sceneType: BatchSceneMode) {
+  return sceneType === "image_edit" ? "图编辑" : "文生图";
+}
+
+function getModelsBySceneType(sceneType: BatchSceneMode) {
+  return generationModels.value
+    .filter((item) => (
+      taskScenes.value.find((scene) => scene.scene_key === item.model_key)?.scene_type === sceneType
+    ))
+    .sort((a, b) => a.sort_order - b.sort_order);
+}
+
+function getModelDisplayName(model: GenerationModelOption) {
+  return model.display_name || model.model_label || model.model_key;
+}
+
+function getModelCreditSubtitle(modelKey: string, targetResolution = "") {
+  return `消耗 ${resolveSceneCreditCost(modelKey, targetResolution)} 积分`;
+}
+
+function getDefaultModelKey(sceneType: BatchSceneMode) {
+  return getModelsBySceneType(sceneType)[0]?.model_key || generationModels.value[0]?.model_key || "";
+}
+
+const userCredits = computed(() => Number(auth.user?.credits || 0));
+const activeRemoteCardCount = computed(() => cards.value.filter((card) => (
+  ["submitting", "pending", "queued", "processing"].includes(card.status)
+)).length);
+const queuedLocalCount = computed(() => cards.value.filter((card) => card.status === "queued_local").length);
+const remainingSlots = computed(() => Math.max(MAX_BATCH_CARDS - activeRemoteCardCount.value, 0));
+const canAddMoreCards = computed(() => cards.value.length < MAX_BATCH_CARDS);
+const hasFinishedCards = computed(() => cards.value.some((card) => ["success", "failed"].includes(card.status)));
+const globalUploading = computed(() => globalReferenceItems.value.some((item) => item.status === "uploading"));
+const downloadableImages = computed(() => cards.value
+  .map((card) => getPrimaryImage(card))
+  .filter((image): image is ImageResult => Boolean(image && image.image_url)));
+const estimatedCreditTotal = computed(() => cards.value.reduce((total, card) => {
+  if (!card.model) return total;
+  return total + resolveSceneCreditCost(card.model, card.resolution);
+}, 0));
+
+function getModelOption(modelKey: string) {
+  return generationModels.value.find((item) => item.model_key === modelKey) || null;
+}
+
+function isImageEditModel(modelKey: string) {
+  return taskScenes.value.find((item) => item.scene_key === modelKey)?.scene_type === "image_edit";
+}
+
+function getAspectRatioOptions(modelKey: string) {
+  return getModelOption(modelKey)?.aspect_ratio_options?.length
+    ? getModelOption(modelKey)!.aspect_ratio_options
+    : DEFAULT_ASPECT_RATIO_OPTIONS;
+}
+
+function getResolutionOptions(modelKey: string) {
+  return getModelOption(modelKey)?.image_size_options?.length
+    ? getModelOption(modelKey)!.image_size_options
+    : DEFAULT_IMAGE_SIZE_OPTIONS;
+}
+
+function getCustomSizeOptions(modelKey: string) {
+  return getModelOption(modelKey)?.custom_size_options?.length
+    ? getModelOption(modelKey)!.custom_size_options
+    : DEFAULT_CUSTOM_SIZE_OPTIONS;
+}
+
+function hideAspectRatio(modelKey: string) {
+  return Boolean(getModelOption(modelKey)?.hide_aspect_ratio);
+}
+
+function hideResolution(modelKey: string) {
+  return Boolean(getModelOption(modelKey)?.hide_resolution);
+}
+
+function hideCustomSize(modelKey: string) {
+  return Boolean(getModelOption(modelKey)?.hide_custom_size);
+}
+
+function getMaxReferenceImages(modelKey: string) {
+  const configured = Number(getModelOption(modelKey)?.max_reference_images || 0);
+  return configured > 0 ? configured : 6;
+}
+
+function resolveSceneCreditCost(sceneKey: string, targetResolution = "") {
+  const scene = getModelOption(sceneKey) || taskScenes.value.find((item) => item.scene_key === sceneKey);
+  const resolutionKey = String(targetResolution || "").trim();
+  const resolutionCosts = scene?.resolution_credit_costs || {};
+  if (resolutionKey && Object.prototype.hasOwnProperty.call(resolutionCosts, resolutionKey)) {
+    return Number(resolutionCosts[resolutionKey] || 0);
+  }
+  return Number(scene?.credit_cost || 0);
+}
+
+function createEmptyCard(): BatchGenerateCard {
+  const card: BatchGenerateCard = {
+    id: makeId("card"),
+    sceneType: globalSettings.value.sceneType,
+    prompt: "",
+    model: globalSettings.value.model || getDefaultModelKey(globalSettings.value.sceneType),
+    size: globalSettings.value.size,
+    resolution: globalSettings.value.resolution,
+    customSize: globalSettings.value.customSize,
+    referenceItems: cloneSuccessReferenceItems(globalReferenceItems.value),
+    status: "idle",
+    taskId: null,
+    images: [],
+    errorMessage: "",
+    creditRefunded: false,
+    createdAt: null,
+    dragActive: false,
+    dragCounter: 0,
+    highlighted: false,
+  };
+  if (globalSettings.value.prompt.trim()) {
+    card.prompt = globalSettings.value.prompt;
+  }
+  normalizeCardSelections(card);
+  return card;
+}
+
+function createCardFromHistoryItem(item: UserHistoryCard): BatchGenerateCard {
+  const hasReferenceImages = Array.isArray(item.reference_images) && item.reference_images.length > 0;
+  const matchedScene = item.model
+    ? taskScenes.value.find((scene) => scene.scene_key === item.model)
+    : null;
+  const sceneType: BatchSceneMode = (
+    item.task_type === "image_edit"
+    || matchedScene?.scene_type === "image_edit"
+    || hasReferenceImages
+  )
+    ? "image_edit"
+    : "generate";
+  const fallbackImageCount = Math.max(1, Number(item.num_images || item.images.length || 1));
+
+  const card: BatchGenerateCard = {
+    id: makeId("history-card"),
+    sceneType,
+    prompt: item.prompt || "",
+    model: item.model || getDefaultModelKey(sceneType),
+    size: item.size || "",
+    resolution: item.resolution || "",
+    customSize: item.custom_size || "",
+    referenceItems: hasReferenceImages
+      ? item.reference_images.map((url) => createReferenceItemFromRemote(url))
+      : [],
+    status: item.status,
+    taskId: item.task_id || null,
+    images: item.images.length ? item.images : createPendingImages(fallbackImageCount),
+    errorMessage: item.error_message || item.images.find((image) => image.status === "failed" && image.error_message)?.error_message || "",
+    creditRefunded: Boolean(item.credit_refunded),
+    createdAt: item.created_at || null,
+    dragActive: false,
+    dragCounter: 0,
+    highlighted: false,
+  };
+
+  normalizeCardSelections(card);
+  return card;
+}
+
+function normalizeSelectedValue(currentValue: string, options: SceneOptionItem[]) {
+  if (!options.length) return "";
+  if (currentValue && options.some((item) => item.value === currentValue)) return currentValue;
+  return options[0]?.value || "";
+}
+
+function normalizeReferenceLimit(items: UploadPreviewItem[], modelKey: string) {
+  const limit = getMaxReferenceImages(modelKey);
+  if (items.length <= limit) return items;
+  items.slice(limit).forEach((item) => revokeObjectUrl(item.objectUrl));
+  return items.slice(0, limit);
+}
+
+function normalizeCardSelections(card: BatchGenerateCard) {
+  if (!generationModels.value.length) return;
+  if (!card.model || !getModelOption(card.model) || !getModelsBySceneType(card.sceneType).some((item) => item.model_key === card.model)) {
+    card.model = getDefaultModelKey(card.sceneType);
+  }
+
+  const sizeOptions = getAspectRatioOptions(card.model);
+  const resolutionOptions = getResolutionOptions(card.model);
+  const customSizeOptions = getCustomSizeOptions(card.model);
+
+  card.size = hideAspectRatio(card.model) ? "" : normalizeSelectedValue(card.size, sizeOptions);
+  card.resolution = hideResolution(card.model) ? "" : normalizeSelectedValue(card.resolution, resolutionOptions);
+  card.customSize = hideCustomSize(card.model) ? "" : normalizeSelectedValue(card.customSize, customSizeOptions);
+  card.referenceItems = normalizeReferenceLimit(card.referenceItems, card.model);
+}
+
+function normalizeGlobalSelections() {
+  if (!generationModels.value.length) return;
+  if (
+    !globalSettings.value.model
+    || !getModelOption(globalSettings.value.model)
+    || !getModelsBySceneType(globalSettings.value.sceneType).some((item) => item.model_key === globalSettings.value.model)
+  ) {
+    globalSettings.value.model = getDefaultModelKey(globalSettings.value.sceneType);
+  }
+
+  const sizeOptions = getAspectRatioOptions(globalSettings.value.model);
+  const resolutionOptions = getResolutionOptions(globalSettings.value.model);
+  const customSizeOptions = getCustomSizeOptions(globalSettings.value.model);
+
+  globalSettings.value.size = hideAspectRatio(globalSettings.value.model)
+    ? ""
+    : normalizeSelectedValue(globalSettings.value.size, sizeOptions);
+  globalSettings.value.resolution = hideResolution(globalSettings.value.model)
+    ? ""
+    : normalizeSelectedValue(globalSettings.value.resolution, resolutionOptions);
+  globalSettings.value.customSize = hideCustomSize(globalSettings.value.model)
+    ? ""
+    : normalizeSelectedValue(globalSettings.value.customSize, customSizeOptions);
+  globalReferenceItems.value = normalizeReferenceLimit(globalReferenceItems.value, globalSettings.value.model);
+}
+
+function createInitialCards(count = DEFAULT_BATCH_CARDS) {
+  if (!generationModels.value.length) return;
+  const safeCount = Math.min(Math.max(count, 1), MAX_BATCH_CARDS);
+  cards.value = Array.from({ length: safeCount }, () => createEmptyCard());
+}
+
+function ensureInitialCard() {
+  if (!cards.value.length && generationModels.value.length) {
+    createInitialCards();
+  }
+}
+
+async function loadActiveHistoryCards() {
+  if (!auth.isLoggedIn || !generationModels.value.length) return;
+
+  try {
+    const seenTaskIds = new Set<string>();
+    const activeHistoryItems: UserHistoryCard[] = [];
+    let page = 1;
+    let total = Infinity;
+
+    while (activeHistoryItems.length < MAX_BATCH_CARDS && activeHistoryItems.length < total) {
+      const res = await fetchHistory(page, ACTIVE_BATCH_HISTORY_PAGE_SIZE, {
+        respect_pins: false,
+        include_prompt_reverse: false,
+      });
+      total = res.total;
+      if (!res.items.length) break;
+
+      res.items.forEach((item) => {
+        if (activeHistoryItems.length >= MAX_BATCH_CARDS) return;
+        if (item.mode === "promptReverse" || !item.task_id || seenTaskIds.has(item.task_id)) return;
+        if (!["pending", "queued", "processing"].includes(item.status)) return;
+        seenTaskIds.add(item.task_id);
+        activeHistoryItems.push(item);
+      });
+
+      page += 1;
+    }
+
+    if (!activeHistoryItems.length) return;
+
+    const historyCards = activeHistoryItems.map(createCardFromHistoryItem);
+    const existingCardsByTaskId = new Map(
+      cards.value
+        .filter((card) => card.taskId)
+        .map((card) => [String(card.taskId), card]),
+    );
+
+    historyCards.forEach((historyCard) => {
+      const existingCard = historyCard.taskId ? existingCardsByTaskId.get(String(historyCard.taskId)) : null;
+      if (!existingCard) {
+        if (cards.value.length < MAX_BATCH_CARDS) {
+          cards.value.push(historyCard);
+        }
+        return;
+      }
+
+      existingCard.status = historyCard.status;
+      existingCard.images = historyCard.images;
+      existingCard.errorMessage = historyCard.errorMessage;
+      existingCard.creditRefunded = historyCard.creditRefunded;
+      existingCard.createdAt = historyCard.createdAt;
+      existingCard.taskId = historyCard.taskId;
+    });
+    ensurePolling();
+
+    try {
+      await pollTaskResults();
+    } catch {
+      // keep history snapshot cards and continue polling
+    }
+  } catch {
+    // ignore history hydration failure and fall back to empty card
+  }
+}
+
+watch(generationModels, () => {
+  normalizeGlobalSelections();
+  cards.value.forEach((card) => normalizeCardSelections(card));
+  ensureInitialCard();
+});
+
+watch(
+  [globalSettings, globalReferenceItems, cards],
+  () => {
+    if (!draftHydrationReady.value) return;
+    persistBatchGenerateDraft();
+  },
+  { deep: true },
+);
+
+function setGlobalReferenceUploadBlockRef(el: unknown) {
+  unbindGlobalReferenceDragHandlers?.();
+  unbindGlobalReferenceDragHandlers = null;
+
+  if (el instanceof HTMLElement) {
+    unbindGlobalReferenceDragHandlers = bindReferenceDragHandlers(el, {
+      setActive(active) {
+        globalReferenceDragActive.value = active;
+      },
+      increaseCounter() {
+        globalReferenceDragCounter.value += 1;
+      },
+      decreaseCounter() {
+        globalReferenceDragCounter.value = Math.max(0, globalReferenceDragCounter.value - 1);
+        if (globalReferenceDragCounter.value === 0) {
+          globalReferenceDragActive.value = false;
+        }
+      },
+      resetCounter() {
+        globalReferenceDragCounter.value = 0;
+        globalReferenceDragActive.value = false;
+      },
+      onDrop(files) {
+        void uploadReferenceFilesToTarget(files, "global");
+      },
+    });
+    return;
+  }
+}
+
+function setCardFileInput(cardId: string, el: unknown) {
+  if (el instanceof HTMLInputElement) {
+    cardFileInputs.set(cardId, el);
+  } else {
+    cardFileInputs.delete(cardId);
+  }
+}
+
+function setCardReferenceUploadBlockRef(cardId: string, el: unknown) {
+  const previousUnbind = unbindCardReferenceDragHandlers.get(cardId);
+  previousUnbind?.();
+  unbindCardReferenceDragHandlers.delete(cardId);
+
+  if (el instanceof HTMLElement) {
+    cardReferenceUploadBlockRefs.set(cardId, el);
+    const unbind = bindReferenceDragHandlers(el, {
+      setActive(active) {
+        const card = cards.value.find((item) => item.id === cardId);
+        if (!card) return;
+        card.dragActive = active;
+      },
+      increaseCounter() {
+        const card = cards.value.find((item) => item.id === cardId);
+        if (!card) return;
+        card.dragCounter += 1;
+      },
+      decreaseCounter() {
+        const card = cards.value.find((item) => item.id === cardId);
+        if (!card) return;
+        card.dragCounter = Math.max(0, card.dragCounter - 1);
+        if (card.dragCounter === 0) {
+          card.dragActive = false;
+        }
+      },
+      resetCounter() {
+        const card = cards.value.find((item) => item.id === cardId);
+        if (!card) return;
+        card.dragCounter = 0;
+        card.dragActive = false;
+      },
+      onDrop(files) {
+        const card = cards.value.find((item) => item.id === cardId);
+        if (!card) return;
+        void uploadReferenceFilesToTarget(files, card);
+      },
+    });
+    unbindCardReferenceDragHandlers.set(cardId, unbind);
+    return;
+  }
+
+  cardReferenceUploadBlockRefs.delete(cardId);
+}
+
+async function ensureAuthenticated() {
+  if (!auth.isLoggedIn) {
+    loginModalVisible.value = true;
+    return false;
+  }
+  try {
+    auth.updateUser(await getMe());
+    return true;
+  } catch {
+    loginModalVisible.value = true;
+    return false;
+  }
+}
+
+function isInsufficientCreditsError(err: any) {
+  const detail = String(err?.response?.data?.detail || err?.message || "");
+  return detail.includes("积分不足");
+}
+
+function isSubmissionLimitError(err: any) {
+  const detail = String(err?.response?.data?.detail || err?.message || "");
+  return err?.response?.status === 429 || detail.includes("当前提交任务较多");
+}
+
+function showInsufficientCreditsPurchase(detail?: string) {
+  if (detail) {
+    message.warning(detail);
+  }
+  openPurchaseEntry?.();
+}
+
+function getReferencePreviewUrl(item: UploadPreviewItem) {
+  return resolveImageUrl(item.localUrl || item.remoteUrl);
+}
+
+function isReferenceImageFile(file: File) {
+  if (file.type.startsWith("image/")) return true;
+  return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(file.name);
+}
+
+function isReferenceFileDragEvent(event: DragEvent) {
+  const types = Array.from(event.dataTransfer?.types || []);
+  return types.includes("Files");
+}
+
+function bindReferenceDragHandlers(
+  element: HTMLElement,
+  handlers: {
+    setActive: (active: boolean) => void;
+    increaseCounter: () => void;
+    decreaseCounter: () => void;
+    resetCounter: () => void;
+    onDrop: (files: File[]) => void;
+  }
+) {
+  const handleDragEnter = (event: DragEvent) => {
+    if (!isReferenceFileDragEvent(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    handlers.increaseCounter();
+    handlers.setActive(true);
+  };
+
+  const handleDragOver = (event: DragEvent) => {
+    if (!isReferenceFileDragEvent(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "copy";
+    }
+  };
+
+  const handleDragLeave = (event: DragEvent) => {
+    if (!isReferenceFileDragEvent(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    handlers.decreaseCounter();
+  };
+
+  const handleDrop = (event: DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    handlers.resetCounter();
+
+    const files = Array.from(event.dataTransfer?.files || []);
+    if (!files.length) return;
+    handlers.onDrop(files);
+  };
+
+  element.addEventListener("dragenter", handleDragEnter);
+  element.addEventListener("dragover", handleDragOver);
+  element.addEventListener("dragleave", handleDragLeave);
+  element.addEventListener("drop", handleDrop);
+
+  return () => {
+    element.removeEventListener("dragenter", handleDragEnter);
+    element.removeEventListener("dragover", handleDragOver);
+    element.removeEventListener("dragleave", handleDragLeave);
+    element.removeEventListener("drop", handleDrop);
+  };
+}
+
+function updateCard(cardId: string, updater: (card: BatchGenerateCard) => void) {
+  const card = cards.value.find((item) => item.id === cardId);
+  if (!card) return;
+  updater(card);
+}
+
+function hasUploadingReferences(items: UploadPreviewItem[]) {
+  return items.some((item) => item.status === "uploading");
+}
+
+function hasFailedReferences(items: UploadPreviewItem[]) {
+  return items.some((item) => item.status === "failed");
+}
+
+function isCardLocked(card: BatchGenerateCard) {
+  return ["queued_local", "submitting", "pending", "queued", "processing"].includes(card.status);
+}
+
+function buildReferenceUrls(items: UploadPreviewItem[]) {
+  return items
+    .filter((item) => item.status === "success" && item.remoteUrl)
+    .map((item) => item.remoteUrl);
+}
+
+function updateReferenceItem(
+  items: UploadPreviewItem[],
+  id: string,
+  patch: Partial<UploadPreviewItem>,
+) {
+  const index = items.findIndex((item) => item.id === id);
+  if (index === -1) return items;
+  const nextItems = [...items];
+  nextItems[index] = {
+    ...nextItems[index],
+    ...patch,
+  };
+  return nextItems;
+}
+
+function commitReferenceItems(
+  items: UploadPreviewItem[],
+  target: "global" | BatchGenerateCard,
+) {
+  if (target === "global") {
+    globalReferenceItems.value = items;
+    return;
+  }
+
+  const cardIndex = cards.value.findIndex((card) => card.id === target.id);
+  if (cardIndex === -1) {
+    target.referenceItems = items;
+    return;
+  }
+
+  cards.value[cardIndex] = {
+    ...cards.value[cardIndex],
+    referenceItems: items,
+  };
+}
+
+async function uploadReferenceFilesToTarget(
+  files: File[],
+  target: "global" | BatchGenerateCard,
+) {
+  if (!(await ensureAuthenticated())) return;
+
+  const imageFiles = files.filter((file) => isReferenceImageFile(file));
+  if (!imageFiles.length) {
+    if (files.length) {
+      message.warning("仅支持上传图片文件");
+    }
+    return;
+  }
+
+  const items = target === "global" ? [...globalReferenceItems.value] : [...target.referenceItems];
+  const modelKey = target === "global" ? globalSettings.value.model : target.model;
+  const limit = getMaxReferenceImages(modelKey);
+  const remainingSlots = Math.max(0, limit - items.length);
+  if (!remainingSlots) {
+    message.warning(`当前模型最多上传 ${limit} 张参考图`);
+    return;
+  }
+
+  const acceptedFiles = imageFiles.slice(0, remainingSlots);
+  if (imageFiles.length > acceptedFiles.length) {
+    message.warning(`当前模型最多支持 ${limit} 张参考图，本次仅上传前 ${acceptedFiles.length} 张`);
+  }
+
+  let uploadedCount = 0;
+  let failedCount = 0;
+  let oversizedCount = 0;
+  let workingItems = items;
+
+  for (const file of acceptedFiles) {
+    if (file.size > MAX_REFERENCE_FILE_SIZE) {
+      oversizedCount += 1;
+      continue;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    const item: UploadPreviewItem = {
+      id: makeId("upload"),
+      localUrl: objectUrl,
+      remoteUrl: "",
+      status: "uploading",
+      objectUrl,
+    };
+    workingItems = [...workingItems, item];
+    commitReferenceItems(workingItems, target);
+
+    try {
+      const res = await uploadReferenceImage(file, "ref");
+      revokeObjectUrl(objectUrl);
+      workingItems = updateReferenceItem(workingItems, item.id, {
+        objectUrl: undefined,
+        localUrl: res.url,
+        remoteUrl: res.url,
+        status: "success",
+      });
+      uploadedCount += 1;
+    } catch {
+      workingItems = updateReferenceItem(workingItems, item.id, {
+        status: "failed",
+      });
+      failedCount += 1;
+    }
+
+    commitReferenceItems(workingItems, target);
+  }
+
+  if (target !== "global") {
+    const latestCard = cards.value.find((item) => item.id === target.id);
+    if (latestCard) {
+      normalizeCardSelections(latestCard);
+    }
+  } else {
+    normalizeGlobalSelections();
+  }
+
+  if (uploadedCount > 0) {
+    message.success(`成功上传 ${uploadedCount} 张参考图`);
+  }
+  if (oversizedCount > 0) {
+    message.warning(`${oversizedCount} 张图片超过 10MB，已跳过`);
+  }
+  if (failedCount > 0) {
+    message.error(`${failedCount} 张参考图上传失败，请重试`);
+  }
+}
+
+function removeReferenceItem(items: UploadPreviewItem[], index: number) {
+  const item = items[index];
+  if (item) {
+    revokeObjectUrl(item.objectUrl);
+  }
+  items.splice(index, 1);
+}
+
+function triggerGlobalReferenceUpload() {
+  void ensureAuthenticated().then((passed) => {
+    if (!passed) return;
+    globalFileInput.value?.click();
+  });
+}
+
+function triggerCardReferenceUpload(cardId: string) {
+  const card = cards.value.find((item) => item.id === cardId);
+  if (!card || isCardLocked(card)) return;
+  void ensureAuthenticated().then((passed) => {
+    if (!passed) return;
+    cardFileInputs.get(cardId)?.click();
+  });
+}
+
+async function handleGlobalReferenceChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  try {
+    await uploadReferenceFilesToTarget(files, "global");
+  } finally {
+    input.value = "";
+  }
+}
+
+async function handleCardReferenceChange(cardId: string, event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  const card = cards.value.find((item) => item.id === cardId);
+  if (!card) return;
+  try {
+    if (isCardLocked(card)) return;
+    await uploadReferenceFilesToTarget(files, card);
+  } finally {
+    input.value = "";
+  }
+}
+
+function handleGlobalModelChange(modelKey: string) {
+  globalSettings.value.model = modelKey;
+  globalSettings.value.sceneType = isImageEditModel(modelKey) ? "image_edit" : "generate";
+  normalizeGlobalSelections();
+}
+
+function handleGlobalSceneTypeChange(sceneType: BatchSceneMode) {
+  globalSettings.value.sceneType = sceneType;
+  globalSettings.value.model = getDefaultModelKey(sceneType);
+  normalizeGlobalSelections();
+}
+
+function handleCardModelChange(card: BatchGenerateCard, modelKey: string) {
+  if (isCardLocked(card)) return;
+  card.model = modelKey;
+  card.sceneType = isImageEditModel(modelKey) ? "image_edit" : "generate";
+  normalizeCardSelections(card);
+}
+
+function handleCardSceneTypeChange(card: BatchGenerateCard, sceneType: BatchSceneMode) {
+  if (isCardLocked(card)) return;
+  card.sceneType = sceneType;
+  card.model = getDefaultModelKey(sceneType);
+  normalizeCardSelections(card);
+}
+
+function addCard() {
+  if (!canAddMoreCards.value) {
+    message.warning(`最多添加 ${MAX_BATCH_CARDS} 张配置卡片`);
+    return;
+  }
+  cards.value.push(createEmptyCard());
+}
+
+function removeCard(card: BatchGenerateCard) {
+  if (isCardLocked(card)) return;
+  const doRemove = () => {
+    card.referenceItems.forEach((item) => revokeObjectUrl(item.objectUrl));
+    cards.value = cards.value.filter((item) => item.id !== card.id);
+    if (!cards.value.length) {
+      createInitialCards();
+    }
+  };
+
+  doRemove();
+}
+
+function clearFinishedCards() {
+  cards.value.forEach((card) => {
+    if (["success", "failed"].includes(card.status)) {
+      card.referenceItems.forEach((item) => revokeObjectUrl(item.objectUrl));
+    }
+  });
+  cards.value = cards.value.filter((card) => !["success", "failed"].includes(card.status));
+  if (!cards.value.length) {
+    createInitialCards();
+  }
+}
+
+function applyGlobalSettingsToAll() {
+  const successReferences = cloneSuccessReferenceItems(globalReferenceItems.value);
+  let appliedFieldCount = 0;
+
+  cards.value.forEach((card) => {
+    if (globalSettings.value.model) {
+      card.sceneType = globalSettings.value.sceneType;
+      card.model = globalSettings.value.model;
+      appliedFieldCount += 1;
+    }
+    if (globalSettings.value.prompt.trim()) {
+      card.prompt = globalSettings.value.prompt;
+      appliedFieldCount += 1;
+    }
+    if (globalSettings.value.size) {
+      card.size = globalSettings.value.size;
+      appliedFieldCount += 1;
+    }
+    if (globalSettings.value.resolution) {
+      card.resolution = globalSettings.value.resolution;
+      appliedFieldCount += 1;
+    }
+    if (globalSettings.value.customSize) {
+      card.customSize = globalSettings.value.customSize;
+      appliedFieldCount += 1;
+    }
+    if (successReferences.length) {
+      card.referenceItems.forEach((item) => revokeObjectUrl(item.objectUrl));
+      card.referenceItems = cloneSuccessReferenceItems(successReferences);
+      appliedFieldCount += 1;
+    }
+    normalizeCardSelections(card);
+  });
+
+  if (!appliedFieldCount) {
+    message.warning("全局设置中还没有可应用的内容");
+    return;
+  }
+  message.success(`已将全局设置应用到 ${cards.value.length} 张卡片`);
+}
+
+function getCardBlockingReason(card: BatchGenerateCard) {
+  if (!card.model) return "请选择模型";
+  if (!card.prompt.trim()) return "提示词不能为空";
+  if (card.sceneType === "image_edit" && !buildReferenceUrls(card.referenceItems).length) {
+    return "参考图不能为空";
+  }
+  if (hasUploadingReferences(card.referenceItems)) return "参考图仍在上传，请稍后再试";
+  if (hasFailedReferences(card.referenceItems)) return "存在上传失败的参考图，请删除或重传";
+  return "";
+}
+
+function getSingleSubmitButtonLabel(card: BatchGenerateCard) {
+  return card.status === "idle" ? "开始生成" : "重新生成";
+}
+
+function getStatusLabel(status: BatchCardStatus) {
+  if (status === "idle") return "待开始";
+  if (status === "queued_local") return "等待提交";
+  if (status === "submitting") return "提交中";
+  if (status === "pending") return "待处理";
+  if (status === "queued") return "排队中";
+  if (status === "processing") return "生成中";
+  if (status === "success") return "已完成";
+  return "失败";
+}
+
+function getStatusColor(status: BatchCardStatus) {
+  if (status === "success") return "success";
+  if (status === "failed") return "error";
+  if (status === "idle") return "default";
+  return "processing";
+}
+
+function openPreview(image?: ImageResult) {
+  const url = getPreviewImageUrl(image);
+  if (!url) return;
+  previewCurrent.value = url;
+  previewVisible.value = true;
+}
+
+function refreshCurrentUser() {
+  return getMe().then((user) => auth.updateUser(user)).catch(() => {});
+}
+
+function canEditBatchGeneratedImage(card: BatchGenerateCard, image: ImageResult) {
+  return image.status === "success" && !!(image.image_url || image.preview_url);
+}
+
+function handleEditBatchGeneratedImage(card: BatchGenerateCard, image: ImageResult) {
+  const referenceImage = image.image_url || image.preview_url || "";
+  if (!referenceImage) {
+    message.warning("当前结果图暂不可用于图编辑");
+    return;
+  }
+
+  card.sceneType = "image_edit";
+  if (!isImageEditModel(card.model)) {
+    card.model = getDefaultModelKey("image_edit");
+  }
+  card.referenceItems.forEach((item) => revokeObjectUrl(item.objectUrl));
+  card.referenceItems = [createReferenceItemFromRemote(referenceImage)];
+  card.taskId = null;
+  card.status = "idle";
+  card.images = [];
+  card.errorMessage = "";
+  card.creditRefunded = false;
+  normalizeCardSelections(card);
+  highlightCard(card);
+  message.success("结果图已加载到当前任务卡片，可继续图编辑");
+}
+
+function openFeedbackDialogForBatchCard(card: BatchGenerateCard) {
+  if (!card.taskId || card.status !== "success") {
+    message.warning("当前任务尚未生成完成，暂时无法提交反馈");
+    return;
+  }
+
+  feedbackTarget.value = {
+    taskId: card.taskId,
+    model: card.model,
+    prompt: card.prompt,
+    createdAt: card.createdAt || new Date().toISOString(),
+  };
+  feedbackDialogOpen.value = true;
+}
+
+function canDeleteBatchCardImage(card: BatchGenerateCard, image: ImageResult) {
+  return Boolean(card.taskId && image.id > 0 && (image.status === "success" || image.status === "failed"));
+}
+
+async function removeBatchCardImage(card: BatchGenerateCard, image: ImageResult) {
+  if (!canDeleteBatchCardImage(card, image)) {
+    message.warning("当前图片暂不支持删除");
+    return;
+  }
+
+  try {
+    await deleteImage(image.id);
+    card.images = card.images.filter((item) => item.id !== image.id);
+
+    if (!card.images.length) {
+      card.status = "idle";
+      card.errorMessage = "";
+      card.taskId = null;
+      card.createdAt = null;
+      card.creditRefunded = false;
+    } else if (!card.images.some((item) => item.status === "success")) {
+      card.status = "failed";
+      card.errorMessage = getPreferredGenerationErrorMessage(
+        card.errorMessage,
+        card.images.find((item) => item.status === "failed")?.error_message,
+        Boolean(card.creditRefunded),
+        "生成失败，请重试",
+      );
+    }
+
+    message.success("删除成功");
+  } catch {
+    message.error("删除失败");
+  }
+}
+
+function confirmRemoveBatchCardImage(card: BatchGenerateCard, image: ImageResult) {
+  Modal.confirm({
+    title: "确认删除这张图片？",
+    content: "删除后会移除当前任务卡片中的这张结果图。",
+    centered: true,
+    async onOk() {
+      await removeBatchCardImage(card, image);
+    },
+  });
+}
+
+function duplicateCard(card: BatchGenerateCard) {
+  if (cards.value.length >= MAX_BATCH_CARDS) {
+    message.warning(`最多添加 ${MAX_BATCH_CARDS} 张配置卡片`);
+    return;
+  }
+
+  const nextCard: BatchGenerateCard = {
+    id: makeId("card"),
+    sceneType: card.sceneType,
+    prompt: card.prompt,
+    model: card.model,
+    size: card.size,
+    resolution: card.resolution,
+    customSize: card.customSize,
+    referenceItems: cloneSuccessReferenceItems(card.referenceItems),
+    status: "idle",
+    taskId: null,
+    images: [],
+    errorMessage: "",
+    creditRefunded: false,
+    createdAt: null,
+    dragActive: false,
+    dragCounter: 0,
+    highlighted: false,
+  };
+  normalizeCardSelections(nextCard);
+  const cardIndex = cards.value.findIndex((item) => item.id === card.id);
+  cards.value.splice(cardIndex >= 0 ? cardIndex + 1 : cards.value.length, 0, nextCard);
+  highlightCard(nextCard);
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function getDownloadFilename(imageId: number, imageUrl?: string) {
+  const cleanPath = (imageUrl || "").split("?")[0] || "";
+  const suffix = cleanPath.includes(".") ? cleanPath.slice(cleanPath.lastIndexOf(".")) : ".png";
+  return `banana_${imageId}${suffix || ".png"}`;
+}
+
+async function downloadBlob(imageId: number, imageUrl: string, previewUrl?: string) {
+  const url = getDownloadUrl(imageId, imageUrl, previewUrl);
+  const headers: Record<string, string> = {};
+  const token = localStorage.getItem("token");
+  if (token && !/^https?:\/\//.test(url)) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, { headers });
+  if (!response.ok) throw new Error("download_failed");
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = getDownloadFilename(imageId, imageUrl);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+async function downloadAllImages() {
+  if (!downloadableImages.value.length) {
+    message.warning("当前没有可下载的结果图");
+    return;
+  }
+
+  let successCount = 0;
+  for (const image of downloadableImages.value) {
+    try {
+      await downloadBlob(image.id, image.image_url, image.preview_url);
+      successCount += 1;
+      await wait(180);
+    } catch {
+      // continue downloading remaining images
+    }
+  }
+
+  if (!successCount) {
+    message.error("批量下载失败，请重试");
+    return;
+  }
+  if (successCount < downloadableImages.value.length) {
+    message.warning(`已下载 ${successCount} 张，部分图片下载失败`);
+    return;
+  }
+  message.success(`已开始下载 ${successCount} 张图片`);
+}
+
+function getCardTaskLabel(card: BatchGenerateCard) {
+  const index = cards.value.findIndex((item) => item.id === card.id);
+  return index === -1 ? "任务" : `任务${index + 1}`;
+}
+
+function queueCardsForSubmit(targetCards: BatchGenerateCard[]) {
+  const invalidMessages: string[] = [];
+  let queuedCount = 0;
+
+  targetCards.forEach((card) => {
+    const blockingReason = getCardBlockingReason(card);
+    if (blockingReason) {
+      invalidMessages.push(`${getCardTaskLabel(card)}：${blockingReason}`);
+      return;
+    }
+    card.errorMessage = "";
+    card.creditRefunded = false;
+    card.taskId = null;
+    card.images = [];
+    card.createdAt = null;
+    card.status = "queued_local";
+    queuedCount += 1;
+  });
+
+  if (queuedCount > 0) {
+    scheduleQueuePump(0);
+  }
+
+  if (invalidMessages.length) {
+    message.warning(invalidMessages[0]);
+  } else if (queuedCount > 0) {
+    message.success(`已加入 ${queuedCount} 张卡片到批量队列`);
+  }
+}
+
+async function startBatchGenerate() {
+  if (!(await ensureAuthenticated())) return;
+  const targetCards = cards.value.filter((card) => ["idle", "failed", "success"].includes(card.status));
+  if (!targetCards.length) {
+    message.warning("当前没有可提交的卡片");
+    return;
+  }
+  queueCardsForSubmit(targetCards);
+}
+
+async function retryCard(card: BatchGenerateCard) {
+  if (!(await ensureAuthenticated())) return;
+  queueCardsForSubmit([card]);
+}
+
+function startSingleCard(card: BatchGenerateCard) {
+  if (["queued_local", "idle", "failed", "success"].includes(card.status)) {
+    void retryCard(card);
+  }
+}
+
+function buildCreateTaskPayload(card: BatchGenerateCard) {
+  return {
+    model: card.model,
+    prompt: card.prompt.trim(),
+    num_images: 1,
+    size: hideAspectRatio(card.model) ? "" : card.size,
+    resolution: hideResolution(card.model) ? "" : card.resolution,
+    custom_size: hideCustomSize(card.model) ? "" : card.customSize,
+    mode: "generate" as const,
+    reference_images: isImageEditModel(card.model) && buildReferenceUrls(card.referenceItems).length
+      ? buildReferenceUrls(card.referenceItems)
+      : undefined,
+  };
+}
+
+async function submitCard(card: BatchGenerateCard) {
+  card.status = "submitting";
+  card.errorMessage = "";
+  card.images = createPendingImages(1);
+
+  try {
+    const res = await createTask(buildCreateTaskPayload(card));
+    const taskId = res.task_id || res.task_ids?.[0];
+    if (!taskId) {
+      throw new Error("服务端没有返回任务 ID");
+    }
+
+    card.taskId = taskId;
+    card.status = "pending";
+    card.createdAt = new Date().toISOString();
+    ensurePolling();
+    void refreshCurrentUser();
+  } catch (err: any) {
+    const detail = String(err?.response?.data?.detail || err?.message || "");
+    if (isInsufficientCreditsError(err)) {
+      card.status = "failed";
+      card.images = [];
+      card.errorMessage = formatGenerationErrorMessage(detail, "积分不足");
+      showInsufficientCreditsPurchase(detail);
+      return;
+    }
+
+    if (isSubmissionLimitError(err)) {
+      card.status = "queued_local";
+      card.images = [];
+      card.errorMessage = "当前提交较频繁，系统会自动稍后重试";
+      scheduleQueuePump(SUBMISSION_RETRY_DELAY_MS);
+      return;
+    }
+
+    card.status = "failed";
+    card.images = [];
+    card.errorMessage = formatGenerationErrorMessage(detail, "创建任务失败");
+  }
+}
+
+async function pumpQueue() {
+  if (submissionInFlight) return;
+  if (remainingSlots.value <= 0) return;
+
+  const nextCard = cards.value.find((card) => card.status === "queued_local");
+  if (!nextCard) return;
+
+  submissionInFlight = true;
+  try {
+    await submitCard(nextCard);
+  } finally {
+    submissionInFlight = false;
+  }
+
+  if (cards.value.some((card) => card.status === "queued_local") && remainingSlots.value > 0) {
+    scheduleQueuePump(350);
+  }
+}
+
+function scheduleQueuePump(delay = 0) {
+  if (queueTimer) clearTimeout(queueTimer);
+  queueTimer = setTimeout(() => {
+    queueTimer = null;
+    void pumpQueue();
+  }, delay);
+}
+
+function applyTaskResultToCard(card: BatchGenerateCard, task: TaskResult) {
+  card.taskId = task.id;
+  card.createdAt = task.created_at;
+  card.creditRefunded = Boolean(task.credit_refunded);
+  card.status = task.status;
+  card.images = task.images?.length
+    ? task.images
+    : (["pending", "queued", "processing"].includes(task.status) ? createPendingImages(1) : []);
+
+  if (task.status === "failed") {
+    card.errorMessage = getPreferredGenerationErrorMessage(
+      task.error_message,
+      task.images?.[0]?.error_message,
+      Boolean(task.credit_refunded),
+      "生成失败，请重试",
+    );
+    return;
+  }
+
+  if (task.status === "success") {
+    card.errorMessage = "";
+    return;
+  }
+
+  card.errorMessage = "";
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
+function ensurePolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(() => {
+    void pollTaskResults();
+  }, POLL_INTERVAL_MS);
+}
+
+async function pollTaskResults() {
+  if (taskPollingInFlight.value) return;
+
+  const activeCards = cards.value.filter((card) => (
+    !!card.taskId && (
+      ["submitting", "pending", "queued", "processing"].includes(card.status)
+      || (card.status === "success" && !hasSuccessResult(card))
+    )
+  ));
+
+  if (!activeCards.length) {
+    stopPolling();
+    if (cards.value.some((card) => card.status === "queued_local")) {
+      scheduleQueuePump(0);
+    }
+    return;
+  }
+
+  taskPollingInFlight.value = true;
+  try {
+    const results = await getTasks(activeCards.map((card) => String(card.taskId)));
+    const resultMap = new Map(results.map((item) => [item.id, item]));
+    let shouldRefreshUser = false;
+
+    activeCards.forEach((card) => {
+      const task = resultMap.get(String(card.taskId));
+      if (!task) return;
+      const previousStatus = card.status;
+      applyTaskResultToCard(card, task);
+      if (previousStatus !== card.status && ["success", "failed"].includes(card.status)) {
+        shouldRefreshUser = true;
+      }
+    });
+
+    if (shouldRefreshUser) {
+      void refreshCurrentUser();
+    }
+  } catch {
+    // keep current state and continue polling next round
+  } finally {
+    taskPollingInFlight.value = false;
+  }
+
+  if (cards.value.some((card) => card.status === "queued_local")) {
+    scheduleQueuePump(0);
+  }
+}
+
+function hasSuccessResult(card: BatchGenerateCard) {
+  const image = card.images.find((item) => item.status === "success");
+  return Boolean(image && (image.image_url || image.preview_url));
+}
+
+function getPrimaryImage(card: BatchGenerateCard) {
+  return card.images.find((item) => item.status === "success") || null;
+}
+
+function shouldShowGeneratingCard(card: BatchGenerateCard) {
+  if (hasSuccessResult(card)) return false;
+  if (card.status === "idle" || card.status === "failed") return false;
+  return Boolean(card.taskId)
+    || ["queued_local", "submitting", "pending", "queued", "processing", "success"].includes(card.status)
+    || card.images.some((item) => item.status === "pending");
+}
+
+function isCardGenerating(card: BatchGenerateCard) {
+  return shouldShowGeneratingCard(card);
+}
+
+function getResultMessage(card: BatchGenerateCard) {
+  if (card.status === "queued_local") return "已加入本地等待队列，系统会在有空闲并发后自动提交。";
+  if (card.status === "submitting") return "正在提交任务到服务端。";
+  if (card.status === "pending" || card.status === "queued") return "任务已创建，正在等待服务端处理。";
+  if (card.status === "processing") return "服务端正在生成图片。";
+  if (card.status === "success") return "生成完成，可预览或下载图片。";
+  if (card.errorMessage) return card.errorMessage;
+  return "";
+}
+
+async function loadTaskScenes() {
+  sceneConfigLoading.value = true;
+  try {
+    taskScenes.value = await getTaskScenes();
+    sceneConfigLoaded.value = true;
+  } catch (err: any) {
+    const detail = String(err?.response?.data?.detail || err?.message || "");
+    message.error(formatGenerationErrorMessage(detail, "加载模型配置失败"));
+  } finally {
+    sceneConfigLoading.value = false;
+  }
+}
+
+onMounted(async () => {
+  await loadTaskScenes();
+  restoreBatchGenerateDraft();
+  normalizeGlobalSelections();
+  cards.value.forEach((card) => normalizeCardSelections(card));
+  await loadActiveHistoryCards();
+  ensureInitialCard();
+  draftHydrationReady.value = true;
+  persistBatchGenerateDraft();
+});
+
+onBeforeUnmount(() => {
+  stopPolling();
+  if (queueTimer) clearTimeout(queueTimer);
+  unbindGlobalReferenceDragHandlers?.();
+  unbindCardReferenceDragHandlers.forEach((unbind) => unbind());
+  unbindCardReferenceDragHandlers.clear();
+  globalReferenceItems.value.forEach((item) => revokeObjectUrl(item.objectUrl));
+  cards.value.forEach((card) => card.referenceItems.forEach((item) => revokeObjectUrl(item.objectUrl)));
+});
+</script>
+
+<template>
+  <div class="batch-generate-page">
+    <a-card class="batch-panel batch-panel-global" :loading="sceneConfigLoading">
+      <template #title>
+        <div class="panel-title-row panel-title-row-global">
+          <div class="panel-title-block">
+            <span class="panel-title-text">全局应用设置</span>
+          </div>
+        </div>
+      </template>
+      <template #extra>
+        <div class="global-panel-actions">
+          <a-segmented
+            class="global-scene-switch"
+            :value="globalSettings.sceneType"
+            :options="sceneTypeOptions"
+            @update:value="handleGlobalSceneTypeChange($event as BatchSceneMode)"
+          />
+          <a-button
+            type="primary"
+            class="global-apply-btn batch-action-btn batch-action-btn-primary"
+            :disabled="globalUploading"
+            @click="applyGlobalSettingsToAll"
+          >
+            应用到全部
+          </a-button>
+        </div>
+      </template>
+
+      <div v-if="sceneConfigLoaded" class="panel-body panel-body-compact global-panel-body">
+        <div class="global-settings-layout" :class="{ 'has-reference-column': globalSettings.sceneType === 'image_edit' }">
+            <div class="global-params-column">
+              <div class="field-block field-block-no-title">
+                <a-select
+                  class="card-setting-select"
+                  :value="globalSettings.model"
+                  show-search
+                  option-filter-prop="title"
+                  option-label-prop="title"
+                  placeholder="选择全局模型"
+                  @update:value="handleGlobalModelChange"
+                >
+                  <a-select-option
+                    v-for="model in getModelsBySceneType(globalSettings.sceneType)"
+                    :key="model.model_key"
+                    :value="model.model_key"
+                    :title="getModelDisplayName(model)"
+                  >
+                    <div class="batch-model-option">
+                      <div class="batch-model-option-label">{{ getModelDisplayName(model) }}</div>
+                      <div class="batch-model-option-desc">{{ getModelCreditSubtitle(model.model_key, globalSettings.resolution) }}</div>
+                    </div>
+                  </a-select-option>
+                </a-select>
+              </div>
+
+              <div v-if="!hideAspectRatio(globalSettings.model)" class="field-block field-block-no-title">
+                <AspectRatioPicker
+                  :model-value="globalSettings.size"
+                  :options="getAspectRatioOptions(globalSettings.model)"
+                  @update:model-value="globalSettings.size = $event"
+                />
+              </div>
+
+              <div v-if="!hideResolution(globalSettings.model)" class="field-block field-block-no-title">
+                <OptionGridPicker
+                  :model-value="globalSettings.resolution"
+                  :options="getResolutionOptions(globalSettings.model)"
+                  panel-title="选择分辨率"
+                  placeholder="选择分辨率"
+                  @update:model-value="globalSettings.resolution = $event"
+                />
+              </div>
+
+              <div v-if="!hideCustomSize(globalSettings.model)" class="field-block field-block-no-title">
+                <OptionGridPicker
+                  :model-value="globalSettings.customSize"
+                  :options="getCustomSizeOptions(globalSettings.model)"
+                  panel-title="选择自定义尺寸"
+                  placeholder="选择自定义尺寸"
+                  @update:model-value="globalSettings.customSize = $event"
+                />
+              </div>
+            </div>
+
+            <div class="field-block global-prompt-field field-block-no-title">
+              <a-textarea
+                v-model:value="globalSettings.prompt"
+                :rows="3"
+                :maxlength="5000"
+                placeholder="描述您想要生成的图片..."
+                class="global-prompt-textarea"
+              />
+            </div>
+
+            <div
+              v-if="globalSettings.sceneType === 'image_edit'"
+              :ref="setGlobalReferenceUploadBlockRef"
+              class="field-block batch-ref-upload-block global-ref-upload-block"
+              :class="{ 'is-reference-drag-over': globalReferenceDragActive }"
+            >
+              <div class="panel-head">
+                <h3>参考图</h3>
+                <span class="panel-hint">(最多 {{ getMaxReferenceImages(globalSettings.model) }} 张，支持拖拽上传)</span>
+              </div>
+
+              <input
+                ref="globalFileInput"
+                class="hidden-input"
+                type="file"
+                accept="image/*"
+                multiple
+                @change="handleGlobalReferenceChange"
+              />
+
+              <div class="upload-grid">
+                <div
+                  v-for="(item, index) in globalReferenceItems"
+                  :key="item.id"
+                  class="upload-thumb"
+                  @click="openPreview({ id: 0, image_url: item.remoteUrl || item.localUrl, preview_url: item.remoteUrl || item.localUrl, status: 'success' })"
+                >
+                  <img :src="getReferencePreviewUrl(item)" alt="参考图" />
+                  <div v-if="item.status !== 'success'" class="upload-thumb-mask" :class="{ error: item.status === 'failed' }">
+                    <a-spin v-if="item.status === 'uploading'" size="small" />
+                    <span v-else>上传失败</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="thumb-remove"
+                    aria-label="删除参考图"
+                    @click.stop="removeReferenceItem(globalReferenceItems, index)"
+                  >
+                    <CloseOutlined />
+                  </button>
+                </div>
+
+                <div
+                  v-if="globalReferenceItems.length < getMaxReferenceImages(globalSettings.model)"
+                  class="upload-add"
+                  @click="triggerGlobalReferenceUpload"
+                >
+                  <a-spin v-if="globalUploading" size="small" />
+                  <template v-else>
+                    <UploadOutlined class="upload-add-icon" />
+                    <span>{{ globalReferenceDragActive ? "松开上传" : "拖拽或点击" }}</span>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+      </div>
+    </a-card>
+
+    <div class="toolbar-row">
+      <div class="toolbar-left">
+        <a-button
+          type="primary"
+          class="batch-action-btn batch-action-btn-primary"
+          :disabled="sceneConfigLoading || globalUploading"
+          @click="startBatchGenerate"
+        >
+          <template #icon><PlayCircleOutlined /></template>
+          开始批量生成
+        </a-button>
+        <a-button
+          class="batch-action-btn batch-action-btn-neutral"
+          :disabled="!hasFinishedCards"
+          @click="clearFinishedCards"
+        >
+          <template #icon><DeleteOutlined /></template>
+          清空已完成/失败
+        </a-button>
+        <a-button
+          class="batch-action-btn batch-action-btn-secondary"
+          :disabled="!downloadableImages.length"
+          @click="downloadAllImages"
+        >
+          <template #icon><DownloadOutlined /></template>
+          下载全部
+        </a-button>
+      </div>
+      <div class="toolbar-note">
+        生图卡片可手动新增到并发上限，提交时系统会自动按空闲槽位依次发起请求。
+      </div>
+    </div>
+
+    <div class="batch-task-card-list">
+      <a-card
+        v-for="(card, index) in cards"
+        :key="card.id"
+        class="batch-card batch-card-compact"
+        :class="{ 'batch-card-highlighted': card.highlighted }"
+      >
+        <template #title>
+          <div class="panel-title-row">
+            <span>任务{{ index + 1 }}</span>
+            <a-tag :color="getStatusColor(card.status)">{{ getStatusLabel(card.status) }}</a-tag>
+          </div>
+        </template>
+        <template #extra>
+          <div class="card-header-actions">
+            <a-segmented
+              class="global-scene-switch"
+              :value="card.sceneType"
+              :options="sceneTypeOptions"
+              :disabled="isCardLocked(card)"
+              @update:value="handleCardSceneTypeChange(card, $event as BatchSceneMode)"
+            />
+            <a-button type="text" danger class="card-close-btn" :disabled="isCardLocked(card)" @click="removeCard(card)">
+              <template #icon><CloseOutlined /></template>
+            </a-button>
+          </div>
+        </template>
+
+        <div class="panel-body panel-body-card">
+          <div class="card-form-grid">
+            <div class="field-block field-block-inline-fit field-block-no-title setting-model-row">
+              <a-select
+                class="card-setting-select"
+                :value="card.model"
+                :disabled="isCardLocked(card)"
+                show-search
+                option-filter-prop="title"
+                option-label-prop="title"
+                placeholder="选择模型"
+                @update:value="handleCardModelChange(card, $event)"
+              >
+                <a-select-option
+                  v-for="model in getModelsBySceneType(card.sceneType)"
+                  :key="model.model_key"
+                  :value="model.model_key"
+                  :title="getModelDisplayName(model)"
+                >
+                  <div class="batch-model-option">
+                    <div class="batch-model-option-label">{{ getModelDisplayName(model) }}</div>
+                    <div class="batch-model-option-desc">{{ getModelCreditSubtitle(model.model_key, card.resolution) }}</div>
+                  </div>
+                </a-select-option>
+              </a-select>
+            </div>
+
+            <div class="setting-inline-row setting-inline-row-primary">
+              <div class="field-block field-block-inline-fit field-block-no-title setting-model-cell">
+                <div
+                  v-if="!hideAspectRatio(card.model)"
+                  class="field-block field-block-inline-fit field-block-no-title"
+                  :class="{ 'card-setting-disabled': isCardLocked(card) }"
+                >
+                  <AspectRatioPicker
+                    :model-value="card.size"
+                    :options="getAspectRatioOptions(card.model)"
+                    @update:model-value="card.size = $event"
+                  />
+                </div>
+              </div>
+
+              <div
+                v-if="!hideResolution(card.model)"
+                class="field-block field-block-inline-fit field-block-no-title setting-quarter-cell"
+                :class="{ 'card-setting-disabled': isCardLocked(card) }"
+              >
+                <OptionGridPicker
+                  :model-value="card.resolution"
+                  :options="getResolutionOptions(card.model)"
+                  panel-title="选择分辨率"
+                  placeholder="选择分辨率"
+                  @update:model-value="card.resolution = $event"
+                />
+              </div>
+
+              <div
+                v-if="!hideCustomSize(card.model)"
+                class="field-block field-block-inline-fit field-block-no-title setting-quarter-cell"
+                :class="{ 'card-setting-disabled': isCardLocked(card) }"
+              >
+                <OptionGridPicker
+                  :model-value="card.customSize"
+                  :options="getCustomSizeOptions(card.model)"
+                  panel-title="选择自定义尺寸"
+                  placeholder="选择自定义尺寸"
+                  @update:model-value="card.customSize = $event"
+                />
+              </div>
+            </div>
+
+            <div
+              v-if="card.sceneType === 'image_edit'"
+              :ref="(el) => setCardReferenceUploadBlockRef(card.id, el)"
+              class="field-block batch-ref-upload-block"
+              :class="{ 'is-reference-drag-over': card.dragActive }"
+            >
+              <div class="panel-head">
+                <h3>参考图</h3>
+                <span class="panel-hint">
+                  {{ isImageEditModel(card.model) ? `(最多 ${getMaxReferenceImages(card.model)} 张，支持拖拽上传)` : "(可上传参考图，当前模型默认不使用)" }}
+                </span>
+              </div>
+
+              <input
+                :ref="(el) => setCardFileInput(card.id, el)"
+                class="hidden-input"
+                type="file"
+                accept="image/*"
+                multiple
+                @change="handleCardReferenceChange(card.id, $event)"
+              />
+
+              <div class="upload-grid">
+                <div
+                  v-for="(item, refIndex) in card.referenceItems"
+                  :key="item.id"
+                  class="upload-thumb"
+                  @click="openPreview({ id: 0, image_url: item.remoteUrl || item.localUrl, preview_url: item.remoteUrl || item.localUrl, status: 'success' })"
+                >
+                  <img :src="getReferencePreviewUrl(item)" alt="参考图" />
+                  <div v-if="item.status !== 'success'" class="upload-thumb-mask" :class="{ error: item.status === 'failed' }">
+                    <a-spin v-if="item.status === 'uploading'" size="small" />
+                    <span v-else>上传失败</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="thumb-remove"
+                    aria-label="删除参考图"
+                    :disabled="isCardLocked(card)"
+                    @click.stop="removeReferenceItem(card.referenceItems, refIndex)"
+                  >
+                    <CloseOutlined />
+                  </button>
+                </div>
+
+                <div
+                  v-if="card.referenceItems.length < getMaxReferenceImages(card.model)"
+                  class="upload-add"
+                  :class="{ disabled: isCardLocked(card) }"
+                  @click="triggerCardReferenceUpload(card.id)"
+                >
+                  <a-spin v-if="hasUploadingReferences(card.referenceItems)" size="small" />
+                  <template v-else>
+                    <UploadOutlined class="upload-add-icon" />
+                    <span>{{ card.dragActive ? "松开上传" : "拖拽或点击" }}</span>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-block field-block-wide field-block-no-title">
+              <a-textarea
+                v-model:value="card.prompt"
+                :rows="4"
+                :maxlength="5000"
+                :disabled="isCardLocked(card)"
+                placeholder="描述您想要生成的图片..."
+              />
+            </div>
+          </div>
+
+          <div class="result-panel result-panel-compact">
+            <div class="result-panel-head">
+              <div class="result-panel-actions">
+                <a-button
+                  type="primary"
+                  class="single-submit-btn batch-action-btn batch-action-btn-primary"
+                  :disabled="!['failed', 'idle', 'success'].includes(card.status)"
+                  @click="startSingleCard(card)"
+                >
+                  <template #icon><PlayCircleOutlined /></template>
+                  {{ getSingleSubmitButtonLabel(card) }}
+                </a-button>
+                <a-button
+                  class="batch-action-btn batch-action-btn-neutral"
+                  :disabled="cards.length >= MAX_BATCH_CARDS"
+                  @click="duplicateCard(card)"
+                >
+                  <template #icon><CopyOutlined /></template>
+                  复制任务
+                </a-button>
+              </div>
+            </div>
+
+            <div class="result-body">
+              <div v-if="!shouldShowGeneratingCard(card) && getResultMessage(card)" class="result-info">
+                <div class="result-message">
+                  <CheckCircleFilled v-if="card.status === 'success'" class="success-icon" />
+                  <span>{{ getResultMessage(card) }}</span>
+                </div>
+              </div>
+
+              <div class="result-preview-shell">
+                <template v-if="hasSuccessResult(card) && getPrimaryImage(card)">
+                  <div class="result-success-frame">
+                    <img :src="getDisplayImageUrl(getPrimaryImage(card)!)" alt="生图结果" class="result-image" />
+                    <div class="result-hover-actions result-hover-actions-top">
+                      <a-button
+                        v-if="card.taskId && card.status === 'success'"
+                        shape="circle"
+                        class="result-hover-action"
+                        @click.stop="openFeedbackDialogForBatchCard(card)"
+                      >
+                        <template #icon><MessageOutlined /></template>
+                      </a-button>
+                      <a-button
+                        v-if="canDeleteBatchCardImage(card, getPrimaryImage(card)!)"
+                        shape="circle"
+                        class="result-hover-action result-hover-action-danger"
+                        @click.stop="confirmRemoveBatchCardImage(card, getPrimaryImage(card)!)"
+                      >
+                        <template #icon><DeleteOutlined /></template>
+                      </a-button>
+                    </div>
+                    <div class="result-hover-actions">
+                      <a-button shape="circle" class="result-hover-action" @click.stop="openPreview(getPrimaryImage(card)!)">
+                        <template #icon><EyeOutlined /></template>
+                      </a-button>
+                      <a-button
+                        v-if="canEditBatchGeneratedImage(card, getPrimaryImage(card)!)"
+                        shape="circle"
+                        class="result-hover-action"
+                        @click.stop="handleEditBatchGeneratedImage(card, getPrimaryImage(card)!)"
+                      >
+                        <template #icon><EditOutlined /></template>
+                      </a-button>
+                      <a-button
+                        shape="circle"
+                        class="result-hover-action"
+                        :href="getDownloadUrl(getPrimaryImage(card)!.id, getPrimaryImage(card)!.image_url, getPrimaryImage(card)!.preview_url)"
+                        target="_blank"
+                        @click.stop
+                      >
+                        <template #icon><DownloadOutlined /></template>
+                      </a-button>
+                    </div>
+                  </div>
+                </template>
+                <template v-else-if="shouldShowGeneratingCard(card)">
+                  <div class="result-generating">
+                    <a-spin size="large" />
+                    <span class="result-generating-title">正在生成图片...</span>
+                    <span class="result-generating-sub">预计 30 秒 ～ 2 分钟</span>
+                  </div>
+                </template>
+                <template v-else-if="card.status === 'failed'">
+                  <div class="result-failed">
+                    <img :src="failedResultAsset" alt="生成失败" class="failed-image" />
+                    <div class="result-hover-actions result-hover-actions-top">
+                      <a-button
+                        v-if="card.taskId"
+                        shape="circle"
+                        class="result-hover-action"
+                        @click.stop="openFeedbackDialogForBatchCard(card)"
+                      >
+                        <template #icon><MessageOutlined /></template>
+                      </a-button>
+                      <a-button
+                        v-if="card.images[0] && canDeleteBatchCardImage(card, card.images[0])"
+                        shape="circle"
+                        class="result-hover-action result-hover-action-danger"
+                        @click.stop="confirmRemoveBatchCardImage(card, card.images[0])"
+                      >
+                        <template #icon><DeleteOutlined /></template>
+                      </a-button>
+                    </div>
+                    <div class="result-failed-overlay">
+                      <span>{{ getResultMessage(card) || "生成失败" }}</span>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="result-empty">
+                    <span>结果图将在这里展示</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </a-card>
+      <button
+        v-if="canAddMoreCards"
+        type="button"
+        class="batch-add-placeholder"
+        @click="addCard"
+      >
+        <span class="batch-add-placeholder-icon">+</span>
+        <span class="batch-add-placeholder-text">添加新任务</span>
+      </button>
+    </div>
+
+    <a-modal v-model:open="previewVisible" title="图片预览" :footer="null" width="880px">
+      <img :src="previewCurrent" alt="预览图" class="preview-modal-image" />
+    </a-modal>
+    <FeedbackDialog
+      v-model:open="feedbackDialogOpen"
+      :task-id="feedbackTarget?.taskId"
+      :model="feedbackTarget?.model"
+      :prompt="feedbackTarget?.prompt"
+      :created-at="feedbackTarget?.createdAt"
+    />
+  </div>
+</template>
+
+<style scoped lang="scss">
+.batch-generate-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 24px 24px;
+}
+
+.batch-panel,
+.batch-card {
+  border-radius: 12px;
+  border: 1px solid var(--theme-border);
+  box-shadow: none;
+}
+
+.batch-card-highlighted {
+  border-color: rgba(255, 172, 38, 0.72);
+  box-shadow:
+    0 0 0 2px rgba(255, 172, 38, 0.18),
+    0 12px 26px rgba(245, 158, 11, 0.16);
+  animation: batch-card-highlight-pulse 2.4s ease;
+}
+
+@keyframes batch-card-highlight-pulse {
+  0% {
+    border-color: rgba(255, 172, 38, 0.18);
+    box-shadow:
+      0 0 0 0 rgba(255, 172, 38, 0),
+      0 0 0 rgba(245, 158, 11, 0);
+  }
+  22% {
+    border-color: rgba(255, 172, 38, 0.82);
+    box-shadow:
+      0 0 0 4px rgba(255, 172, 38, 0.24),
+      0 16px 30px rgba(245, 158, 11, 0.2);
+  }
+  100% {
+    border-color: rgba(255, 172, 38, 0.18);
+    box-shadow:
+      0 0 0 0 rgba(255, 172, 38, 0),
+      0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.panel-title-row-global {
+  align-items: flex-start;
+}
+
+.panel-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.panel-title-text {
+  color: var(--theme-title);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.card-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-close-btn {
+  padding-inline: 4px;
+  min-width: 28px;
+  height: 28px;
+}
+
+.panel-title-tip {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel-body-compact {
+  gap: 10px;
+}
+
+.batch-panel-global :deep(.ant-card-head) {
+  min-height: 52px;
+  padding: 0 16px;
+}
+
+.batch-panel-global :deep(.ant-card-head-title),
+.batch-panel-global :deep(.ant-card-extra) {
+  padding: 8px 0;
+}
+
+.global-panel-body {
+  gap: 12px;
+}
+
+.global-panel-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.global-scene-switch {
+  flex-shrink: 0;
+}
+
+.global-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(168px, 200px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  min-height: 118px;
+}
+
+.global-settings-layout.has-reference-column {
+  grid-template-columns: minmax(168px, 200px) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.global-params-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+}
+
+.global-prompt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.global-prompt-textarea {
+  flex: 1;
+  min-height: 0;
+}
+
+.batch-panel-global .global-prompt-textarea :deep(textarea) {
+  height: 100% !important;
+  min-height: 118px;
+  resize: none;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.global-settings-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 150px) minmax(180px, 1fr) minmax(240px, 1.2fr) repeat(3, minmax(120px, auto));
+  gap: 10px;
+  align-items: end;
+}
+
+.global-settings-row-inline {
+  grid-template-columns: minmax(180px, 1.3fr) repeat(3, minmax(110px, auto));
+  align-items: center;
+}
+
+.global-setting-inline-row-primary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.global-ref-upload-block {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 118px;
+}
+
+.global-ref-upload-block .upload-grid {
+  flex: 1;
+  align-content: start;
+}
+
+.batch-panel-global .global-params-column :deep(.card-setting-select),
+.batch-panel-global .global-params-column :deep(.option-grid-picker) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.batch-panel-global .global-params-column :deep(.card-setting-select) {
+  background: linear-gradient(180deg, var(--theme-control-bg), var(--theme-panel-bg-soft));
+  border: 1px solid var(--theme-control-border);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 4px 12px var(--theme-shadow-soft);
+}
+
+.batch-panel-global .global-params-column :deep(.card-setting-select .ant-select-selector) {
+  height: 34px !important;
+  min-height: 34px;
+  border: none !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 10px !important;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.batch-panel-global .global-params-column :deep(.card-setting-select .ant-select-selection-item),
+.batch-panel-global .global-params-column :deep(.card-setting-select .ant-select-selection-placeholder) {
+  line-height: 34px !important;
+}
+
+.batch-panel-global .global-params-column :deep(.card-setting-select .ant-select-selection-item) {
+  font-weight: 700;
+}
+
+.batch-panel-global .global-params-column :deep(.card-setting-select .ant-select-selection-placeholder) {
+  font-weight: 400;
+}
+
+.batch-model-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.batch-model-option-label {
+  color: var(--theme-title);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.batch-model-option-desc {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.batch-panel-global .global-params-column :deep(.option-grid-trigger) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 34px;
+  min-height: 34px;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 13px;
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 4px 12px var(--theme-shadow-soft);
+}
+
+.batch-panel-global .global-params-column :deep(.option-grid-trigger:hover),
+.batch-panel-global .global-params-column :deep(.option-grid-trigger.open) {
+  transform: none;
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 4px 12px var(--theme-shadow-soft);
+}
+
+.batch-panel-global .global-params-column :deep(.option-grid-trigger.open) {
+  border-color: var(--theme-border-accent);
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 0 0 3px var(--theme-focus-ring),
+    0 4px 12px var(--theme-shadow-soft);
+}
+
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-block-no-title {
+  justify-content: center;
+}
+
+.field-block-no-title .field-label {
+  display: none;
+}
+
+.field-block-wide {
+  grid-column: 1 / -1;
+}
+
+.global-apply-btn {
+  min-width: 108px;
+}
+
+.batch-action-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 18px rgba(245, 158, 11, 0.16);
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft),
+    border-color var(--motion-duration-fast) var(--motion-ease-soft),
+    background var(--motion-duration-fast) var(--motion-ease-soft),
+    color var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.batch-action-btn:hover,
+.batch-action-btn:focus {
+  transform: translateY(-1px);
+}
+
+.batch-action-btn:disabled,
+.batch-action-btn.ant-btn-disabled {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.batch-action-btn-primary {
+  border: none !important;
+  background: rgb(255, 172, 38) !important;
+  color: #5b3300 !important;
+  box-shadow: 0 10px 22px rgba(245, 158, 11, 0.28);
+}
+
+.batch-action-btn-primary:hover,
+.batch-action-btn-primary:focus {
+  border: none !important;
+  background: rgb(255, 172, 38) !important;
+  color: #5b3300 !important;
+  box-shadow: 0 14px 26px rgba(245, 158, 11, 0.32) !important;
+}
+
+.batch-action-btn-secondary {
+  border: none !important;
+  background: rgb(255, 172, 38) !important;
+  color: #9a5a00 !important;
+  box-shadow: 0 8px 18px rgba(245, 158, 11, 0.12);
+}
+
+.batch-action-btn-secondary:hover,
+.batch-action-btn-secondary:focus {
+  border: none !important;
+  background: rgb(255, 172, 38) !important;
+  color: #8a4f00 !important;
+  box-shadow: 0 12px 22px rgba(245, 158, 11, 0.18) !important;
+}
+
+.batch-action-btn-neutral {
+  border: 1px solid var(--theme-control-border) !important;
+  background: linear-gradient(180deg, var(--theme-control-bg), var(--theme-panel-bg-soft)) !important;
+  color: var(--theme-title) !important;
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 8px 18px var(--theme-shadow-soft);
+}
+
+.batch-action-btn-neutral:hover,
+.batch-action-btn-neutral:focus {
+  border-color: var(--theme-border-strong) !important;
+  background: linear-gradient(180deg, var(--theme-panel-bg-soft), var(--theme-control-bg)) !important;
+  color: var(--theme-title) !important;
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 12px 22px var(--theme-shadow-medium) !important;
+}
+
+:deep(.global-scene-switch.ant-segmented) {
+  padding: 3px;
+  border: none !important;
+  border-radius: 10px !important;
+  background: #fff4df !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 172, 38, 0.22) !important;
+}
+
+:deep(.global-scene-switch .ant-segmented-group) {
+  gap: 2px;
+}
+
+:deep(.global-scene-switch .ant-segmented-item) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  line-height: 24px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9a5a00;
+  border-radius: 8px;
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-soft),
+    color var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+:deep(.global-scene-switch .ant-segmented-item-label) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  line-height: 1;
+}
+
+:deep(.global-scene-switch .ant-segmented-item-selected) {
+  background: rgb(255, 172, 38) !important;
+  color: #5b3300 !important;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.22) !important;
+}
+
+.field-label {
+  color: var(--theme-title);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.field-tip {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.reference-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reference-section-inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.reference-section-inline .section-label-row {
+  min-width: 180px;
+  justify-content: flex-start;
+}
+
+.reference-section-inline .reference-toolbar {
+  flex-shrink: 0;
+}
+
+.reference-section-inline .reference-list {
+  flex: 1;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 88px));
+  justify-content: flex-end;
+}
+
+.section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reference-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.reference-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: 8px;
+}
+
+.reference-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: 10px;
+  background: var(--theme-panel-bg);
+}
+
+.reference-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--theme-accent) 6%, var(--theme-panel-bg));
+}
+
+.reference-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.panel-head h3 {
+  margin: 0;
+  color: var(--theme-title);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.panel-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.batch-ref-upload-block {
+  padding: 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  background: var(--theme-panel-bg);
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-soft),
+    background var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.batch-ref-upload-block.is-reference-drag-over {
+  border-color: var(--theme-border-accent);
+  background: color-mix(in srgb, var(--theme-accent) 6%, var(--theme-panel-bg));
+  box-shadow: 0 0 0 3px var(--theme-focus-ring);
+}
+
+.upload-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: start;
+}
+
+.upload-thumb {
+  position: relative;
+  overflow: hidden;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid var(--theme-border);
+  cursor: pointer;
+  background: var(--theme-panel-bg-muted);
+}
+
+.upload-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.upload-thumb-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(76, 52, 26, 0.38);
+  color: #fff;
+  font-size: 10px;
+}
+
+.upload-thumb-mask.error {
+  background: rgba(185, 64, 64, 0.48);
+}
+
+.thumb-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  cursor: pointer;
+  font-size: 9px;
+  opacity: 0;
+  transform: scale(0.92);
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-soft),
+    transform var(--motion-duration-fast) var(--motion-ease-soft),
+    background var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.upload-thumb:hover .thumb-remove,
+.upload-thumb:focus-within .thumb-remove {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.thumb-remove:hover,
+.thumb-remove:focus-visible {
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.upload-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  padding: 4px;
+  border: 1px dashed var(--theme-border-accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-accent) 4%, var(--theme-panel-bg));
+  color: var(--theme-accent-text);
+  font-size: 9px;
+  line-height: 1.15;
+  cursor: pointer;
+  text-align: center;
+}
+
+.upload-add-icon {
+  font-size: 14px;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolbar-note {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.batch-task-card-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+  width: 100%;
+}
+
+.batch-task-card-list > :deep(.ant-card) {
+  min-width: 0;
+}
+
+.batch-card-compact :deep(.ant-card-head) {
+  min-height: 46px;
+  padding: 0 10px;
+}
+
+.batch-card-compact :deep(.ant-card-head-title) {
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.batch-card-compact :deep(.ant-card-body) {
+  padding: 10px;
+}
+
+.batch-add-placeholder {
+  min-height: 100%;
+  border: 1px dashed var(--theme-border-accent);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--theme-accent) 6%, var(--theme-panel-bg));
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 20px 40px var(--theme-shadow-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px 20px;
+  color: var(--theme-accent-text);
+  cursor: pointer;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-soft),
+    border-color var(--motion-duration-fast) var(--motion-ease-soft),
+    color var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft),
+    background var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.batch-add-placeholder:hover,
+.batch-add-placeholder:focus {
+  transform: translateY(-2px);
+  border-color: var(--theme-accent);
+  color: var(--theme-accent-text-hover);
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 0 0 3px var(--theme-focus-ring),
+    0 24px 46px var(--theme-shadow-medium);
+  background: color-mix(in srgb, var(--theme-accent) 9%, var(--theme-panel-bg));
+}
+
+.batch-add-placeholder-icon {
+  font-size: 64px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.batch-add-placeholder-text {
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.panel-body-card {
+  gap: 10px;
+}
+
+.field-block-inline-fit {
+  min-width: 0;
+}
+
+.card-setting-disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.card-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-model-row {
+  width: 100%;
+}
+
+.setting-inline-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: start;
+}
+
+.setting-inline-row-primary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.setting-model-cell {
+  flex: 2 1 0;
+  min-width: 0;
+}
+
+.setting-quarter-cell {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.reference-section-card .section-label-row {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.result-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.result-panel-compact {
+  gap: 8px;
+  padding: 0;
+  border-radius: 0;
+}
+
+.result-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.result-panel-actions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.result-title {
+  color: var(--theme-title);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.single-submit-btn {
+  min-width: 138px;
+}
+
+.single-submit-btn:hover,
+.single-submit-btn:focus {
+  color: #5b3300 !important;
+}
+
+.result-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(240px, 320px);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.result-panel-compact .result-body {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--theme-title);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.success-icon {
+  color: var(--theme-accent);
+}
+
+.result-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.result-preview-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.result-success-frame {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+}
+
+.result-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--theme-border);
+  object-fit: contain;
+  background: var(--theme-panel-bg-muted);
+  display: block;
+}
+
+.result-hover-actions {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-soft),
+    transform var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.result-hover-actions-top {
+  top: 12px;
+  right: 12px;
+  bottom: auto;
+}
+
+.result-success-frame:hover .result-hover-actions,
+.result-success-frame:focus-within .result-hover-actions,
+.result-failed:hover .result-hover-actions,
+.result-failed:focus-within .result-hover-actions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.result-hover-action {
+  border: 1px solid rgba(255, 240, 214, 0.18) !important;
+  background: rgba(76, 52, 26, 0.58) !important;
+  color: #fff7ea !important;
+  box-shadow: 0 10px 20px rgba(34, 22, 10, 0.22);
+  backdrop-filter: blur(10px);
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-soft),
+    border-color var(--motion-duration-fast) var(--motion-ease-soft),
+    color var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
+}
+
+.result-hover-action:hover,
+.result-hover-action:focus {
+  background: rgba(76, 52, 26, 0.78) !important;
+  border-color: rgba(255, 240, 214, 0.26) !important;
+  color: #fffdfa !important;
+  box-shadow: 0 14px 26px rgba(34, 22, 10, 0.28);
+}
+
+.result-hover-action-danger {
+  border-color: rgba(255, 214, 209, 0.18) !important;
+  background: rgba(180, 58, 43, 0.88) !important;
+  color: #fff5f2 !important;
+  box-shadow: 0 10px 22px rgba(140, 40, 28, 0.24);
+}
+
+.result-hover-action-danger:hover,
+.result-hover-action-danger:focus {
+  background: rgba(201, 73, 60, 0.98) !important;
+  border-color: rgba(255, 224, 220, 0.24) !important;
+  color: #fff7f5 !important;
+  box-shadow: 0 14px 26px rgba(140, 40, 28, 0.34);
+}
+
+.result-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  border: 1px dashed var(--theme-border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 12px;
+  background: var(--theme-empty-bg);
+}
+
+.result-generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  border: 1px dashed var(--theme-border);
+  border-radius: 10px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(255, 250, 240, 0.1), rgba(255, 250, 240, 0.16));
+}
+
+.result-generating-title {
+  color: var(--theme-title);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.result-generating-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.result-failed {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border: 1px dashed var(--theme-border);
+  border-radius: 10px;
+  background: var(--theme-empty-bg);
+}
+
+.failed-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.result-failed-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+  color: #c9493c;
+  font-size: 13px;
+  font-weight: 600;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 233, 228, 0.42),
+    rgba(255, 221, 214, 0.92)
+  );
+}
+
+.preview-modal-image {
+  display: block;
+  width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.card-setting-select),
+.batch-card-compact .setting-inline-row-primary :deep(.option-grid-picker) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.card-setting-select) {
+  background: linear-gradient(180deg, var(--theme-control-bg), var(--theme-panel-bg-soft));
+  border: 1px solid var(--theme-control-border);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 4px 12px var(--theme-shadow-soft);
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.card-setting-select .ant-select-selector) {
+  height: 34px !important;
+  min-height: 34px;
+  border: none !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 10px !important;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.card-setting-select .ant-select-selection-item),
+.batch-card-compact .setting-inline-row-primary :deep(.card-setting-select .ant-select-selection-placeholder) {
+  line-height: 34px !important;
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.card-setting-select .ant-select-selection-item) {
+  font-weight: 700;
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.card-setting-select .ant-select-selection-placeholder) {
+  font-weight: 400;
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.option-grid-trigger) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 34px;
+  min-height: 34px;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 13px;
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 4px 12px var(--theme-shadow-soft);
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.option-grid-trigger:hover),
+.batch-card-compact .setting-inline-row-primary :deep(.option-grid-trigger.open) {
+  transform: none;
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 4px 12px var(--theme-shadow-soft);
+}
+
+.batch-card-compact .setting-inline-row-primary :deep(.option-grid-trigger.open) {
+  border-color: var(--theme-border-accent);
+  box-shadow:
+    inset 0 1px 0 var(--theme-panel-inset),
+    0 0 0 3px var(--theme-focus-ring),
+    0 4px 12px var(--theme-shadow-soft);
+}
+
+.batch-card-compact :deep(.ant-select-selector),
+.batch-card-compact :deep(.option-grid-trigger) {
+  min-height: 34px;
+  height: 34px;
+}
+
+.batch-card-compact :deep(.ant-select-selector) {
+  display: flex;
+  align-items: center;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.batch-card-compact :deep(.ant-select-selection-item),
+.batch-card-compact :deep(.ant-select-selection-placeholder) {
+  line-height: 34px !important;
+}
+
+.batch-panel :deep(.ant-select-selector) {
+  display: flex;
+  align-items: center;
+}
+
+.batch-panel :deep(.ant-select-selection-item),
+.batch-panel :deep(.ant-select-selection-placeholder) {
+  line-height: 32px !important;
+}
+
+@media (max-width: 1080px) {
+  .result-body {
+    grid-template-columns: 1fr;
+  }
+
+  .global-settings-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .global-settings-row-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .global-settings-layout,
+  .global-settings-layout.has-reference-column {
+    grid-template-columns: 1fr;
+  }
+
+  .global-setting-inline-row-primary .setting-model-cell {
+    flex: 1 1 100%;
+  }
+
+  .global-setting-inline-row-primary .setting-quarter-cell {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .setting-inline-row-primary {
+    flex-wrap: wrap;
+  }
+
+  .setting-inline-row-primary .setting-model-cell {
+    flex: 1 1 100%;
+  }
+
+  .setting-inline-row-primary .setting-quarter-cell {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .batch-panel-global :deep(.ant-card-head) {
+    padding: 0 14px;
+  }
+
+  .setting-inline-row {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-section-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .batch-task-card-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .batch-panel-global :deep(.ant-card-head) {
+    min-height: auto;
+  }
+
+  .batch-panel-global :deep(.ant-card-head-wrapper) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .batch-panel-global :deep(.ant-card-extra) {
+    margin-inline-start: 0;
+  }
+
+  .global-panel-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .global-apply-btn {
+    min-width: 0;
+  }
+
+  .global-settings-row {
+    grid-template-columns: 1fr;
+  }
+
+  .global-settings-row-inline {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .global-settings-layout,
+  .global-settings-layout.has-reference-column {
+    grid-template-columns: 1fr;
+  }
+
+  .global-setting-inline-row-primary .setting-model-cell,
+  .global-setting-inline-row-primary .setting-quarter-cell {
+    flex: 1 1 100%;
+  }
+
+  .setting-inline-row-primary .setting-model-cell,
+  .setting-inline-row-primary .setting-quarter-cell {
+    flex: 1 1 100%;
+  }
+
+  .batch-task-card-list {
+    grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));
+  }
+
+  .batch-generate-page {
+    padding: 16px;
+  }
+}
+</style>

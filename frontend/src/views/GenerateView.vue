@@ -2012,17 +2012,21 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                     支持 <strong>8</strong> 张图片同时生成（{{ activeGenerationImageCount }} / {{ MAX_ACTIVE_GENERATION_IMAGES }}）
                   </div>
                 </div>
-                <a-button
-                  type="primary"
-                  block
-                  size="large"
-                  :disabled="sceneConfigLoading || !canClickGenerate"
-                  class="generate-btn"
-                  @click="handleGenerate"
-                >
-                  <template #icon><ThunderboltOutlined /></template>
-                  {{ generateButtonText }}
-                </a-button>
+                <div class="generate-action-row">
+                  <a-button size="large" class="generate-btn generate-btn-secondary" @click="router.push('/batch-generate')">
+                    批量生图
+                  </a-button>
+                  <a-button
+                    type="primary"
+                    size="large"
+                    :disabled="sceneConfigLoading || !canClickGenerate"
+                    class="generate-btn"
+                    @click="handleGenerate"
+                  >
+                    <template #icon><ThunderboltOutlined /></template>
+                    {{ generateButtonText }}
+                  </a-button>
+                </div>
               </div>
             </section>
 
@@ -2293,17 +2297,21 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
                     支持 <strong>8</strong> 张图片同时生成（{{ activeGenerationImageCount }} / {{ MAX_ACTIVE_GENERATION_IMAGES }}）
                   </div>
                 </div>
-                <a-button
-                  type="primary"
-                  block
-                  size="large"
-                  :disabled="sceneConfigLoading || !canClickGenerate"
-                  class="generate-btn"
-                  @click="handleGenerate"
-                >
-                  <template #icon><ThunderboltOutlined /></template>
-                  {{ generateButtonText }}
-                </a-button>
+                <div class="generate-action-row">
+                  <a-button size="large" class="generate-btn generate-btn-secondary" @click="router.push('/batch-generate')">
+                    批量生图
+                  </a-button>
+                  <a-button
+                    type="primary"
+                    size="large"
+                    :disabled="sceneConfigLoading || !canClickGenerate"
+                    class="generate-btn"
+                    @click="handleGenerate"
+                  >
+                    <template #icon><ThunderboltOutlined /></template>
+                    {{ generateButtonText }}
+                  </a-button>
+                </div>
               </div>
             </section>
 
@@ -3857,6 +3865,40 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
   }
 }
 
+.generate-action-row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.generate-action-row .generate-btn {
+  margin-top: 0;
+  width: 100%;
+}
+
+.generate-btn-secondary {
+  background: rgba(255, 248, 235, 0.96) !important;
+  color: var(--theme-title) !important;
+  border: 1px solid rgba(232, 188, 108, 0.7) !important;
+  box-shadow: 0 14px 24px rgba(228, 174, 74, 0.12) !important;
+
+  &:hover,
+  &:focus {
+    background: rgba(255, 244, 223, 0.98) !important;
+    border-color: rgba(220, 168, 75, 0.9) !important;
+    box-shadow: 0 16px 28px rgba(228, 174, 74, 0.16) !important;
+  }
+
+  &:disabled {
+    background: var(--theme-control-hover-bg) !important;
+    border-color: transparent !important;
+    color: var(--text-muted) !important;
+    box-shadow: none !important;
+  }
+}
+
 .source-upload-empty {
   min-height: 280px;
   padding: 26px 20px;
@@ -5063,6 +5105,10 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-mor
     flex-direction: column;
     align-items: stretch;
     gap: 2px;
+  }
+
+  .generate-action-row {
+    grid-template-columns: 1fr;
   }
 
   .generate-link-tip-right {

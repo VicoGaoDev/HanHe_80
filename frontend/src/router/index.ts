@@ -24,6 +24,11 @@ const router = createRouter({
           component: () => import("@/views/GenerateView.vue"),
         },
         {
+          path: "batch-generate",
+          name: "BatchGenerate",
+          component: () => import("@/views/BatchGenerateView.vue"),
+        },
+        {
           path: "history",
           name: "History",
           component: () => import("@/views/HistoryView.vue"),

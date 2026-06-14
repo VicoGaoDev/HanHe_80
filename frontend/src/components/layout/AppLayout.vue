@@ -201,6 +201,7 @@ const selectedKeys = computed(() => {
   if (p.startsWith("/admin")) return ["admin"];
   if (p === "/") return [];
   if (p === "/templates") return ["templates"];
+  if (p === "/batch-generate") return ["batch-generate"];
   if (p === "/history") return ["history"];
   if (
     p === "/profile" ||
@@ -1135,7 +1136,7 @@ watch(purchaseDialogOpen, (open) => {
     </a-layout-header>
 
     <a-layout-content class="app-content">
-      <div class="content-inner">
+      <div class="content-inner" :class="{ 'content-inner-wide': route.name === 'BatchGenerate' }">
         <router-view v-slot="{ Component, route: currentRoute }">
           <transition :name="routeTransitionName" mode="out-in">
             <div :key="currentRoute.path" class="route-page-shell">
@@ -2819,6 +2820,10 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .warm-dropdown .ant-dropdo
   margin: 0 auto;
   position: relative;
   z-index: 1;
+}
+
+.content-inner-wide {
+  max-width: 100%;
 }
 
 .route-page-shell {
