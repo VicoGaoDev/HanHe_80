@@ -10,7 +10,8 @@ from app.schemas.admin import (
     CreateUserRequest, UserOut, UpdateStatusRequest, UpdateRoleRequest,
     UpdateWhitelistRequest, ResetPasswordRequest, StatsOut, AllocateCreditsRequest, ResetCreditsRequest, CreditLogOut,
     CreateRedeemKeysBatchRequest, RedeemKeyBatchOut, RedeemKeyOut, UpdateRedeemKeyStatusRequest, PaymentOrderAdminOut,
-    AnalyticsSummaryOut, AnalyticsTimeseriesOut, AnalyticsBreakdownOut, AnalyticsRedeemRevenueOut, ErrorAnalyticsOut, DailyReportTestOut,
+    CreateOfflineOrderRequest, OfflineOrderOut,
+    AnalyticsSummaryOut, AnalyticsTimeseriesOut, AnalyticsBreakdownOut, AnalyticsRedeemRevenueOut, ErrorAnalyticsOut, ErrorCategoryTimeseriesOut, ErrorTaskListOut, DailyReportTestOut,
     AdminUserPromoDashboardOut,
 )
 from app.schemas.feedback import (
@@ -24,9 +25,9 @@ from app.services.business_id_service import get_user_by_business_id
 from app.services.admin_service import (
     create_user, list_users, update_user_status, update_user_role,
     update_user_whitelist, reset_user_password, get_stats, allocate_credits, reset_user_credits, get_credit_logs,
-    list_payment_orders,
+    list_payment_orders, create_offline_order, list_offline_orders,
     get_analytics_summary, get_analytics_timeseries, get_analytics_breakdown, get_analytics_redeem_revenue,
-    get_analytics_payment_revenue, get_error_analytics,
+    get_analytics_payment_revenue, get_analytics_offline_order_revenue, get_error_analytics, get_error_category_timeseries, get_error_tasks,
 )
 from app.services.credit_redeem_service import create_redeem_key_batch, list_redeem_keys, update_redeem_key_status
 from app.services.promo_service import get_user_promo_dashboard_for_admin
@@ -227,6 +228,42 @@ def admin_payment_orders(
     )
 
 
+@router.post("/offline-orders", response_model=OfflineOrderOut)
+def admin_create_offline_order(
+    body: CreateOfflineOrderRequest,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return create_offline_order(
+        db,
+        user_id=body.user_id,
+        credit_amount=body.credit_amount,
+        amount_yuan=body.amount_yuan,
+        remark=body.remark,
+        admin=admin,
+    )
+
+
+@router.get("/offline-orders", response_model=dict)
+def admin_offline_orders(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    user: Optional[str] = Query(None),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+    _user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return list_offline_orders(
+        db,
+        page=page,
+        page_size=page_size,
+        user_keyword=user,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
 @router.get("/stats", response_model=StatsOut)
 def admin_stats(
     _user: User = Depends(require_admin),
@@ -348,11 +385,28 @@ def admin_analytics_payment_revenue(
     )
 
 
+@router.get("/analytics/offline-order-revenue", response_model=AnalyticsRedeemRevenueOut)
+def admin_analytics_offline_order_revenue(
+    granularity: str = Query("day", pattern="^(day|week|month)$"),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+    _user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return get_analytics_offline_order_revenue(
+        db,
+        granularity=granularity,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
 @router.get("/analytics/errors", response_model=ErrorAnalyticsOut)
 def admin_error_analytics(
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
     model: Optional[str] = Query(None),
+    error_category: Optional[str] = Query(None),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -361,6 +415,49 @@ def admin_error_analytics(
         start_date=start_date,
         end_date=end_date,
         model=model,
+        error_category=error_category,
+    )
+
+
+@router.get("/analytics/errors/timeseries", response_model=ErrorCategoryTimeseriesOut)
+def admin_error_category_timeseries(
+    granularity: str = Query("day", pattern="^(day|week|month)$"),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+    model: Optional[str] = Query(None),
+    limit: int = Query(6, ge=1, le=12),
+    _user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return get_error_category_timeseries(
+        db,
+        granularity=granularity,
+        start_date=start_date,
+        end_date=end_date,
+        model=model,
+        limit=limit,
+    )
+
+
+@router.get("/analytics/errors/tasks", response_model=ErrorTaskListOut)
+def admin_error_tasks(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+    model: Optional[str] = Query(None),
+    error_category: Optional[str] = Query(None),
+    _user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return get_error_tasks(
+        db,
+        page=page,
+        page_size=page_size,
+        start_date=start_date,
+        end_date=end_date,
+        model=model,
+        error_category=error_category,
     )
 
 
@@ -512,6 +609,9 @@ def admin_test_daily_report_notify(
         "revenue_fen": stats.revenue_fen,
         "revenue_yuan": stats.revenue_fen / 100,
         "paid_order_count": stats.paid_order_count,
+        "offline_order_revenue_fen": stats.offline_order_revenue_fen,
+        "offline_order_revenue_yuan": stats.offline_order_revenue_fen / 100,
+        "offline_order_count": stats.offline_order_count,
         "redeem_revenue_yuan": stats.redeem_revenue_yuan,
         "redeem_used_count": stats.redeem_used_count,
         "task_total_count": stats.task_total_count,

@@ -70,6 +70,111 @@ def _clip_response_preview(payload: object) -> str:
     return preview[:MAX_RESPONSE_PREVIEW_LENGTH] + "..."
 
 
+def _measure_elapsed_seconds(started_perf: float | None) -> float | None:
+    if started_perf is None:
+        return None
+    return round(max(time.perf_counter() - started_perf, 0), 2)
+
+
+def _format_elapsed_fragment(elapsed_seconds: float | None) -> str:
+    if elapsed_seconds is None:
+        return ""
+    return f"（实际耗时 {elapsed_seconds} 秒）"
+
+
+def _classify_generation_request_exception(
+    exc: Exception,
+    *,
+    started_perf: float | None,
+) -> tuple[str, tuple[object, ...], str]:
+    elapsed_seconds = _measure_elapsed_seconds(started_perf)
+    elapsed_fragment = _format_elapsed_fragment(elapsed_seconds)
+
+    if isinstance(exc, httpx.ConnectTimeout):
+        return (
+            "Generation API connect timed out after %s seconds (configured timeout=%s seconds)",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", settings.AI_TIMEOUT),
+            f"生图接口连接超时{elapsed_fragment or f'（配置超时 {settings.AI_TIMEOUT} 秒）'}",
+        )
+    if isinstance(exc, httpx.ReadTimeout):
+        return (
+            "Generation API read timed out after %s seconds (configured timeout=%s seconds)",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", settings.AI_TIMEOUT),
+            f"生图接口响应读取超时{elapsed_fragment or f'（配置超时 {settings.AI_TIMEOUT} 秒）'}",
+        )
+    if isinstance(exc, httpx.WriteTimeout):
+        return (
+            "Generation API write timed out after %s seconds (configured timeout=%s seconds)",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", settings.AI_TIMEOUT),
+            f"生图接口请求发送超时{elapsed_fragment or f'（配置超时 {settings.AI_TIMEOUT} 秒）'}",
+        )
+    if isinstance(exc, httpx.PoolTimeout):
+        return (
+            "Generation API pool timed out after %s seconds (configured timeout=%s seconds)",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", settings.AI_TIMEOUT),
+            f"生图接口连接池等待超时{elapsed_fragment or f'（配置超时 {settings.AI_TIMEOUT} 秒）'}",
+        )
+    if isinstance(exc, httpx.RemoteProtocolError):
+        return (
+            "Generation API upstream connection closed unexpectedly after %s seconds: %s",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", str(exc)),
+            _clip_error_message(f"生图接口连接被上游异常断开{elapsed_fragment}: {exc}"),
+        )
+    if isinstance(exc, httpx.ConnectError):
+        return (
+            "Generation API connect error after %s seconds: %s",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", str(exc)),
+            _clip_error_message(f"生图接口连接失败{elapsed_fragment}: {exc}"),
+        )
+    if isinstance(exc, httpx.ReadError):
+        return (
+            "Generation API read error after %s seconds: %s",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", str(exc)),
+            _clip_error_message(f"生图接口响应读取失败{elapsed_fragment}: {exc}"),
+        )
+    if isinstance(exc, httpx.WriteError):
+        return (
+            "Generation API write error after %s seconds: %s",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", str(exc)),
+            _clip_error_message(f"生图接口请求发送失败{elapsed_fragment}: {exc}"),
+        )
+    if isinstance(exc, httpx.CloseError):
+        return (
+            "Generation API connection close error after %s seconds: %s",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", str(exc)),
+            _clip_error_message(f"生图接口连接关闭异常{elapsed_fragment}: {exc}"),
+        )
+    if isinstance(exc, httpx.ProtocolError):
+        return (
+            "Generation API protocol error after %s seconds: %s",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", str(exc)),
+            _clip_error_message(f"生图接口协议异常{elapsed_fragment}: {exc}"),
+        )
+    if isinstance(exc, httpx.NetworkError):
+        return (
+            "Generation API network error after %s seconds: %s",
+            (elapsed_seconds if elapsed_seconds is not None else "unknown", str(exc)),
+            _clip_error_message(f"生图接口网络异常{elapsed_fragment}: {exc}"),
+        )
+    if isinstance(exc, httpx.TimeoutException):
+        if elapsed_seconds is not None:
+            return (
+                "Generation API request timed out after %s seconds (configured timeout=%s seconds)",
+                (elapsed_seconds, settings.AI_TIMEOUT),
+                f"生图接口请求超时（实际耗时 {elapsed_seconds} 秒，配置超时 {settings.AI_TIMEOUT} 秒）",
+            )
+        return (
+            "Generation API request timed out after %s seconds (configured timeout=%s seconds)",
+            ("unknown", settings.AI_TIMEOUT),
+            f"生图接口请求超时（配置超时 {settings.AI_TIMEOUT} 秒）",
+        )
+    return (
+        "Generation API request failed after %s seconds: %s",
+        (elapsed_seconds if elapsed_seconds is not None else "unknown", str(exc)),
+        _clip_error_message(f"生图接口请求失败{elapsed_fragment}: {exc}"),
+    )
+
+
 def _mark_task_request_started(task: Task) -> bool:
     if task.request_started_at is not None:
         return False
@@ -296,6 +401,7 @@ def _call_gemini_api(
     (None, error_message, http_status_code) on HTTP failure.
     """
     db = SessionLocal()
+    request_started_perf: float | None = None
 
     try:
         scene_key = SCENE_INPAINT if mode == "inpaint" else model_key
@@ -402,6 +508,7 @@ def _call_gemini_api(
             "multipart" if should_use_multipart_request(rendered) else "json",
         )
 
+        request_started_perf = time.perf_counter()
         with httpx.Client(timeout=settings.AI_TIMEOUT, trust_env=False) as client:
             resp = client.post(
                 rendered.request_url,
@@ -437,9 +544,17 @@ def _call_gemini_api(
         logger.error("Generation API config error: %s", detail)
         return None, _clip_error_message(detail), None
 
-    except httpx.TimeoutException:
-        logger.error("Generation API request timed out (%s seconds)", settings.AI_TIMEOUT)
-        return None, f"生图接口请求超时（{settings.AI_TIMEOUT} 秒）", None
+    except (
+        httpx.TimeoutException,
+        httpx.NetworkError,
+        httpx.ProtocolError,
+    ) as exc:
+        log_message, log_args, user_message = _classify_generation_request_exception(
+            exc,
+            started_perf=request_started_perf,
+        )
+        logger.error(log_message, *log_args)
+        return None, user_message, None
     except Exception as e:
         logger.error("Generation API error: %s", e, exc_info=True)
         return None, _clip_error_message(f"生图接口调用异常: {e}"), None

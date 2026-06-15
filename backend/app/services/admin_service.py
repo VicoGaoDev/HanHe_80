@@ -2,13 +2,15 @@ from calendar import monthrange
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from sqlalchemy.orm import Session
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func
 from fastapi import HTTPException, status
 from app.models.user import User
 from app.models.task import Task
 from app.models.credit_log import CreditLog
 from app.models.credit_redeem_key import CreditRedeemKey
+from app.models.offline_order import OfflineOrder
 from app.models.payment_order import PaymentOrder
 from app.services.business_id_service import get_user_by_business_id, task_external_id, user_external_id
 from app.services.prompt_reverse_service import (
@@ -17,6 +19,7 @@ from app.services.prompt_reverse_service import (
     PROMPT_REVERSE_MODEL,
 )
 from app.services.task_service import ENQUEUE_FAILURE_DESCRIPTION, TASK_FAILURE_REFUND_DESCRIPTION
+from app.services.task_service import is_task_generation_failure_credit_refunded
 from app.services.task_type_service import (
     TASK_TYPE_IMAGE_EDIT,
     TASK_TYPE_INPAINT,
@@ -190,6 +193,34 @@ def _serialize_user_with_balance(user: User, balance: int, consumed_credits: int
     }
 
 
+def _yuan_to_fen(amount_yuan: Decimal | int | float | str) -> int:
+    try:
+        normalized = Decimal(str(amount_yuan)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="金额格式不正确") from exc
+    if normalized <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="金额必须大于 0")
+    return int((normalized * Decimal("100")).to_integral_value(rounding=ROUND_HALF_UP))
+
+
+def _serialize_offline_order(order: OfflineOrder, user: User | None, creator: User | None) -> dict:
+    amount_fen = int(order.amount_fen or 0)
+    return {
+        "id": int(order.id),
+        "business_id": order.business_id,
+        "user_id": user_external_id(user) if user else "",
+        "username": user.username if user else "",
+        "user_email": (user.email or "") if user else "",
+        "credit_amount": int(order.credit_amount or 0),
+        "amount_fen": amount_fen,
+        "amount_yuan": round(amount_fen / 100, 2),
+        "remark": order.remark or "",
+        "created_by": user_external_id(creator) if creator else "",
+        "created_at": order.created_at,
+        "updated_at": order.updated_at,
+    }
+
+
 def update_user_status(db: Session, user_id: str, new_status: str) -> dict:
     if new_status not in ("active", "disabled"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="状态必须是 active 或 disabled")
@@ -294,6 +325,79 @@ def reset_user_credits(db: Session, user_id: str, description: str, operator_id:
     db.commit()
     db.refresh(user)
     return _serialize_user(user)
+
+
+def create_offline_order(
+    db: Session,
+    *,
+    user_id: str,
+    credit_amount: int,
+    amount_yuan: Decimal | int | float | str,
+    remark: str,
+    admin: User,
+) -> dict:
+    user = get_user_by_business_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    if credit_amount <= 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="积分必须大于 0")
+
+    order = OfflineOrder(
+        user_id=user.id,
+        credit_amount=int(credit_amount),
+        amount_fen=_yuan_to_fen(amount_yuan),
+        remark=(remark or "").strip(),
+        created_by=admin.id,
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return _serialize_offline_order(order, user, admin)
+
+
+def list_offline_orders(
+    db: Session,
+    *,
+    page: int = 1,
+    page_size: int = 20,
+    user_keyword: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> dict:
+    creator_alias = aliased(User)
+    query = (
+        db.query(OfflineOrder, User, creator_alias)
+        .join(User, User.id == OfflineOrder.user_id)
+        .join(creator_alias, creator_alias.id == OfflineOrder.created_by)
+    )
+
+    keyword = (user_keyword or "").strip()
+    if keyword:
+        like = f"%{keyword}%"
+        query = query.filter(
+            (User.username.ilike(like))
+            | (User.email.ilike(like))
+            | (User.business_id.ilike(like))
+            | (OfflineOrder.business_id.ilike(like))
+        )
+    if start_date:
+        query = query.filter(OfflineOrder.created_at >= start_date)
+    if end_date:
+        query = query.filter(OfflineOrder.created_at <= end_date)
+
+    total = query.count()
+    rows = (
+        query
+        .order_by(OfflineOrder.created_at.desc(), OfflineOrder.id.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    items = []
+    for order, user, creator in rows:
+        items.append(_serialize_offline_order(order, user, creator))
+    return {"total": total, "items": items}
 
 
 def _resolve_credit_log_mode(log: CreditLog, task_modes: dict[int, str]) -> str:
@@ -1234,6 +1338,56 @@ def get_analytics_payment_revenue(
     }
 
 
+def get_analytics_offline_order_revenue(
+    db: Session,
+    *,
+    granularity: str = "day",
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> dict:
+    current_start, current_end = _align_range(granularity, start_date, end_date)
+
+    rows = (
+        db.query(
+            OfflineOrder.credit_amount,
+            OfflineOrder.amount_fen,
+            func.count(OfflineOrder.id).label("order_count"),
+            func.coalesce(func.sum(OfflineOrder.amount_fen), 0).label("total_amount_fen"),
+        )
+        .filter(
+            OfflineOrder.created_at >= _to_db_datetime(current_start),
+            OfflineOrder.created_at <= _to_db_datetime(current_end),
+        )
+        .group_by(OfflineOrder.credit_amount, OfflineOrder.amount_fen)
+        .order_by(OfflineOrder.amount_fen.asc(), OfflineOrder.credit_amount.asc())
+        .all()
+    )
+
+    items: list[dict] = []
+    total_used_count = 0
+    total_amount = 0.0
+    for row in rows:
+        order_count = int(row.order_count or 0)
+        total_amount_yuan = round(int(row.total_amount_fen or 0) / 100, 2)
+        items.append(
+            {
+                "credit_amount": int(row.credit_amount or 0),
+                "unit_price": round(int(row.amount_fen or 0) / 100, 2),
+                "used_count": order_count,
+                "total_amount": total_amount_yuan,
+            }
+        )
+        total_used_count += order_count
+        total_amount += total_amount_yuan
+
+    return {
+        "range_label": _format_range_label(current_start, current_end),
+        "items": items,
+        "total_used_count": total_used_count,
+        "total_amount": round(total_amount, 2),
+    }
+
+
 MISSING_INLINE_BASE64_ERROR_MESSAGE = (
     "生图接口返回内容缺少配置路径 candidates.0.content.parts.0.inlineData.data 对应的 base64 数据；"
 )
@@ -1257,12 +1411,70 @@ def _normalize_error_message_for_analytics(error_message: str | None) -> str:
     return message
 
 
+def _classify_error_message_for_analytics(error_message: str | None) -> str:
+    message = _normalize_error_message_for_analytics(error_message)
+    lower = message.lower()
+
+    if "生图接口连接被上游异常断开" in message:
+        return "上游异常断开连接"
+    if "生图接口连接超时" in message:
+        return "上游连接超时"
+    if "生图接口响应读取超时" in message:
+        return "上游响应读取超时"
+    if "生图接口请求发送超时" in message:
+        return "上游请求发送超时"
+    if "生图接口连接池等待超时" in message:
+        return "连接池等待超时"
+    if "生图接口请求超时" in message:
+        return "上游请求超时"
+    if "生图接口连接失败" in message:
+        return "上游连接失败"
+    if "生图接口响应读取失败" in message:
+        return "上游响应读取失败"
+    if "生图接口请求发送失败" in message:
+        return "上游请求发送失败"
+    if "生图接口连接关闭异常" in message:
+        return "连接关闭异常"
+    if "生图接口协议异常" in message:
+        return "上游协议异常"
+    if "生图接口网络异常" in message:
+        return "上游网络异常"
+    if "invalid image file or mode" in lower or "provider_request_invalid" in lower:
+        return "参考图无效"
+    if "生图接口返回内容缺少配置路径" in message and "对应的 base64 数据" in message:
+        return "上游返回缺少图片数据"
+    if "生图接口返回 http" in lower:
+        return "上游 HTTP 错误"
+    if "图片已生成，但保存结果失败" in message:
+        return "结果图片保存失败"
+    if "图编辑原图不存在或无法读取" in message:
+        return "图编辑原图不可读"
+    if "图编辑蒙版不存在或无法读取" in message:
+        return "图编辑蒙版不可读"
+    if "图编辑原图格式无效" in message:
+        return "图编辑原图格式无效"
+    if "图编辑蒙版格式无效" in message:
+        return "图编辑蒙版格式无效"
+    if "任务处理超时" in message:
+        return "任务处理超时"
+    if "任务队列暂不可用" in message or "任务入队失败" in message:
+        return "任务入队异常"
+    if "生图任务执行异常" in message or "重新生成任务执行异常" in message:
+        return "任务执行异常"
+    if "关联任务不存在" in message:
+        return "关联任务不存在"
+    if "生图失败" in message:
+        return "生图失败"
+    return "其他错误"
+
+
 def get_error_analytics(
     db: Session,
     *,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     model: str | None = None,
+    error_category: str | None = None,
 ) -> dict:
     current_start, current_end = _align_range("day", start_date, end_date)
     query = (
@@ -1280,21 +1492,163 @@ def get_error_analytics(
         query = query.filter(Task.model == model)
     rows = query.all()
 
-    error_count_map: dict[str, int] = defaultdict(int)
+    raw_error_count_map: dict[str, int] = defaultdict(int)
+    category_count_map: dict[str, int] = defaultdict(int)
+    category_sample_map: dict[str, str] = {}
+    filtered_total_failed_tasks = 0
     for row in rows:
         normalized_message = _normalize_error_message_for_analytics(row.error_message)
-        error_count_map[normalized_message] += 1
+        row_error_category = _classify_error_message_for_analytics(normalized_message)
+        if error_category is not None and row_error_category != error_category:
+            continue
+        filtered_total_failed_tasks += 1
+        raw_error_count_map[normalized_message] += 1
+        category_count_map[row_error_category] += 1
+        category_sample_map.setdefault(row_error_category, normalized_message)
 
     items = [
-        {"error_message": error_message, "count": count}
-        for error_message, count in sorted(
-            error_count_map.items(),
+        {
+            "error_category": error_category,
+            "error_message": category_sample_map.get(error_category, ""),
+            "count": count,
+        }
+        for error_category, count in sorted(
+            category_count_map.items(),
             key=lambda item: (-item[1], item[0]),
         )
     ]
     return {
         "range_label": _format_range_label(current_start, current_end),
-        "total_failed_tasks": len(rows),
-        "distinct_error_messages": len(items),
+        "total_failed_tasks": filtered_total_failed_tasks,
+        "distinct_error_categories": len(items),
+        "distinct_error_messages": len(raw_error_count_map),
         "items": items,
     }
+
+
+def get_error_category_timeseries(
+    db: Session,
+    *,
+    granularity: str = "day",
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    model: str | None = None,
+    limit: int = 6,
+) -> dict:
+    current_start, current_end = _align_range(granularity, start_date, end_date)
+    bucket_starts = _iter_bucket_starts(current_start, current_end, granularity)
+    query = (
+        db.query(Task.created_at, Task.error_message)
+        .join(User, User.id == Task.user_id)
+        .filter(
+            Task.created_at >= _to_db_datetime(current_start),
+            Task.created_at <= _to_db_datetime(current_end),
+            Task.status == "failed",
+            User.role != "superadmin",
+            _non_whitelisted_user_filter(),
+        )
+    )
+    if model:
+        query = query.filter(Task.model == model)
+    rows = query.all()
+
+    category_totals: dict[str, int] = defaultdict(int)
+    bucket_category_counts: dict[datetime, dict[str, int]] = {
+        bucket: defaultdict(int) for bucket in bucket_starts
+    }
+
+    for row in rows:
+        if not row.created_at:
+            continue
+        bucket = _bucket_start(_to_local_datetime(row.created_at), granularity)
+        if bucket not in bucket_category_counts:
+            continue
+        error_category = _classify_error_message_for_analytics(row.error_message)
+        category_totals[error_category] += 1
+        bucket_category_counts[bucket][error_category] += 1
+
+    ranked_categories = sorted(
+        category_totals.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+    top_categories = [name for name, _count in ranked_categories[:max(limit, 1)]]
+
+    points = []
+    for bucket in bucket_starts:
+        category_counts = bucket_category_counts[bucket]
+        points.append(
+            {
+                "label": _bucket_label(bucket, granularity),
+                "bucket_start": bucket,
+                "bucket_end": _bucket_end(bucket, granularity),
+                "total_failed_tasks": sum(category_counts.values()),
+                "categories": {name: category_counts.get(name, 0) for name in top_categories},
+            }
+        )
+
+    return {
+        "granularity": granularity,
+        "range_label": _format_range_label(current_start, current_end),
+        "series": [
+            {"error_category": name, "total_count": category_totals[name]}
+            for name in top_categories
+        ],
+        "points": points,
+    }
+
+
+def get_error_tasks(
+    db: Session,
+    *,
+    page: int = 1,
+    page_size: int = 20,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    model: str | None = None,
+    error_category: str | None = None,
+) -> dict:
+    query = (
+        db.query(Task, User)
+        .join(User, User.id == Task.user_id)
+        .filter(
+            Task.status == "failed",
+            User.role != "superadmin",
+            _non_whitelisted_user_filter(),
+        )
+    )
+    if start_date:
+        query = query.filter(Task.created_at >= _to_db_datetime(start_date))
+    if end_date:
+        query = query.filter(Task.created_at <= _to_db_datetime(end_date))
+    if model:
+        query = query.filter(Task.model == model)
+
+    rows = query.order_by(Task.created_at.desc(), Task.id.desc()).all()
+    items: list[dict] = []
+    scene_type_map = get_task_scene_type_map(db)
+    for task, user in rows:
+        normalized_message = _normalize_error_message_for_analytics(task.error_message)
+        row_error_category = _classify_error_message_for_analytics(normalized_message)
+        if error_category and row_error_category != error_category:
+            continue
+        items.append({
+            "task_id": task_external_id(task),
+            "user_id": user_external_id(user),
+            "username": user.username or "",
+            "avatar_url": user.avatar_url or "",
+            "task_type": resolve_task_type_for_task(task, scene_type_map=scene_type_map),
+            "model": task.model or "",
+            "source": task.source or "web",
+            "mode": task.mode or "generate",
+            "prompt": task.prompt or "",
+            "status": task.status or "failed",
+            "error_message": task.error_message or "",
+            "credit_cost": int(task.credit_cost or 0),
+            "credit_refunded": bool(is_task_generation_failure_credit_refunded(db, task.id)) if task.id else False,
+            "created_at": task.created_at,
+        })
+
+    total = len(items)
+    start_index = max(page - 1, 0) * page_size
+    page_items = items[start_index:start_index + page_size]
+    return {"total": total, "items": page_items}

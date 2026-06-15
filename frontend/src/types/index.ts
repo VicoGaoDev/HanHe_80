@@ -554,6 +554,9 @@ export interface AdminDailyReportTestResult {
   revenue_fen: number;
   revenue_yuan: number;
   paid_order_count: number;
+  offline_order_revenue_fen: number;
+  offline_order_revenue_yuan: number;
+  offline_order_count: number;
   redeem_revenue_yuan: number;
   redeem_used_count: number;
   task_total_count: number;
@@ -587,6 +590,7 @@ export interface AdminAnalyticsRedeemRevenue {
 }
 
 export interface AdminErrorAnalyticsItem {
+  error_category: string;
   error_message: string;
   count: number;
 }
@@ -594,8 +598,51 @@ export interface AdminErrorAnalyticsItem {
 export interface AdminErrorAnalytics {
   range_label: string;
   total_failed_tasks: number;
+  distinct_error_categories: number;
   distinct_error_messages: number;
   items: AdminErrorAnalyticsItem[];
+}
+
+export interface AdminErrorCategoryTimeseriesSeries {
+  error_category: string;
+  total_count: number;
+}
+
+export interface AdminErrorCategoryTimeseriesPoint {
+  label: string;
+  bucket_start?: string | null;
+  bucket_end?: string | null;
+  total_failed_tasks: number;
+  categories: Record<string, number>;
+}
+
+export interface AdminErrorCategoryTimeseries {
+  granularity: AdminAnalyticsGranularity;
+  range_label: string;
+  series: AdminErrorCategoryTimeseriesSeries[];
+  points: AdminErrorCategoryTimeseriesPoint[];
+}
+
+export interface AdminErrorTaskItem {
+  task_id: string;
+  user_id: string;
+  username: string;
+  avatar_url: string;
+  task_type: TaskType;
+  model: string;
+  source: TaskSource;
+  mode: TaskMode;
+  prompt: string;
+  status: string;
+  error_message: string;
+  credit_cost: number;
+  credit_refunded: boolean;
+  created_at?: string | null;
+}
+
+export interface AdminErrorTaskList {
+  total: number;
+  items: AdminErrorTaskItem[];
 }
 
 export interface AdminPaymentOrder {
@@ -620,6 +667,28 @@ export interface AdminPaymentOrder {
   failed_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface AdminOfflineOrder {
+  id: number;
+  business_id: string;
+  user_id: string;
+  username: string;
+  user_email: string;
+  credit_amount: number;
+  amount_fen: number;
+  amount_yuan: number;
+  remark: string;
+  created_by: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface CreateOfflineOrderPayload {
+  user_id: string;
+  credit_amount: number;
+  amount_yuan: number;
+  remark?: string;
 }
 
 export interface AdminConfig {

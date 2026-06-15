@@ -3,6 +3,8 @@ import type {
   AdminStats,
   AdminAnalyticsBreakdown,
   AdminErrorAnalytics,
+  AdminErrorCategoryTimeseries,
+  AdminErrorTaskList,
   AdminAnalyticsQuery,
   AdminAnalyticsRedeemRevenue,
   AdminAnalyticsSummary,
@@ -11,6 +13,7 @@ import type {
   CosConfig,
   AdminUser,
   AdminPaymentOrder,
+  AdminOfflineOrder,
   CreditLog,
   AdminRedeemKey,
   AdminRedeemKeyBatchResult,
@@ -33,6 +36,7 @@ import type {
   HistoryResponse,
   UserHistoryCard,
   AdminUserPromoDashboard,
+  CreateOfflineOrderPayload,
 } from "@/types";
 
 function buildAnalyticsParams(query: AdminAnalyticsQuery): Record<string, unknown> {
@@ -112,6 +116,20 @@ export function listPaymentOrders(params: {
   end_date?: string;
 }): Promise<{ total: number; items: AdminPaymentOrder[] }> {
   return client.get("/admin/payment-orders", { params });
+}
+
+export function createOfflineOrder(payload: CreateOfflineOrderPayload): Promise<AdminOfflineOrder> {
+  return client.post("/admin/offline-orders", payload);
+}
+
+export function listOfflineOrders(params: {
+  page?: number;
+  page_size?: number;
+  user?: string;
+  start_date?: string;
+  end_date?: string;
+}): Promise<{ total: number; items: AdminOfflineOrder[] }> {
+  return client.get("/admin/offline-orders", { params });
 }
 
 export function createRedeemKeysBatch(count: number, creditAmount: number): Promise<AdminRedeemKeyBatchResult> {
@@ -253,12 +271,44 @@ export function getAdminAnalyticsPaymentRevenue(query: AdminAnalyticsQuery): Pro
   });
 }
 
+export function getAdminAnalyticsOfflineOrderRevenue(query: AdminAnalyticsQuery): Promise<AdminAnalyticsRedeemRevenue> {
+  return client.get("/admin/analytics/offline-order-revenue", {
+    params: {
+      granularity: query.granularity,
+      start_date: query.start_date,
+      end_date: query.end_date,
+    },
+  });
+}
+
 export function getAdminErrorAnalytics(params: {
   start_date?: string;
   end_date?: string;
   model?: string;
+  error_category?: string;
 }): Promise<AdminErrorAnalytics> {
   return client.get("/admin/analytics/errors", { params });
+}
+
+export function getAdminErrorCategoryTimeseries(query: {
+  granularity: "day" | "week" | "month";
+  start_date?: string;
+  end_date?: string;
+  model?: string;
+  limit?: number;
+}): Promise<AdminErrorCategoryTimeseries> {
+  return client.get("/admin/analytics/errors/timeseries", { params: query });
+}
+
+export function getAdminErrorTasks(params: {
+  page?: number;
+  page_size?: number;
+  start_date?: string;
+  end_date?: string;
+  model?: string;
+  error_category?: string;
+}): Promise<AdminErrorTaskList> {
+  return client.get("/admin/analytics/errors/tasks", { params });
 }
 
 export function getAdminConfig(): Promise<AdminConfig | null> {

@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from decimal import Decimal
+
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 
@@ -35,6 +37,13 @@ class ResetCreditsRequest(BaseModel):
 class CreateRedeemKeysBatchRequest(BaseModel):
     count: int
     credit_amount: int
+
+
+class CreateOfflineOrderRequest(BaseModel):
+    user_id: str
+    credit_amount: int = Field(ge=1)
+    amount_yuan: Decimal = Field(gt=0)
+    remark: str = ""
 
 
 class UpdateRedeemKeyStatusRequest(BaseModel):
@@ -97,6 +106,21 @@ class PaymentOrderAdminOut(BaseModel):
     credited_at: datetime | None = None
     closed_at: datetime | None = None
     failed_at: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class OfflineOrderOut(BaseModel):
+    id: int
+    business_id: str
+    user_id: str
+    username: str = ""
+    user_email: str = ""
+    credit_amount: int
+    amount_fen: int
+    amount_yuan: float
+    remark: str = ""
+    created_by: str
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -195,6 +219,7 @@ class AnalyticsRedeemRevenueOut(BaseModel):
 
 
 class ErrorAnalyticsItemOut(BaseModel):
+    error_category: str
     error_message: str
     count: int = 0
 
@@ -202,8 +227,51 @@ class ErrorAnalyticsItemOut(BaseModel):
 class ErrorAnalyticsOut(BaseModel):
     range_label: str
     total_failed_tasks: int
+    distinct_error_categories: int
     distinct_error_messages: int
     items: list[ErrorAnalyticsItemOut]
+
+
+class ErrorCategoryTimeseriesPointOut(BaseModel):
+    label: str
+    bucket_start: datetime | None = None
+    bucket_end: datetime | None = None
+    total_failed_tasks: int = 0
+    categories: dict[str, int]
+
+
+class ErrorCategoryTimeseriesSeriesOut(BaseModel):
+    error_category: str
+    total_count: int = 0
+
+
+class ErrorCategoryTimeseriesOut(BaseModel):
+    granularity: str
+    range_label: str
+    series: list[ErrorCategoryTimeseriesSeriesOut]
+    points: list[ErrorCategoryTimeseriesPointOut]
+
+
+class ErrorTaskItemOut(BaseModel):
+    task_id: str
+    user_id: str = ""
+    username: str = ""
+    avatar_url: str = ""
+    task_type: str = "text_generate"
+    model: str = ""
+    source: str = "web"
+    mode: str = "generate"
+    prompt: str = ""
+    status: str = "failed"
+    error_message: str = ""
+    credit_cost: int = 0
+    credit_refunded: bool = False
+    created_at: datetime | None = None
+
+
+class ErrorTaskListOut(BaseModel):
+    total: int
+    items: list[ErrorTaskItemOut]
 
 
 class DailyReportTestOut(BaseModel):
@@ -214,6 +282,9 @@ class DailyReportTestOut(BaseModel):
     revenue_fen: int
     revenue_yuan: float
     paid_order_count: int
+    offline_order_revenue_fen: int
+    offline_order_revenue_yuan: float
+    offline_order_count: int
     redeem_revenue_yuan: float
     redeem_used_count: int
     task_total_count: int
