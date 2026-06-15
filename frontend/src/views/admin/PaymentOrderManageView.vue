@@ -261,6 +261,7 @@ onMounted(load);
         :loading="loading"
         :pagination="false"
         row-key="id"
+        :scroll="{ x: 960 }"
         class="admin-mobile-table compact-payment-order-table"
       >
         <template #bodyCell="{ column, record }">
@@ -560,5 +561,32 @@ onMounted(load);
 
 :deep(.compact-payment-order-table .ant-table-cell) {
   word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .payment-order-filter-user,
+  .payment-order-filter-status,
+  .payment-order-filter-date,
+  .action-btn {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .pagination-summary {
+    white-space: normal;
+  }
+
+  .detail-summary-card {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  :deep(.payment-order-detail-drawer .ant-drawer-content-wrapper) {
+    width: 100% !important;
+  }
 }
 </style>

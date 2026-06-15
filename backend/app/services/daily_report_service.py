@@ -69,7 +69,15 @@ def collect_daily_report_stats(
 
     offline_order_revenue_fen, offline_order_count = (
         db.query(
-            func.coalesce(func.sum(OfflineOrder.amount_fen), 0),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (OfflineOrder.order_type == "refund", -OfflineOrder.amount_fen),
+                        else_=OfflineOrder.amount_fen,
+                    )
+                ),
+                0,
+            ),
             func.count(OfflineOrder.id),
         )
         .filter(

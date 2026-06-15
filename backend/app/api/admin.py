@@ -237,6 +237,7 @@ def admin_create_offline_order(
     return create_offline_order(
         db,
         user_id=body.user_id,
+        order_type=body.order_type,
         credit_amount=body.credit_amount,
         amount_yuan=body.amount_yuan,
         remark=body.remark,

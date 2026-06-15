@@ -675,6 +675,7 @@ export interface AdminOfflineOrder {
   user_id: string;
   username: string;
   user_email: string;
+  order_type: "purchase" | "refund";
   credit_amount: number;
   amount_fen: number;
   amount_yuan: number;
@@ -686,6 +687,7 @@ export interface AdminOfflineOrder {
 
 export interface CreateOfflineOrderPayload {
   user_id: string;
+  order_type: "purchase" | "refund";
   credit_amount: number;
   amount_yuan: number;
   remark?: string;

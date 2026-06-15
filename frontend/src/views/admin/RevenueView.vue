@@ -9,13 +9,14 @@ import {
   getAdminAnalyticsOfflineOrderRevenue,
   getAdminAnalyticsPaymentRevenue,
   getAdminAnalyticsRedeemRevenue,
+  listOfflineOrders,
   listUsers,
   testAdminDailyReportNotify,
 } from "@/api/admin";
 import { isSessionExpiredError } from "@/lib/authError";
 import { useAuthStore } from "@/stores/auth";
 import RedeemRevenueTable from "@/components/admin/RedeemRevenueTable.vue";
-import type { AdminAnalyticsRedeemRevenue, AdminUser } from "@/types";
+import type { AdminAnalyticsRedeemRevenue, AdminOfflineOrder, AdminUser } from "@/types";
 
 type DatePreset = "today" | "3d" | "7d" | "30d";
 
@@ -29,9 +30,11 @@ const dateRange = ref<[Dayjs, Dayjs] | null>(null);
 const redeemRevenue = ref<AdminAnalyticsRedeemRevenue | null>(null);
 const paymentRevenue = ref<AdminAnalyticsRedeemRevenue | null>(null);
 const offlineOrderRevenue = ref<AdminAnalyticsRedeemRevenue | null>(null);
+const offlineOrderItems = ref<AdminOfflineOrder[]>([]);
 const users = ref<AdminUser[]>([]);
 const offlineOrderForm = reactive({
   user_id: undefined as string | undefined,
+  order_type: "purchase" as "purchase" | "refund",
   credit_amount: 0,
   amount_yuan: undefined as number | undefined,
   remark: "",
@@ -120,20 +123,48 @@ async function load() {
       start_date: formatQueryDate(dateRange.value[0].startOf("day")),
       end_date: formatQueryDate(dateRange.value[1].endOf("day")),
     } as const;
-    const [redeemResult, paymentResult, offlineOrderResult] = await Promise.all([
+    const [redeemResult, paymentResult, offlineOrderResult, offlineOrderListResult] = await Promise.all([
       getAdminAnalyticsRedeemRevenue(query),
       getAdminAnalyticsPaymentRevenue(query),
       getAdminAnalyticsOfflineOrderRevenue(query),
+      listOfflineOrders({
+        page: 1,
+        page_size: 100,
+        start_date: formatQueryDate(dateRange.value[0].startOf("day")),
+        end_date: formatQueryDate(dateRange.value[1].endOf("day")),
+      }),
     ]);
     redeemRevenue.value = redeemResult;
     paymentRevenue.value = paymentResult;
     offlineOrderRevenue.value = offlineOrderResult;
+    offlineOrderItems.value = offlineOrderListResult.items;
   } catch (err: unknown) {
     if (isSessionExpiredError(err)) return;
     message.error("获取营业额数据失败");
   } finally {
     loading.value = false;
   }
+}
+
+const offlineOrderColumns = [
+  { title: "类型", dataIndex: "order_type", width: 90 },
+  { title: "用户", dataIndex: "username", width: 120, ellipsis: true },
+  { title: "积分", dataIndex: "credit_amount", width: 100 },
+  { title: "金额（元）", dataIndex: "amount_yuan", width: 120 },
+  { title: "备注", dataIndex: "remark", width: 220, ellipsis: true },
+  { title: "时间", dataIndex: "created_at", width: 168 },
+];
+
+function formatMoney(value?: number) {
+  return Number(value || 0).toFixed(2);
+}
+
+function formatOfflineOrderType(value: AdminOfflineOrder["order_type"]) {
+  return value === "refund" ? "退款" : "购入";
+}
+
+function offlineOrderRowKey(record: AdminOfflineOrder) {
+  return String(record.business_id || record.id);
 }
 
 async function loadUsers() {
@@ -147,6 +178,7 @@ async function loadUsers() {
 
 function openOfflineOrderModal() {
   offlineOrderForm.user_id = undefined;
+  offlineOrderForm.order_type = "purchase";
   offlineOrderForm.credit_amount = 0;
   offlineOrderForm.amount_yuan = undefined;
   offlineOrderForm.remark = "";
@@ -170,6 +202,7 @@ async function handleCreateOfflineOrder() {
   try {
     await createOfflineOrder({
       user_id: offlineOrderForm.user_id,
+      order_type: offlineOrderForm.order_type,
       credit_amount: offlineOrderForm.credit_amount,
       amount_yuan: Number(offlineOrderForm.amount_yuan),
       remark: offlineOrderForm.remark.trim(),
@@ -270,6 +303,35 @@ onMounted(() => {
         title="线下订单营业额"
         count-label="录入"
       />
+      <div class="offline-order-detail-card warm-card motion-card-lift motion-fade-up" style="--motion-delay: 320ms">
+        <div class="offline-order-detail-head">
+          <div class="redeem-revenue-title">线下订单明细</div>
+        </div>
+        <a-table
+          :columns="offlineOrderColumns"
+          :data-source="offlineOrderItems"
+          :pagination="false"
+          :row-key="offlineOrderRowKey"
+          :scroll="{ x: 780 }"
+          size="middle"
+          class="offline-order-detail-table admin-mobile-table"
+        >
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.dataIndex === 'order_type'">
+              {{ formatOfflineOrderType(record.order_type) }}
+            </template>
+            <template v-else-if="column.dataIndex === 'amount_yuan'">
+              {{ record.order_type === "refund" ? "-" : "" }}{{ formatMoney(record.amount_yuan) }}
+            </template>
+            <template v-else-if="column.dataIndex === 'remark'">
+              {{ record.remark || "-" }}
+            </template>
+            <template v-else-if="column.dataIndex === 'created_at'">
+              {{ record.created_at ? dayjs(record.created_at).format("YYYY-MM-DD HH:mm:ss") : "-" }}
+            </template>
+          </template>
+        </a-table>
+      </div>
     </div>
 
     <a-modal
@@ -292,6 +354,12 @@ onMounted(() => {
               value: user.id,
             }))"
           />
+        </a-form-item>
+        <a-form-item label="类型">
+          <a-radio-group v-model:value="offlineOrderForm.order_type">
+            <a-radio value="purchase">购入</a-radio>
+            <a-radio value="refund">退款</a-radio>
+          </a-radio-group>
         </a-form-item>
         <a-form-item label="积分">
           <a-input-number
@@ -325,6 +393,11 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
+.warm-page {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
 .analytics-filter {
   margin-bottom: 16px;
 }
@@ -332,6 +405,35 @@ onMounted(() => {
 .revenue-section-stack {
   display: grid;
   gap: 16px;
+  min-width: 0;
+}
+
+.offline-order-detail-card {
+  padding: 16px 18px 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.offline-order-detail-head {
+  margin-bottom: 12px;
+}
+
+.offline-order-detail-table {
+  min-width: 0;
+
+  :deep(.ant-table) {
+    background: transparent;
+  }
+
+  :deep(.ant-table-thead > tr > th) {
+    background: rgba(255, 248, 236, 0.92);
+    color: #8c7458;
+    font-weight: 600;
+  }
+
+  :deep(.ant-table-tbody > tr > td) {
+    color: #5d4526;
+  }
 }
 
 .revenue-header-btn {
@@ -359,6 +461,10 @@ onMounted(() => {
   .analytics-filter-date,
   .analytics-action-btn {
     width: 100%;
+  }
+
+  .offline-order-detail-card {
+    padding-inline: 14px;
   }
 
   .revenue-header-btn {

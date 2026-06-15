@@ -138,6 +138,7 @@
 
 - `business_id`: 线下订单对外业务 ID，32 位十六进制字符串。
 - `user_id`: 绑定的用户。
+- `order_type`: 线下订单类型，当前支持 `purchase`（购入）和 `refund`（退款）。
 - `credit_amount`: 线下订单对应积分数。
 - `amount_fen`: 订单金额，单位为分；前端按人民币元输入，后端换算后按分存储。
 - `remark`: 备注。

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy import func
+from sqlalchemy import case, func
 from fastapi import HTTPException, status
 from app.models.user import User
 from app.models.task import Task
@@ -211,6 +211,7 @@ def _serialize_offline_order(order: OfflineOrder, user: User | None, creator: Us
         "user_id": user_external_id(user) if user else "",
         "username": user.username if user else "",
         "user_email": (user.email or "") if user else "",
+        "order_type": order.order_type or "purchase",
         "credit_amount": int(order.credit_amount or 0),
         "amount_fen": amount_fen,
         "amount_yuan": round(amount_fen / 100, 2),
@@ -331,6 +332,7 @@ def create_offline_order(
     db: Session,
     *,
     user_id: str,
+    order_type: str,
     credit_amount: int,
     amount_yuan: Decimal | int | float | str,
     remark: str,
@@ -339,11 +341,14 @@ def create_offline_order(
     user = get_user_by_business_id(db, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    if order_type not in ("purchase", "refund"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="线下订单类型必须是 purchase 或 refund")
     if credit_amount <= 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="积分必须大于 0")
 
     order = OfflineOrder(
         user_id=user.id,
+        order_type=order_type,
         credit_amount=int(credit_amount),
         amount_fen=_yuan_to_fen(amount_yuan),
         remark=(remark or "").strip(),
@@ -1349,17 +1354,26 @@ def get_analytics_offline_order_revenue(
 
     rows = (
         db.query(
+            OfflineOrder.order_type,
             OfflineOrder.credit_amount,
             OfflineOrder.amount_fen,
             func.count(OfflineOrder.id).label("order_count"),
-            func.coalesce(func.sum(OfflineOrder.amount_fen), 0).label("total_amount_fen"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (OfflineOrder.order_type == "refund", -OfflineOrder.amount_fen),
+                        else_=OfflineOrder.amount_fen,
+                    )
+                ),
+                0,
+            ).label("net_amount_fen"),
         )
         .filter(
             OfflineOrder.created_at >= _to_db_datetime(current_start),
             OfflineOrder.created_at <= _to_db_datetime(current_end),
         )
-        .group_by(OfflineOrder.credit_amount, OfflineOrder.amount_fen)
-        .order_by(OfflineOrder.amount_fen.asc(), OfflineOrder.credit_amount.asc())
+        .group_by(OfflineOrder.order_type, OfflineOrder.credit_amount, OfflineOrder.amount_fen)
+        .order_by(OfflineOrder.amount_fen.asc(), OfflineOrder.credit_amount.asc(), OfflineOrder.order_type.asc())
         .all()
     )
 
@@ -1368,11 +1382,12 @@ def get_analytics_offline_order_revenue(
     total_amount = 0.0
     for row in rows:
         order_count = int(row.order_count or 0)
-        total_amount_yuan = round(int(row.total_amount_fen or 0) / 100, 2)
+        signed_unit_price = round(int(row.amount_fen or 0) / 100, 2)
+        total_amount_yuan = round(int(row.net_amount_fen or 0) / 100, 2)
         items.append(
             {
                 "credit_amount": int(row.credit_amount or 0),
-                "unit_price": round(int(row.amount_fen or 0) / 100, 2),
+                "unit_price": -signed_unit_price if row.order_type == "refund" else signed_unit_price,
                 "used_count": order_count,
                 "total_amount": total_amount_yuan,
             }

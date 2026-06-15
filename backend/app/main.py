@@ -830,6 +830,7 @@ def _ensure_offline_order_schema():
                         id INTEGER NOT NULL AUTO_INCREMENT,
                         business_id VARCHAR(32) NOT NULL,
                         user_id INTEGER NOT NULL,
+                        order_type VARCHAR(20) NOT NULL DEFAULT 'purchase',
                         credit_amount INTEGER NOT NULL DEFAULT 0,
                         amount_fen INTEGER NOT NULL DEFAULT 0,
                         remark VARCHAR(500) NOT NULL DEFAULT '',
@@ -839,6 +840,7 @@ def _ensure_offline_order_schema():
                         PRIMARY KEY (id),
                         UNIQUE KEY uq_offline_orders_business_id (business_id),
                         INDEX ix_offline_orders_user_id (user_id),
+                        INDEX ix_offline_orders_order_type (order_type),
                         INDEX ix_offline_orders_created_by (created_by),
                         INDEX ix_offline_orders_created_at (created_at),
                         CONSTRAINT fk_offline_orders_user_id FOREIGN KEY (user_id) REFERENCES users (id),
@@ -856,6 +858,8 @@ def _ensure_offline_order_schema():
             conn.execute(text("ALTER TABLE offline_orders ADD COLUMN business_id VARCHAR(32) NULL"))
         if "user_id" not in offline_order_columns:
             conn.execute(text("ALTER TABLE offline_orders ADD COLUMN user_id INTEGER NULL"))
+        if "order_type" not in offline_order_columns:
+            conn.execute(text("ALTER TABLE offline_orders ADD COLUMN order_type VARCHAR(20) NOT NULL DEFAULT 'purchase'"))
         if "credit_amount" not in offline_order_columns:
             conn.execute(text("ALTER TABLE offline_orders ADD COLUMN credit_amount INTEGER NOT NULL DEFAULT 0"))
         if "amount_fen" not in offline_order_columns:
@@ -889,6 +893,8 @@ def _ensure_offline_order_schema():
             conn.execute(text("CREATE UNIQUE INDEX uq_offline_orders_business_id ON offline_orders (business_id)"))
         if "ix_offline_orders_user_id" not in offline_order_indexes:
             conn.execute(text("CREATE INDEX ix_offline_orders_user_id ON offline_orders (user_id)"))
+        if "ix_offline_orders_order_type" not in offline_order_indexes:
+            conn.execute(text("CREATE INDEX ix_offline_orders_order_type ON offline_orders (order_type)"))
         if "ix_offline_orders_created_by" not in offline_order_indexes:
             conn.execute(text("CREATE INDEX ix_offline_orders_created_by ON offline_orders (created_by)"))
         if "ix_offline_orders_created_at" not in offline_order_indexes:
@@ -917,6 +923,8 @@ def _ensure_offline_order_schema():
             conn.execute(text("ALTER TABLE offline_orders MODIFY COLUMN business_id VARCHAR(32) NOT NULL"))
         if "user_id" in refreshed_columns:
             conn.execute(text("ALTER TABLE offline_orders MODIFY COLUMN user_id INTEGER NOT NULL"))
+        if "order_type" in refreshed_columns:
+            conn.execute(text("ALTER TABLE offline_orders MODIFY COLUMN order_type VARCHAR(20) NOT NULL DEFAULT 'purchase'"))
         if "created_by" in refreshed_columns:
             conn.execute(text("ALTER TABLE offline_orders MODIFY COLUMN created_by INTEGER NOT NULL"))
 

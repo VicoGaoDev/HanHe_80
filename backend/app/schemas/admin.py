@@ -41,6 +41,7 @@ class CreateRedeemKeysBatchRequest(BaseModel):
 
 class CreateOfflineOrderRequest(BaseModel):
     user_id: str
+    order_type: str = "purchase"
     credit_amount: int = Field(ge=1)
     amount_yuan: Decimal = Field(gt=0)
     remark: str = ""
@@ -116,6 +117,7 @@ class OfflineOrderOut(BaseModel):
     user_id: str
     username: str = ""
     user_email: str = ""
+    order_type: str
     credit_amount: int
     amount_fen: int
     amount_yuan: float

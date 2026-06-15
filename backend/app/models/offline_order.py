@@ -11,6 +11,7 @@ class OfflineOrder(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     business_id = Column(String(32), unique=True, nullable=False, index=True, default=generate_business_id)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    order_type = Column(String(20), nullable=False, default="purchase", server_default="purchase", index=True)
     credit_amount = Column(Integer, nullable=False, default=0, server_default="0")
     amount_fen = Column(Integer, nullable=False, default=0, server_default="0")
     remark = Column(String(500), nullable=False, default="", server_default="")
