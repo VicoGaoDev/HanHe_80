@@ -86,6 +86,13 @@ def on_startup():
     Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
     if settings.DB_AUTO_CREATE_TABLES:
         Base.metadata.create_all(bind=engine)
+    if settings.should_run_startup_schema_sync:
+        _run_startup_schema_sync()
+    if settings.should_run_seed:
+        _seed_default_data()
+
+
+def _run_startup_schema_sync():
     _ensure_user_credit_schema()
     _ensure_payment_order_schema()
     _ensure_offline_order_schema()
@@ -110,8 +117,6 @@ def on_startup():
         _ensure_schema_compat()
     _backfill_task_credit_costs()
     _initialize_template_sort_orders()
-    if settings.should_run_seed:
-        _seed_default_data()
 
 
 def _ensure_schema_compat():

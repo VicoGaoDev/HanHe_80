@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     DB_NAME: str | None = None
     DB_CHARSET: str = "utf8mb4"
     DB_AUTO_CREATE_TABLES: bool = False
+    DB_RUN_STARTUP_SCHEMA_SYNC: bool = False
     DB_RUN_SCHEMA_COMPAT: bool = False
     DB_RUN_SEED: bool = False
     DB_POOL_SIZE: int = 5
@@ -99,6 +100,10 @@ class Settings(BaseSettings):
     @property
     def should_run_schema_compat(self) -> bool:
         return self.DB_RUN_SCHEMA_COMPAT
+
+    @property
+    def should_run_startup_schema_sync(self) -> bool:
+        return self.DB_RUN_STARTUP_SCHEMA_SYNC
 
     @property
     def should_run_seed(self) -> bool:

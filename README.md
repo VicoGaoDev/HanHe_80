@@ -93,6 +93,7 @@ DB_PASSWORD=password
 DB_NAME=database
 DB_CHARSET=utf8mb4
 DB_AUTO_CREATE_TABLES=true
+DB_RUN_STARTUP_SCHEMA_SYNC=false
 DB_RUN_SCHEMA_COMPAT=false
 DB_RUN_SEED=false
 ```
@@ -112,6 +113,7 @@ uvicorn app.main:app --reload --port 8000
 
 - 项目仅支持 MySQL，不再提供 SQLite 回退
 - `DB_AUTO_CREATE_TABLES=true` 时会自动建表
+- `DB_RUN_STARTUP_SCHEMA_SYNC=true` 时会在启动阶段执行 schema 修复与数据回填；生产环境建议保持关闭，改为上线前手工执行版本化 SQL
 - `DB_RUN_SCHEMA_COMPAT=true` 时会在启动阶段补齐兼容字段
 - `DB_RUN_SEED=true` 时会初始化默认账号与基础运行配置
 
@@ -268,9 +270,16 @@ celery -A app.workers.celery_app worker --loglevel=info
 
 生产环境建议：
 
+- `DB_RUN_STARTUP_SCHEMA_SYNC=false`
 - `DB_RUN_SCHEMA_COMPAT=false`
 - `DB_RUN_SEED=false`
 - 关闭同步降级模式
+
+推荐发布顺序：
+
+1. 按顺序执行 `docs/sql/migrations/` 下尚未执行过的版本化 SQL。
+2. 确认生产库结构已完成本次变更。
+3. 再部署 `backend/` 与 `backend-api/`，保持 `DB_RUN_STARTUP_SCHEMA_SYNC=false`。
 
 ### 并发起步建议
 
@@ -342,6 +351,7 @@ celery -A app.workers.celery_app worker --loglevel=info
 - `docs/web_user_guide.md`：Web 端用户使用说明
 - `docs/alipay_payment_integration.md`：支付宝支付接入说明
 - `docs/mysql_empty_database_init.md`：MySQL 空库初始化说明
+- `docs/sql/migrations/README.md`：数据库版本化 SQL 迁移说明
 - `docs/backend-security-checklist.md`：后端安全检查清单
 - `docs/user_agreement.md`：用户协议
 - `docs/privacy_policy.md`：隐私政策
