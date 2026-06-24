@@ -2,11 +2,21 @@ import COS from "cos-js-sdk-v5";
 import client from "./client";
 import type { UploadCredential, UploadPurpose } from "@/types";
 
+function inferImageContentType(file: File) {
+  if (file.type) return file.type;
+  const name = file.name.toLowerCase();
+  if (/\.(jpe?g)$/.test(name)) return "image/jpeg";
+  if (/\.png$/.test(name)) return "image/png";
+  if (/\.webp$/.test(name)) return "image/webp";
+  if (/\.gif$/.test(name)) return "image/gif";
+  return "application/octet-stream";
+}
+
 function getUploadCredential(file: File, purpose: UploadPurpose): Promise<UploadCredential> {
   return client.post("/upload/credential", {
     file_name: file.name,
     file_size: file.size,
-    content_type: file.type,
+    content_type: inferImageContentType(file),
     purpose,
   });
 }

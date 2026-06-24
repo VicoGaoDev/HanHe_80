@@ -789,8 +789,14 @@ async function ensureAuthenticated() {
   }
 }
 
-async function triggerUpload() {
-  if (!(await ensureAuthenticated())) return;
+function triggerUpload() {
+  if (!auth.isLoggedIn) {
+    loginModalVisible.value = true;
+    return;
+  }
+  getMe().then((user) => auth.updateUser(user)).catch(() => {
+    loginModalVisible.value = true;
+  });
   fileInput.value?.click();
 }
 
@@ -986,8 +992,14 @@ function removeReference(index: number) {
   referenceItems.value.splice(index, 1);
 }
 
-async function triggerSourceUpload() {
-  if (!(await ensureAuthenticated())) return;
+function triggerSourceUpload() {
+  if (!auth.isLoggedIn) {
+    loginModalVisible.value = true;
+    return;
+  }
+  getMe().then((user) => auth.updateUser(user)).catch(() => {
+    loginModalVisible.value = true;
+  });
   sourceInput.value?.click();
 }
 
@@ -1031,8 +1043,14 @@ function removeSourceImage() {
   canRedoMask.value = false;
 }
 
-async function triggerReverseUpload() {
-  if (!(await ensureAuthenticated())) return;
+function triggerReverseUpload() {
+  if (!auth.isLoggedIn) {
+    loginModalVisible.value = true;
+    return;
+  }
+  getMe().then((user) => auth.updateUser(user)).catch(() => {
+    loginModalVisible.value = true;
+  });
   reverseInput.value?.click();
 }
 
@@ -2169,10 +2187,10 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
                 <input
                   ref="fileInput"
+                  class="native-file-input"
                   type="file"
                   accept="image/*"
                   multiple
-                  hidden
                   @change="handleFileChange"
                 />
 
@@ -2329,9 +2347,9 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
                 <input
                   ref="reverseInput"
+                  class="native-file-input"
                   type="file"
                   accept="image/*"
-                  hidden
                   @change="handleReverseFileChange"
                 />
 
@@ -2429,9 +2447,9 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
                 <input
                   ref="sourceInput"
+                  class="native-file-input"
                   type="file"
                   accept="image/*"
-                  hidden
                   @change="handleSourceFileChange"
                 />
 
@@ -3123,6 +3141,16 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
     rgba(var(--theme-surface-strong-rgb), 0.94) 28%,
     var(--theme-surface-strong)
   );
+}
+
+.native-file-input {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .generate-link-tip {
