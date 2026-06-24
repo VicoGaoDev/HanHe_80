@@ -1097,7 +1097,10 @@ watch(purchaseDialogOpen, (open) => {
 
         <div class="header-actions">
           <a-button type="text" class="top-link-btn" @click="openPurchaseEntry">
-            购买积分
+            <span class="purchase-credit-content">
+              <img src="/purchase-credits.svg" alt="" class="purchase-credit-icon" />
+              <span>购买积分</span>
+            </span>
           </a-button>
           <a-button type="text" class="top-link-btn" @click="openRedeemEntry">
             兑换积分
@@ -1258,8 +1261,10 @@ watch(purchaseDialogOpen, (open) => {
           <div class="mobile-drawer-section-title">积分服务</div>
           <div class="mobile-drawer-credit-actions">
             <a-button block class="mobile-drawer-action-btn" @click="openPurchaseEntry">
-              <template #icon><ThunderboltOutlined /></template>
-              购买积分
+              <span class="purchase-credit-content">
+                <img src="/purchase-credits.svg" alt="" class="purchase-credit-icon" />
+                <span>购买积分</span>
+              </span>
             </a-button>
             <a-button block class="mobile-drawer-action-btn" @click="openRedeemEntry">
               <template #icon><GiftOutlined /></template>
@@ -1873,7 +1878,11 @@ watch(purchaseDialogOpen, (open) => {
 }
 
 .top-link-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   height: 40px !important;
+  line-height: 1 !important;
   padding-inline: 12px !important;
   font-weight: 700 !important;
   color: var(--theme-text-secondary) !important;
@@ -1886,6 +1895,23 @@ watch(purchaseDialogOpen, (open) => {
   background: var(--theme-nav-hover-bg) !important;
   border-color: transparent !important;
   box-shadow: none !important;
+}
+
+.purchase-credit-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.purchase-credit-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  display: block;
 }
 
 .header-menu {
@@ -1989,7 +2015,10 @@ watch(purchaseDialogOpen, (open) => {
 }
 
 .mobile-drawer-action-btn {
+  display: inline-flex !important;
+  align-items: center !important;
   height: 44px;
+  line-height: 1 !important;
   border-radius: 14px !important;
   border: 1px solid var(--theme-panel-border-strong) !important;
   background: linear-gradient(180deg, var(--theme-panel-bg), var(--theme-panel-bg-strong)) !important;

@@ -144,7 +144,7 @@ function selectOption(value: string) {
   width: auto;
   min-width: 108px;
   max-width: 100%;
-  min-height: 48px;
+  min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--theme-control-border);
   border-radius: 16px;
