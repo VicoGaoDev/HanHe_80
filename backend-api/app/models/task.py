@@ -10,6 +10,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     business_id = Column(String(32), unique=True, nullable=False, index=True, default=generate_business_id)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    board_id = Column(Integer, ForeignKey("user_boards.id", ondelete="SET NULL"), nullable=True, index=True)
     model = Column(String(50), default="")
     source = Column(String(20), nullable=False, default="web", server_default="web")
     mode = Column(String(20), default="generate")
@@ -33,4 +34,5 @@ class Task(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", backref="tasks")
+    board = relationship("UserBoard", back_populates="tasks")
     images = relationship("Image", back_populates="task", lazy="selectin")

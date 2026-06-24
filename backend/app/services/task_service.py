@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.credit_log import CreditLog
 from app.models.prompt_history import PromptHistory
 from app.services.business_id_service import task_external_id, user_external_id
+from app.services.board_service import validate_user_board_id
 from app.services.distributed_lock_service import RedisLockHandle, acquire_redis_lock, release_redis_lock
 from app.services.external_api_config_service import SCENE_INPAINT, get_scene_credit_cost
 from app.services.user_credit_service import apply_user_credit_delta, get_user_credit_account
@@ -272,6 +273,7 @@ def create_tasks(
     reference_images: list[str] | None = None,
     source_image: str = "",
     mask_image: str = "",
+    board_id: int | None = None,
 ) -> list[Task]:
     mode, num_images = _validate_task_create_payload(
         mode=mode,
@@ -362,6 +364,7 @@ def create_tasks(
         normalized_custom_size = custom_size.strip()
         normalized_source_image = source_image.strip()
         normalized_mask_image = mask_image.strip()
+        normalized_board_id = validate_user_board_id(db, user_id, board_id)
         credit_log_description = "局部重绘 1 张图片" if mode == "inpaint" else "生成 1 张图片"
         if normalized_source == "api":
             credit_log_description = f"API {credit_log_description}"
@@ -369,6 +372,7 @@ def create_tasks(
         for _ in range(task_count):
             task = Task(
                 user_id=user_id,
+                board_id=normalized_board_id,
                 model=normalized_model,
                 source=normalized_source,
                 mode=mode,

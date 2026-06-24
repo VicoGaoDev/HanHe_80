@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h, inject, onActivated, onBeforeUnmount, onMounted, watch, type Ref } from "vue";
+import { ref, computed, defineComponent, h, inject, onActivated, onBeforeUnmount, onMounted, watch, type Ref } from "vue";
 import { message, Modal, notification } from "ant-design-vue";
 import dayjs from "dayjs";
 import { useRouter } from "vue-router";
@@ -27,7 +27,9 @@ import {
   DownOutlined,
   UndoOutlined,
   MessageOutlined,
+  PlusOutlined,
 } from "@ant-design/icons-vue";
+import { createBoard, listBoards, updateBoard } from "@/api/boards";
 import { getTaskScenes } from "@/api/config";
 import { deleteHistoryTask, fetchHistory } from "@/api/history";
 import { createTask, getTasks } from "@/api/tasks";
@@ -54,7 +56,15 @@ import {
   readStoredGridColumnCount,
   writeStoredGridColumnCount,
 } from "@/lib/gridColumnPreference";
-import type { GenerationModelOption, ImageResult, PromptHistoryItem, SceneOptionItem, TaskResult, TaskSceneConfig, UserHistoryCard } from "@/types";
+import {
+  boardIdFromKey,
+  boardKeyFromId,
+  DEFAULT_BOARD_KEY,
+  GENERATE_BOARD_KEY,
+  readStoredBoardKey,
+  writeStoredBoardKey,
+} from "@/lib/boardPreference";
+import type { BoardKey, GenerationModelOption, ImageResult, PromptHistoryItem, SceneOptionItem, TaskResult, TaskSceneConfig, UserBoardSummary, UserHistoryCard } from "@/types";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -148,6 +158,10 @@ interface GeneratedTaskItem {
 const generatedTasks = ref<GeneratedTaskItem[]>([]);
 const taskPollTimer = ref<ReturnType<typeof setInterval> | null>(null);
 const taskPollingInFlight = ref(false);
+const activeStatusPollTimer = ref<ReturnType<typeof setInterval> | null>(null);
+const activeStatusRefreshInFlight = ref(false);
+const remoteActiveGenerationImageCount = ref(0);
+const remoteActiveTaskIds = ref<Set<string>>(new Set());
 
 type UploadItemStatus = "uploading" | "success" | "failed";
 
@@ -212,6 +226,37 @@ const preferredResultColumnCount = ref<ResultColumnOption>(
     DEFAULT_RESULT_COLUMN_COUNT,
   ),
 );
+const boards = ref<UserBoardSummary[]>([]);
+const boardsLoading = ref(false);
+const selectedBoardKey = ref<BoardKey>(DEFAULT_BOARD_KEY);
+const boardSelectionReady = ref(false);
+const selectedBoardId = computed(() => boardIdFromKey(selectedBoardKey.value));
+const selectedBoard = computed(() => (
+  boards.value.find((board) => boardKeyFromId(board.id) === selectedBoardKey.value) || null
+));
+const visibleBoardOptions = computed(() => {
+  const defaultBoards = boards.value.filter((board) => board.is_default);
+  const recentBoards = boards.value.filter((board) => !board.is_default).slice(0, 10);
+  const selectedExtra = selectedBoard.value && !defaultBoards.includes(selectedBoard.value) && !recentBoards.includes(selectedBoard.value)
+    ? [selectedBoard.value]
+    : [];
+  return [...defaultBoards, ...recentBoards, ...selectedExtra];
+});
+const canRenameSelectedBoard = computed(() => !!selectedBoard.value && !selectedBoard.value.is_default && typeof selectedBoard.value.id === "number");
+const boardRenameDialogOpen = ref(false);
+const boardRenameSaving = ref(false);
+const boardRenameName = ref("");
+const VNodes = defineComponent({
+  props: {
+    vnodes: {
+      type: null,
+      required: true,
+    },
+  },
+  render() {
+    return this.vnodes;
+  },
+});
 
 const historyVisible = ref(false);
 const historyItems = ref<PromptHistoryItem[]>([]);
@@ -306,11 +351,15 @@ const canClickGenerate = computed(() => {
   if (isImageEditMode.value) return true;
   return !!activePrompt.value.trim();
 });
-const activeGenerationImageCount = computed(() => (
+const localUncountedActiveGenerationImageCount = computed(() => (
   generatedTasks.value.reduce((total, task) => {
     if (!["submitting", "pending", "queued", "processing"].includes(task.status)) return total;
+    if (task.taskId && remoteActiveTaskIds.value.has(task.taskId)) return total;
     return total + Math.max(task.images.length, task.numImages || 1);
   }, 0)
+));
+const activeGenerationImageCount = computed(() => (
+  remoteActiveGenerationImageCount.value + localUncountedActiveGenerationImageCount.value
 ));
 const remainingGenerationImageSlots = computed(() => Math.max(
   MAX_ACTIVE_GENERATION_IMAGES - activeGenerationImageCount.value,
@@ -403,6 +452,7 @@ type GenerateTaskPayload = {
   reference_images?: string[];
   source_image?: string;
   mask_image?: string;
+  board_id?: number | null;
 };
 
 type GeneratedTaskDraft = Omit<GeneratedTaskItem, "localId" | "taskId" | "createdAt" | "status" | "images">;
@@ -589,6 +639,7 @@ async function refreshTasks(taskIds = activePollingTaskIds.value) {
   }
   const items = await getTasks(taskIds);
   syncTasksFromResults(items);
+  void loadGlobalActiveGenerationStatus();
   if (!activePollingTaskIds.value.length) {
     stopAllTaskPolling();
   }
@@ -635,6 +686,136 @@ function canRemoveGeneratedResult(task: GeneratedTaskItem, image: ImageResult) {
   return image.status === "success" || isGeneratedResultFailed(task, image);
 }
 
+async function loadGlobalActiveGenerationStatus() {
+  if (!auth.isLoggedIn) {
+    remoteActiveGenerationImageCount.value = 0;
+    remoteActiveTaskIds.value = new Set();
+    stopGlobalActiveStatusPolling();
+    return;
+  }
+  if (activeStatusRefreshInFlight.value) return;
+  activeStatusRefreshInFlight.value = true;
+  try {
+    const [pendingRes, processingRes] = await Promise.all([
+      fetchHistory(1, 100, {
+        respect_pins: false,
+        include_prompt_reverse: false,
+        status: "pending",
+      }),
+      fetchHistory(1, 100, {
+        respect_pins: false,
+        include_prompt_reverse: false,
+        status: "processing",
+      }),
+    ]);
+    const activeItems = [...pendingRes.items, ...processingRes.items];
+    const activeTaskIds = new Set<string>();
+    activeItems.forEach((item) => {
+      if (item.task_id) activeTaskIds.add(item.task_id);
+    });
+    remoteActiveTaskIds.value = activeTaskIds;
+    remoteActiveGenerationImageCount.value = activeItems.length;
+  } catch {
+    // Keep the last known count if the lightweight status refresh fails.
+  } finally {
+    activeStatusRefreshInFlight.value = false;
+    syncGlobalActiveStatusPolling();
+  }
+}
+
+function stopGlobalActiveStatusPolling() {
+  if (!activeStatusPollTimer.value) return;
+  clearInterval(activeStatusPollTimer.value);
+  activeStatusPollTimer.value = null;
+}
+
+function syncGlobalActiveStatusPolling() {
+  if (!auth.isLoggedIn || activeGenerationImageCount.value <= 0) {
+    stopGlobalActiveStatusPolling();
+    return;
+  }
+  if (activeStatusPollTimer.value) return;
+  activeStatusPollTimer.value = setInterval(() => {
+    void loadGlobalActiveGenerationStatus();
+  }, 8000);
+}
+
+function getSelectedBoardHistoryFilter() {
+  if (selectedBoardKey.value === DEFAULT_BOARD_KEY) {
+    return { board_scope: "default" as const };
+  }
+  return { board_id: selectedBoardId.value ?? undefined };
+}
+
+async function loadBoardsForGenerate() {
+  if (!auth.isLoggedIn) {
+    boards.value = [];
+    selectedBoardKey.value = DEFAULT_BOARD_KEY;
+    boardSelectionReady.value = true;
+    return;
+  }
+  boardsLoading.value = true;
+  try {
+    boards.value = (await listBoards({ includeStats: false, includePreviews: false })).items;
+    selectedBoardKey.value = readStoredBoardKey(GENERATE_BOARD_KEY, boards.value, DEFAULT_BOARD_KEY);
+  } catch {
+    boards.value = [{ id: null, name: "默认分类", is_default: true, asset_count: 0, updated_at: null, preview_urls: [] }];
+    selectedBoardKey.value = DEFAULT_BOARD_KEY;
+  } finally {
+    boardSelectionReady.value = true;
+    boardsLoading.value = false;
+  }
+}
+
+async function handleCreateBoardFromGenerate() {
+  if (!auth.isLoggedIn || boardsLoading.value) return;
+  boardsLoading.value = true;
+  try {
+    const board = await createBoard();
+    const boardKey = boardKeyFromId(board.id);
+    boards.value = [...boards.value.filter((item) => item.id !== board.id), board];
+    selectedBoardKey.value = boardKey;
+    message.success("分类已创建");
+  } catch {
+    message.error("创建分类失败");
+  } finally {
+    boardsLoading.value = false;
+  }
+}
+
+async function handleRenameSelectedBoardFromGenerate() {
+  if (!canRenameSelectedBoard.value || !selectedBoard.value || typeof selectedBoard.value.id !== "number") {
+    message.info("默认分类不可重命名");
+    return;
+  }
+  boardRenameName.value = selectedBoard.value.name;
+  boardRenameDialogOpen.value = true;
+}
+
+async function submitRenameSelectedBoardFromGenerate() {
+  if (!canRenameSelectedBoard.value || !selectedBoard.value || typeof selectedBoard.value.id !== "number") return;
+  const nextName = boardRenameName.value.trim();
+  if (!nextName) {
+    message.warning("分类名称不能为空");
+    return;
+  }
+  if (nextName === selectedBoard.value.name) {
+    boardRenameDialogOpen.value = false;
+    return;
+  }
+  boardRenameSaving.value = true;
+  try {
+    const updatedBoard = await updateBoard(selectedBoard.value.id, nextName);
+    boards.value = boards.value.map((board) => (board.id === updatedBoard.id ? updatedBoard : board));
+    boardRenameDialogOpen.value = false;
+    message.success("分类已重命名");
+  } catch {
+    message.error("重命名失败");
+  } finally {
+    boardRenameSaving.value = false;
+  }
+}
+
 async function loadRecentGeneratedTasks() {
   if (!auth.isLoggedIn) {
     generatedTasks.value = [];
@@ -652,6 +833,7 @@ async function loadRecentGeneratedTasks() {
       const res = await fetchHistory(page, MAX_RECENT_GENERATED_TASKS, {
         respect_pins: false,
         include_prompt_reverse: false,
+        ...getSelectedBoardHistoryFilter(),
       });
       total = res.total;
       if (!res.items.length) break;
@@ -720,7 +902,10 @@ async function submitGeneratedTask(
   generatedTasks.value = limitGeneratedTasks([...localTasks, ...generatedTasks.value]);
 
   try {
-    const res = await createTask(payload);
+    const res = await createTask({
+      ...payload,
+      board_id: payload.board_id ?? selectedBoardId.value,
+    });
     const taskIds = res.task_ids?.length ? res.task_ids : (res.task_id ? [res.task_id] : []);
     if (taskIds.length > 1 && taskIds.length <= localTasks.length) {
       const acceptedLocalTasks = localTasks.slice(0, taskIds.length);
@@ -1218,6 +1403,7 @@ async function handleGenerate() {
     message.warning("请输入提示词");
     return;
   }
+  await loadGlobalActiveGenerationStatus();
   const availableSlots = remainingGenerationImageSlots.value;
   if (availableSlots <= 0) {
     message.warning(`当前最多允许同时生成 ${MAX_ACTIVE_GENERATION_IMAGES} 张图片，请等待部分任务完成后再试`);
@@ -1299,6 +1485,7 @@ async function handleGenerate() {
       sourceImage: payload.source_image,
       maskImage: payload.mask_image,
     });
+    await loadGlobalActiveGenerationStatus();
   } catch (err: any) {
     const detail = err.response?.data?.detail || "";
     if (isInsufficientCreditsError(err)) {
@@ -1675,11 +1862,8 @@ async function notifyCompletedUnreadFeedbacks() {
 onMounted(async () => {
   syncViewportWidth();
   window.addEventListener("resize", syncViewportWidth);
-  await Promise.all([
-    loadTaskSceneConfigs(),
-    loadRecentGeneratedTasks(),
-    notifyCompletedUnreadFeedbacks(),
-  ]);
+  await Promise.all([loadTaskSceneConfigs(), loadBoardsForGenerate()]);
+  await Promise.all([loadRecentGeneratedTasks(), loadGlobalActiveGenerationStatus(), notifyCompletedUnreadFeedbacks()]);
   applyDraft(
     localStorage.getItem(HISTORY_DRAFT_KEY),
     "已回填历史任务参数，可继续编辑后重新生成",
@@ -1692,13 +1876,16 @@ onMounted(async () => {
   );
 });
 
-onActivated(() => {
+onActivated(async () => {
+  await loadBoardsForGenerate();
   void loadRecentGeneratedTasks();
+  void loadGlobalActiveGenerationStatus();
   void notifyCompletedUnreadFeedbacks();
 });
 
 onBeforeUnmount(() => {
   stopAllTaskPolling();
+  stopGlobalActiveStatusPolling();
   window.removeEventListener("resize", syncViewportWidth);
   unbindReferenceDragHandlers?.();
   unbindReferenceDragHandlers = null;
@@ -1737,13 +1924,28 @@ watch([customSizeOptions, hideCustomSize], ([options, shouldHide]) => {
   }
 }, { immediate: true });
 
-watch(() => auth.isLoggedIn, (isLoggedIn) => {
+watch(selectedBoardKey, async (key) => {
+  if (!boardSelectionReady.value) return;
+  writeStoredBoardKey(GENERATE_BOARD_KEY, key);
+  generatedTasks.value = [];
+  stopAllTaskPolling();
+  await Promise.all([loadRecentGeneratedTasks(), loadGlobalActiveGenerationStatus()]);
+});
+
+watch(() => auth.isLoggedIn, async (isLoggedIn) => {
   if (isLoggedIn) {
-    void loadRecentGeneratedTasks();
+    boardSelectionReady.value = false;
+    await loadBoardsForGenerate();
+    await Promise.all([loadRecentGeneratedTasks(), loadGlobalActiveGenerationStatus()]);
     return;
   }
   generatedTasks.value = [];
+  boards.value = [];
+  selectedBoardKey.value = DEFAULT_BOARD_KEY;
+  remoteActiveGenerationImageCount.value = 0;
+  remoteActiveTaskIds.value = new Set();
   stopAllTaskPolling();
+  stopGlobalActiveStatusPolling();
 });
 </script>
 
@@ -2597,6 +2799,44 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
           </div>
           <div class="result-head-meta">
             <a-select
+              v-if="auth.isLoggedIn"
+              v-model:value="selectedBoardKey"
+              :loading="boardsLoading"
+              placeholder="选择分类"
+              class="history-filter-control history-filter-board"
+            >
+              <template #dropdownRender="{ menuNode: menu }">
+                <VNodes :vnodes="menu" />
+                <div class="generate-board-dropdown-actions" @mousedown.prevent>
+                  <button
+                    type="button"
+                    class="generate-board-dropdown-action"
+                    :disabled="!canRenameSelectedBoard || boardsLoading"
+                    @click.stop="handleRenameSelectedBoardFromGenerate"
+                  >
+                    <EditOutlined />
+                    <span>重命名</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="generate-board-dropdown-action"
+                    :disabled="boardsLoading"
+                    @click.stop="handleCreateBoardFromGenerate"
+                  >
+                    <PlusOutlined />
+                    <span>新建分类</span>
+                  </button>
+                </div>
+              </template>
+              <a-select-option
+                v-for="board in visibleBoardOptions"
+                :key="boardKeyFromId(board.id)"
+                :value="boardKeyFromId(board.id)"
+              >
+                {{ board.name }}
+              </a-select-option>
+            </a-select>
+            <a-select
               v-model:value="preferredResultColumnCount"
               placeholder="每行列数"
               class="history-filter-control history-filter-columns"
@@ -2812,6 +3052,23 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
         }"
       />
     </div>
+    <a-modal
+      v-model:open="boardRenameDialogOpen"
+      title="重命名分类"
+      centered
+      :confirm-loading="boardRenameSaving"
+      ok-text="保存"
+      cancel-text="取消"
+      @ok="submitRenameSelectedBoardFromGenerate"
+    >
+      <a-input
+        v-model:value="boardRenameName"
+        placeholder="请输入分类名称"
+        :maxlength="100"
+        show-count
+        @press-enter="submitRenameSelectedBoardFromGenerate"
+      />
+    </a-modal>
     <FeedbackDialog
       v-model:open="feedbackDialogOpen"
       :task-id="feedbackTarget?.taskId"
@@ -4341,6 +4598,44 @@ watch(() => auth.isLoggedIn, (isLoggedIn) => {
 
 .result-head-meta :deep(.history-filter-columns) {
   width: 70px;
+}
+
+.result-head-meta :deep(.history-filter-board) {
+  width: 148px;
+}
+
+.generate-board-dropdown-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid rgba(232, 210, 178, 0.75);
+  background: #fffaf1;
+}
+
+.generate-board-dropdown-action {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 10px;
+  color: #7b5428;
+  background: #fff2db;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.generate-board-dropdown-action:hover:not(:disabled) {
+  color: #8a4b00;
+  background: #ffe2b1;
+}
+
+.generate-board-dropdown-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .result-head-meta :deep(.history-filter-columns.ant-select) {

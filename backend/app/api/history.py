@@ -24,6 +24,8 @@ def list_history(
     status: str | None = Query(None, pattern="^(pending|processing|success|failed)$"),
     start_date: datetime | None = Query(None),
     end_date: datetime | None = Query(None),
+    board_id: int | None = Query(None),
+    board_scope: str | None = Query(None, pattern="^(default|all)$"),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -41,6 +43,8 @@ def list_history(
         status=status,
         start_date=start_date,
         end_date=end_date,
+        board_id=board_id,
+        board_scope=board_scope,
     )
 
 

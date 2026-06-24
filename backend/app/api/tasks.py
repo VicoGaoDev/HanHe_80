@@ -83,6 +83,7 @@ def create(
         reference_images=body.reference_images,
         source_image=body.source_image,
         mask_image=body.mask_image,
+        board_id=body.board_id,
     )
 
     dispatched_task_ids: list[int] = []

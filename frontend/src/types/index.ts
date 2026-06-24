@@ -113,6 +113,8 @@ export interface HistoryFilter {
   end_date?: string;
   respect_pins?: boolean;
   include_prompt_reverse?: boolean;
+  board_id?: number;
+  board_scope?: "default" | "all";
 }
 
 export interface HistoryResponse {
@@ -177,6 +179,21 @@ export interface HistoryPinTogglePayload {
 export interface HistoryPinToggleResponse {
   is_pinned: boolean;
   pinned_at?: string | null;
+}
+
+export type BoardKey = "default" | `board:${number}`;
+
+export interface UserBoardSummary {
+  id: number | null;
+  name: string;
+  is_default: boolean;
+  asset_count: number;
+  updated_at?: string | null;
+  preview_urls: string[];
+}
+
+export interface UserBoardListResponse {
+  items: UserBoardSummary[];
 }
 
 export type FeedbackStatus = "pending" | "processing" | "completed";

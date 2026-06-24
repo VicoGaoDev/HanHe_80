@@ -18,6 +18,7 @@ export function createTask(data: {
   reference_images?: string[];
   source_image?: string;
   mask_image?: string;
+  board_id?: number | null;
 }): Promise<CreateTaskResponse> {
   return client.post("/tasks", {
     ...data,

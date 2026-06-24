@@ -16,6 +16,7 @@ import {
 } from "@ant-design/icons-vue";
 import { useRouter } from "vue-router";
 import { getAdminHistoryCards, getCreditLogs as getAdminCreditLogs, listPaymentOrders, listUsers } from "@/api/admin";
+import { listBoards } from "@/api/boards";
 import { getGenerationModels, getTaskScenes } from "@/api/config";
 import { deleteHistoryTask, fetchHistory, toggleHistoryPin } from "@/api/history";
 import { getDisplayImageUrl, getDownloadUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
@@ -29,12 +30,15 @@ import {
   readStoredGridColumnCount,
   writeStoredGridColumnCount,
 } from "@/lib/gridColumnPreference";
-import type { AdminPaymentOrder, AdminUser, CreditLog, GenerationModelOption, TaskSceneConfig, TaskSource, TaskType, UserHistoryCard } from "@/types";
+import { boardIdFromKey, boardKeyFromId, DEFAULT_BOARD_KEY } from "@/lib/boardPreference";
+import type { AdminPaymentOrder, AdminUser, BoardKey, CreditLog, GenerationModelOption, TaskSceneConfig, TaskSource, TaskType, UserBoardSummary, UserHistoryCard } from "@/types";
 
 const props = withDefaults(defineProps<{
   adminUserTasks?: boolean;
+  boardKey?: BoardKey;
 }>(), {
   adminUserTasks: false,
+  boardKey: undefined,
 });
 const router = useRouter();
 const auth = useAuthStore();
@@ -62,6 +66,8 @@ const userFilter = ref<string | undefined>(undefined);
 const promptFilter = ref("");
 const dateRangeFilter = ref<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
 const users = ref<AdminUser[]>([]);
+const boards = ref<UserBoardSummary[]>([]);
+const boardsLoading = ref(false);
 const generationModels = ref<GenerationModelOption[]>([]);
 const taskScenes = ref<TaskSceneConfig[]>([]);
 const detailOpen = ref(false);
@@ -102,6 +108,7 @@ const feedbackDialogOpen = ref(false);
 const feedbackTarget = ref<UserHistoryCard | null>(null);
 const pinningKeys = ref<string[]>([]);
 const isAdminHistoryView = computed(() => props.adminUserTasks && auth.isAdmin);
+const isBoardHistoryView = computed(() => !isAdminHistoryView.value && !!props.boardKey);
 const userInfoDialogOpen = ref(false);
 const userInfoLoading = ref(false);
 const selectedUserInfo = ref<AdminUser | null>(null);
@@ -125,6 +132,25 @@ const modelOptions = computed(() => {
   return Array.from(optionMap.entries()).map(([value, label]) => ({ value, label }));
 });
 const modelLabelMap = computed(() => new Map(modelOptions.value.map((item) => [item.value, item.label])));
+const selectedBoardKey = computed<BoardKey>({
+  get: () => props.boardKey || DEFAULT_BOARD_KEY,
+  set: (key) => {
+    router.push(key === DEFAULT_BOARD_KEY ? "/history/board/default" : `/history/board/${boardIdFromKey(key)}`);
+  },
+});
+const currentBoard = computed(() => (
+  boards.value.find((board) => boardKeyFromId(board.id) === selectedBoardKey.value) || null
+));
+const historyTitle = computed(() => {
+  if (isAdminHistoryView.value) return "用户任务";
+  if (isBoardHistoryView.value) return currentBoard.value?.name || "分类详情";
+  return "历史记录";
+});
+const historyDescription = computed(() => {
+  if (isAdminHistoryView.value) return "管理员可查看所有用户的历史图片，并按用户或任务条件筛选。";
+  if (isBoardHistoryView.value) return "按当前分类查看历史图片，详情中可查看完整参数并重新编辑。";
+  return "按结果图查看历史任务，详情中可查看完整参数并重新编辑。";
+});
 
 const activeFilterCount = computed(() => {
   let count = 0;
@@ -188,7 +214,7 @@ function syncHistoryPolling() {
 }
 
 function getHistoryQuery() {
-  return {
+  const query = {
     respect_pins: false,
     mode: typeFilter.value,
     source: sourceFilter.value,
@@ -198,6 +224,14 @@ function getHistoryQuery() {
     status: statusFilter.value,
     start_date: dateRangeFilter.value?.[0].startOf("day").toISOString(),
     end_date: dateRangeFilter.value?.[1].endOf("day").toISOString(),
+  };
+  if (!isBoardHistoryView.value) return query;
+  const boardId = boardIdFromKey(selectedBoardKey.value);
+  return {
+    ...query,
+    include_prompt_reverse: false,
+    board_scope: selectedBoardKey.value === DEFAULT_BOARD_KEY ? "default" as const : undefined,
+    board_id: boardId ?? undefined,
   };
 }
 
@@ -289,9 +323,26 @@ async function loadUsers() {
   }
 }
 
+async function loadBoardsForHistory() {
+  if (!isBoardHistoryView.value) return;
+  boardsLoading.value = true;
+  try {
+    boards.value = (await listBoards({ includeStats: false, includePreviews: false })).items;
+    if (!boards.value.some((board) => boardKeyFromId(board.id) === selectedBoardKey.value)) {
+      message.warning("分类不存在或已被删除");
+      router.push("/history");
+    }
+  } catch {
+    message.error("获取分类失败");
+  } finally {
+    boardsLoading.value = false;
+  }
+}
+
 onMounted(loadHistory);
 onMounted(loadModels);
 onMounted(loadUsers);
+onMounted(loadBoardsForHistory);
 onBeforeUnmount(() => {
   stopHistoryPolling();
   if (filterDebounceTimer) {
@@ -305,6 +356,18 @@ onBeforeUnmount(() => {
 watch(loadMoreAnchor, (target) => {
   setupLoadMoreObserver(target);
 });
+
+watch(
+  () => props.boardKey,
+  async () => {
+    if (!isBoardHistoryView.value) return;
+    page.value = 1;
+    selectedImageIds.value = [];
+    detailOpen.value = false;
+    await loadBoardsForHistory();
+    await loadHistory(true);
+  }
+);
 
 function modeLabel(taskType: UserHistoryCard["task_type"]) {
   if (taskType === "text_generate") return "文生图";
@@ -848,13 +911,35 @@ function handleEditImage(item: UserHistoryCard) {
           <ClockCircleOutlined />
         </div>
         <div>
-          <div class="warm-page-title history-topbar-title">{{ isAdminHistoryView ? "用户任务" : "历史记录" }}</div>
+          <div class="warm-page-title history-topbar-title">{{ historyTitle }}</div>
           <div class="warm-page-desc">
-            {{ isAdminHistoryView ? "管理员可查看所有用户的历史图片，并按用户或任务条件筛选。" : "按结果图查看历史任务，详情中可查看完整参数并重新编辑。" }}
+            {{ historyDescription }}
           </div>
         </div>
       </div>
       <div class="history-topbar-meta">
+        <a-button
+          v-if="isBoardHistoryView"
+          class="history-back-board-btn"
+          @click="router.push('/history')"
+        >
+          返回分类列表
+        </a-button>
+        <a-select
+          v-if="isBoardHistoryView"
+          v-model:value="selectedBoardKey"
+          :loading="boardsLoading"
+          class="history-board-select"
+          placeholder="选择分类"
+        >
+          <a-select-option
+            v-for="board in boards"
+            :key="boardKeyFromId(board.id)"
+            :value="boardKeyFromId(board.id)"
+          >
+            {{ board.name }}
+          </a-select-option>
+        </a-select>
         <span>共 {{ total }} 条结果</span>
         <span>已展示 {{ items.length }} 条</span>
       </div>
@@ -1307,11 +1392,33 @@ function handleEditImage(item: UserHistoryCard) {
 
 .history-topbar-meta {
   display: flex;
+  align-items: center;
   gap: 12px;
   flex-wrap: wrap;
   font-size: 13px;
   color: #9b825f;
   padding-top: 3px;
+}
+
+.history-back-board-btn {
+  height: 30px;
+  border-radius: 10px;
+  border-color: var(--theme-panel-border-strong) !important;
+  background: var(--theme-panel-bg-strong) !important;
+  color: var(--theme-accent-text) !important;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.history-back-board-btn:hover,
+.history-back-board-btn:focus {
+  border-color: var(--theme-border-strong) !important;
+  background: var(--theme-control-hover-bg) !important;
+  color: var(--theme-accent-text-hover) !important;
+}
+
+.history-board-select {
+  width: 168px;
 }
 
 .history-filter-bar {

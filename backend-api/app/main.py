@@ -109,6 +109,7 @@ def _run_startup_schema_sync():
     _ensure_feedback_schema()
     _ensure_system_message_schema()
     _ensure_history_pin_schema()
+    _ensure_user_board_schema()
     if settings.should_run_schema_compat:
         _ensure_schema_compat()
     _backfill_task_credit_costs()
@@ -1224,6 +1225,43 @@ def _ensure_history_pin_schema():
             conn.execute(text("CREATE INDEX ix_history_pins_user_pinned_at ON history_pins (user_id, pinned_at DESC)"))
         if "ux_history_pins_user_item_key" not in refreshed_indexes:
             conn.execute(text("CREATE UNIQUE INDEX ux_history_pins_user_item_key ON history_pins (user_id, item_key)"))
+
+
+def _ensure_user_board_schema():
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "users" not in table_names:
+        return
+    if "user_boards" not in table_names:
+        from app.models.user_board import UserBoard
+
+        UserBoard.__table__.create(bind=engine)
+        inspector = inspect(engine)
+        table_names = set(inspector.get_table_names())
+
+    board_columns = {col["name"] for col in inspector.get_columns("user_boards")}
+    board_indexes = {index["name"] for index in inspector.get_indexes("user_boards")}
+    with engine.begin() as conn:
+        if "name" not in board_columns:
+            conn.execute(text("ALTER TABLE user_boards ADD COLUMN name VARCHAR(100) NOT NULL DEFAULT ''"))
+        if "created_at" not in board_columns:
+            conn.execute(text("ALTER TABLE user_boards ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+        if "updated_at" not in board_columns:
+            conn.execute(text("ALTER TABLE user_boards ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+        if "idx_user_boards_user_updated_at" not in board_indexes:
+            conn.execute(text("CREATE INDEX idx_user_boards_user_updated_at ON user_boards (user_id, updated_at)"))
+
+    if "tasks" not in table_names:
+        return
+    task_columns = {col["name"] for col in inspect(engine).get_columns("tasks")}
+    task_indexes = {index["name"] for index in inspect(engine).get_indexes("tasks")}
+    with engine.begin() as conn:
+        if "board_id" not in task_columns:
+            conn.execute(text("ALTER TABLE tasks ADD COLUMN board_id INTEGER NULL"))
+        if "idx_tasks_board_id" not in task_indexes:
+            conn.execute(text("CREATE INDEX idx_tasks_board_id ON tasks (board_id)"))
+        if "idx_tasks_user_board_deleted_created" not in task_indexes:
+            conn.execute(text("CREATE INDEX idx_tasks_user_board_deleted_created ON tasks (user_id, board_id, is_deleted, created_at)"))
 
 
 def _backfill_task_credit_costs():

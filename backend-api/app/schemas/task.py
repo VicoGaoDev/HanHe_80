@@ -14,6 +14,7 @@ class TaskCreate(BaseModel):
     reference_images: list[str] | None = None
     source_image: str = ""
     mask_image: str = ""
+    board_id: int | None = None
 
 
 class TaskCreateResponse(BaseModel):

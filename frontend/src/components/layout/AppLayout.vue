@@ -193,6 +193,7 @@ function getRouteRank(path: string) {
   if (path.startsWith("/feedbacks/")) return routeOrder.get("/feedbacks/:feedbackId") ?? 0;
   if (path.startsWith("/system-messages/")) return routeOrder.get("/system-messages/:messageId") ?? 0;
   if (path.startsWith("/admin/feedbacks/")) return routeOrder.get("/admin/feedbacks/:feedbackId") ?? 0;
+  if (path.startsWith("/history")) return routeOrder.get("/history") ?? 0;
   return routeOrder.get(path) ?? 0;
 }
 
@@ -202,7 +203,7 @@ const selectedKeys = computed(() => {
   if (p === "/") return [];
   if (p === "/templates") return ["templates"];
   if (p === "/batch-generate") return ["batch-generate"];
-  if (p === "/history") return ["history"];
+  if (p.startsWith("/history")) return ["history"];
   if (
     p === "/profile" ||
     p === "/settings" ||

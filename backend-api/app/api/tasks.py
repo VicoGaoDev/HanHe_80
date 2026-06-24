@@ -116,6 +116,7 @@ def create(
         reference_images=[],
         source_image="",
         mask_image="",
+        board_id=body.board_id,
     )
 
     from app.workers.generation import _process_task, register_task_inline_images

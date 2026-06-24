@@ -30,8 +30,20 @@ const router = createRouter({
         },
         {
           path: "history",
-          name: "History",
+          name: "HistoryBoards",
+          component: () => import("@/views/HistoryBoardsView.vue"),
+        },
+        {
+          path: "history/board/default",
+          name: "HistoryDefaultBoard",
           component: () => import("@/views/HistoryView.vue"),
+          props: { boardKey: "default" },
+        },
+        {
+          path: "history/board/:boardId",
+          name: "HistoryBoardDetail",
+          component: () => import("@/views/HistoryView.vue"),
+          props: (route) => ({ boardKey: `board:${route.params.boardId}` }),
         },
         {
           path: "profile",

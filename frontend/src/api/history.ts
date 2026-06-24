@@ -4,7 +4,7 @@ import type { HistoryFilter, HistoryPinTogglePayload, HistoryPinToggleResponse, 
 export function fetchHistory(
   page: number = 1,
   pageSize: number = 20,
-  filters: Pick<HistoryFilter, "mode" | "source" | "model" | "prompt" | "status" | "start_date" | "end_date" | "respect_pins" | "include_prompt_reverse"> = {},
+  filters: Pick<HistoryFilter, "mode" | "source" | "model" | "prompt" | "status" | "start_date" | "end_date" | "respect_pins" | "include_prompt_reverse" | "board_id" | "board_scope"> = {},
 ): Promise<UserHistoryResponse> {
   return client.get("/history", {
     params: {
@@ -19,6 +19,8 @@ export function fetchHistory(
       status: filters.status,
       start_date: filters.start_date,
       end_date: filters.end_date,
+      board_id: filters.board_id,
+      board_scope: filters.board_scope,
     },
   });
 }

@@ -29,6 +29,7 @@ from app.services.image_delivery_service import (
     serialize_image,
 )
 from app.services.business_id_service import task_external_id, user_external_id
+from app.services.board_service import validate_user_board_id
 from app.services.task_service import (
     ENQUEUE_FAILURE_DESCRIPTION,
     TASK_FAILURE_REFUND_DESCRIPTION,
@@ -238,6 +239,8 @@ def get_user_history(
     status: str | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
+    board_id: int | None = None,
+    board_scope: str | None = None,
 ):
     cos_config = get_optional_cos_config(db)
     scene_type_map = get_task_scene_type_map(db)
@@ -268,6 +271,13 @@ def get_user_history(
                 PromptHistory.mode == PROMPT_REVERSE_MODE,
             )
         )
+    if board_scope == "default":
+        image_query = image_query.filter(Task.board_id.is_(None))
+        prompt_reverse_query = None
+    elif board_id is not None:
+        validate_user_board_id(db, user_id, board_id)
+        image_query = image_query.filter(Task.board_id == board_id)
+        prompt_reverse_query = None
     if mode:
         if mode == TASK_TYPE_PROMPT_REVERSE:
             image_query = image_query.filter(Task.id.is_(None))

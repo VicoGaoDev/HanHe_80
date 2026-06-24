@@ -7,6 +7,7 @@ from app.config import settings
 from app.models.task import Task
 from app.models.image import Image
 from app.models.user import User
+from app.models.user_board import UserBoard
 from app.models.credit_log import CreditLog
 from app.models.prompt_history import PromptHistory
 from app.services.business_id_service import task_external_id, user_external_id
@@ -181,6 +182,19 @@ def _validate_task_create_payload(
     return mode, num_images
 
 
+def _validate_user_board_id(db: Session, user_id: int, board_id: int | None) -> int | None:
+    if board_id is None:
+        return None
+    exists = (
+        db.query(UserBoard.id)
+        .filter(UserBoard.id == board_id, UserBoard.user_id == user_id)
+        .first()
+    )
+    if not exists:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="看板不存在")
+    return board_id
+
+
 def _task_submission_lock_name(user_id: int, slot_index: int) -> str:
     return f"{TASK_SUBMISSION_LOCK_PREFIX}:{int(user_id)}:{int(slot_index)}"
 
@@ -272,6 +286,7 @@ def create_tasks(
     reference_images: list[str] | None = None,
     source_image: str = "",
     mask_image: str = "",
+    board_id: int | None = None,
 ) -> list[Task]:
     mode, num_images = _validate_task_create_payload(
         mode=mode,
@@ -362,6 +377,7 @@ def create_tasks(
         normalized_custom_size = custom_size.strip()
         normalized_source_image = source_image.strip()
         normalized_mask_image = mask_image.strip()
+        normalized_board_id = _validate_user_board_id(db, user_id, board_id)
         credit_log_description = "局部重绘 1 张图片" if mode == "inpaint" else "生成 1 张图片"
         if normalized_source == "api":
             credit_log_description = f"API {credit_log_description}"
@@ -369,6 +385,7 @@ def create_tasks(
         for _ in range(task_count):
             task = Task(
                 user_id=user_id,
+                board_id=normalized_board_id,
                 model=normalized_model,
                 source=normalized_source,
                 mode=mode,
