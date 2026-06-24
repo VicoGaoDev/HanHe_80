@@ -911,7 +911,9 @@ async function handlePurchaseCredits() {
     if (payWindow) {
       payWindow.location.href = res.pay_url;
       purchaseDialogOpen.value = false;
-      await router.push(`/payment-result?order_no=${encodeURIComponent(res.order_no)}`);
+      await router.push(
+        `/payment-result?order_no=${encodeURIComponent(res.order_no)}&payment_token=${encodeURIComponent(res.result_token)}`
+      );
       return;
     }
     window.location.href = res.pay_url;

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 
 import { getMe } from "@/api/auth";
-import { getPaymentOrder } from "@/api/payments";
+import { getPaymentOrder, getPaymentOrderResult } from "@/api/payments";
 import { useAuthStore } from "@/stores/auth";
 import type { PaymentOrder } from "@/types";
 
@@ -18,6 +18,7 @@ const notFound = ref(false);
 let pollTimer: number | null = null;
 
 const orderNo = computed(() => String(route.query.order_no || "").trim());
+const paymentToken = computed(() => String(route.query.payment_token || "").trim());
 const statusText = computed(() => {
   if (!order.value) return "正在查询订单状态";
   if (order.value.status === "pending_pay") return "订单待支付";
@@ -34,6 +35,20 @@ function clearPollTimer() {
   pollTimer = null;
 }
 
+async function fetchOrderStatus() {
+  if (!paymentToken.value) {
+    return getPaymentOrder(orderNo.value);
+  }
+  try {
+    return await getPaymentOrderResult(orderNo.value, paymentToken.value);
+  } catch (err) {
+    if (auth.isLoggedIn) {
+      return getPaymentOrder(orderNo.value);
+    }
+    throw err;
+  }
+}
+
 async function syncOrder(showError = true) {
   if (!orderNo.value) {
     notFound.value = true;
@@ -41,13 +56,15 @@ async function syncOrder(showError = true) {
   }
   loading.value = true;
   try {
-    order.value = await getPaymentOrder(orderNo.value);
+    order.value = await fetchOrderStatus();
     notFound.value = false;
     if (order.value.status === "credited") {
-      try {
-        auth.updateUser(await getMe());
-      } catch {
-        // ignore refresh errors, result page can still show success
+      if (auth.isLoggedIn) {
+        try {
+          auth.updateUser(await getMe());
+        } catch {
+          // ignore refresh errors, result page can still show success
+        }
       }
       clearPollTimer();
       return;

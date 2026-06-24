@@ -25,6 +25,7 @@ class CreatePaymentOrderResponse(BaseModel):
     credits: int
     subject: str
     pay_url: str
+    result_token: str
 
 
 class PaymentOrderOut(BaseModel):

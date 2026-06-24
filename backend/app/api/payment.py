@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,7 @@ from app.services.payment_service import (
     close_expired_unpaid_starter_orders,
     create_payment_order,
     format_payment_order,
+    get_payment_order_by_result_token_with_sync,
     get_payment_order_for_user_with_sync,
     list_payment_plans,
     process_alipay_notification,
@@ -69,9 +70,31 @@ def create_order(
         timeout_express=settings.ALIPAY_TIMEOUT_EXPRESS,
         private_key=settings.ALIPAY_PRIVATE_KEY,
         sign_type=settings.ALIPAY_SIGN_TYPE,
+        result_token_secret=settings.SECRET_KEY,
     )
     db.commit()
     return order
+
+
+@router.get("/orders/{order_no}/result", response_model=PaymentOrderOut)
+def get_order_result(
+    order_no: str,
+    token: str = Query(min_length=1),
+    db: Session = Depends(get_db),
+):
+    order = get_payment_order_by_result_token_with_sync(
+        db,
+        order_no=order_no,
+        result_token=token,
+        result_token_secret=settings.SECRET_KEY,
+        alipay_app_id=settings.ALIPAY_APP_ID,
+        gateway=settings.ALIPAY_GATEWAY,
+        private_key=settings.ALIPAY_PRIVATE_KEY,
+        sign_type=settings.ALIPAY_SIGN_TYPE,
+        alipay_public_key=settings.ALIPAY_PUBLIC_KEY,
+    )
+    db.commit()
+    return format_payment_order(order)
 
 
 @router.get("/orders/{order_no}", response_model=PaymentOrderOut)

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import base64
+import binascii
+import hashlib
+import hmac
 import json
 import re
 import secrets
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
@@ -70,6 +74,7 @@ SUCCESSFUL_PURCHASE_STATUSES = {PAYMENT_STATUS_PAID, PAYMENT_STATUS_CREDITED}
 ACTIVE_PURCHASE_STATUSES = {PAYMENT_STATUS_CREATED, PAYMENT_STATUS_PENDING_PAY, PAYMENT_STATUS_PAID, PAYMENT_STATUS_CREDITED}
 ALIPAY_QUERYABLE_STATUSES = {PAYMENT_STATUS_PENDING_PAY, PAYMENT_STATUS_PAID}
 ALIPAY_TIMEOUT_PATTERN = re.compile(r"^\s*(\d+)\s*([mhd])\s*$", re.IGNORECASE)
+PAYMENT_RESULT_TOKEN_TTL_SECONDS = 2 * 60 * 60
 
 
 def _serialize_payment_plan(plan: PaymentPlan) -> dict:
@@ -249,9 +254,57 @@ def generate_order_no() -> str:
     return f"ALI{datetime.utcnow():%Y%m%d%H%M%S}{secrets.token_hex(4).upper()}"
 
 
-def build_return_redirect_url(base_url: str, order_no: str) -> str:
+def _base64url_encode(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
+
+
+def _base64url_decode(value: str) -> bytes:
+    padding = "=" * (-len(value) % 4)
+    return base64.urlsafe_b64decode(f"{value}{padding}".encode("ascii"))
+
+
+def create_payment_result_token(*, order: PaymentOrder, secret_key: str) -> str:
+    if not (secret_key or "").strip():
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="支付结果查询配置不完整")
+    payload = {
+        "v": 1,
+        "order_no": order.order_no,
+        "user_id": int(order.user_id),
+        "exp": int(time.time()) + PAYMENT_RESULT_TOKEN_TTL_SECONDS,
+    }
+    payload_b64 = _base64url_encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    signature = hmac.new((secret_key or "").encode("utf-8"), payload_b64.encode("ascii"), hashlib.sha256).digest()
+    return f"{payload_b64}.{_base64url_encode(signature)}"
+
+
+def verify_payment_result_token(*, token: str, order_no: str, secret_key: str) -> dict:
+    if not (secret_key or "").strip():
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="支付结果查询配置不完整")
+    try:
+        payload_b64, signature_b64 = (token or "").strip().split(".", 1)
+        expected_signature = hmac.new(
+            secret_key.encode("utf-8"),
+            payload_b64.encode("ascii"),
+            hashlib.sha256,
+        ).digest()
+        provided_signature = _base64url_decode(signature_b64)
+        if not hmac.compare_digest(provided_signature, expected_signature):
+            raise ValueError("signature mismatch")
+        payload = json.loads(_base64url_decode(payload_b64))
+    except (binascii.Error, UnicodeError, ValueError, json.JSONDecodeError):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="支付结果查询凭证无效")
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="支付结果查询凭证无效")
+    if str(payload.get("order_no") or "") != order_no:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="支付结果查询凭证无效")
+    if int(payload.get("exp") or 0) < int(time.time()):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="支付结果查询凭证已过期")
+    return payload
+
+
+def build_return_redirect_url(base_url: str, order_no: str, result_token: str) -> str:
     separator = "&" if "?" in base_url else "?"
-    return f"{base_url}{separator}order_no={order_no}"
+    return f"{base_url}{separator}{urlencode({'order_no': order_no, 'payment_token': result_token})}"
 
 
 def create_payment_order(
@@ -266,6 +319,7 @@ def create_payment_order(
     timeout_express: str,
     private_key: str,
     sign_type: str,
+    result_token_secret: str,
 ) -> dict:
     missing_config_fields: list[str] = []
     if not (alipay_app_id or "").strip():
@@ -306,13 +360,14 @@ def create_payment_order(
     )
     db.add(order)
     db.flush()
+    result_token = create_payment_result_token(order=order, secret_key=result_token_secret)
 
     pay_url = build_alipay_page_pay_url(
         app_id=alipay_app_id,
         gateway=gateway,
         order=order,
         notify_url=notify_url,
-        return_url=build_return_redirect_url(return_url, order.order_no),
+        return_url=build_return_redirect_url(return_url, order.order_no, result_token),
         timeout_express=timeout_express,
         private_key=private_key,
         sign_type=sign_type,
@@ -328,6 +383,7 @@ def create_payment_order(
         "credits": int(order.credits or 0),
         "subject": order.subject,
         "pay_url": pay_url,
+        "result_token": result_token,
     }
 
 
@@ -354,6 +410,56 @@ def get_payment_order_for_user_with_sync(
     alipay_public_key: str,
 ) -> PaymentOrder:
     order = get_payment_order_for_user(db, order_no=order_no, user=user)
+    return sync_payment_order_from_alipay(
+        db,
+        order=order,
+        alipay_app_id=alipay_app_id,
+        gateway=gateway,
+        private_key=private_key,
+        sign_type=sign_type,
+        alipay_public_key=alipay_public_key,
+    )
+
+
+def get_payment_order_by_result_token_with_sync(
+    db: Session,
+    *,
+    order_no: str,
+    result_token: str,
+    result_token_secret: str,
+    alipay_app_id: str,
+    gateway: str,
+    private_key: str,
+    sign_type: str,
+    alipay_public_key: str,
+) -> PaymentOrder:
+    payload = verify_payment_result_token(token=result_token, order_no=order_no, secret_key=result_token_secret)
+    order = get_payment_order_by_order_no(db, order_no=order_no)
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
+    if int(payload.get("user_id") or 0) != int(order.user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="支付结果查询凭证无效")
+    return sync_payment_order_from_alipay(
+        db,
+        order=order,
+        alipay_app_id=alipay_app_id,
+        gateway=gateway,
+        private_key=private_key,
+        sign_type=sign_type,
+        alipay_public_key=alipay_public_key,
+    )
+
+
+def sync_payment_order_from_alipay(
+    db: Session,
+    *,
+    order: PaymentOrder,
+    alipay_app_id: str,
+    gateway: str,
+    private_key: str,
+    sign_type: str,
+    alipay_public_key: str,
+) -> PaymentOrder:
     if order.status not in ALIPAY_QUERYABLE_STATUSES:
         return order
 

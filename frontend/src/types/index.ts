@@ -363,6 +363,7 @@ export interface CreatePaymentOrderResult {
   credits: number;
   subject: string;
   pay_url: string;
+  result_token: string;
 }
 
 export type RedeemKeyStatus = "enabled" | "disabled";

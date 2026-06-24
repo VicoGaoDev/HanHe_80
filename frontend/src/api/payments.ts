@@ -12,3 +12,7 @@ export function createPaymentOrder(planKey: string): Promise<CreatePaymentOrderR
 export function getPaymentOrder(orderNo: string): Promise<PaymentOrder> {
   return client.get(`/payment/orders/${orderNo}`);
 }
+
+export function getPaymentOrderResult(orderNo: string, token: string): Promise<PaymentOrder> {
+  return client.get(`/payment/orders/${orderNo}/result`, { params: { token } });
+}
