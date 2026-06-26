@@ -220,7 +220,7 @@ def list_payment_plans(db: Session, *, user: User) -> list[dict]:
         if plan.key == STARTER_PLAN_KEY:
             if purchased_starter:
                 item["purchasable"] = False
-                item["disabled_reason"] = "该套餐一个用户只能购买一次"
+                item["disabled_reason"] = "该套餐限购一次"
             elif active_starter_order:
                 item["purchasable"] = False
                 item["disabled_reason"] = "该套餐已有订单处理中，请勿重复下单"

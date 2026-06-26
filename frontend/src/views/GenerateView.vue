@@ -2949,9 +2949,13 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                       <img :src="failedResultAsset" alt="生成失败" class="failed-image" />
                       <div class="frame-state error">
                         <span>{{ getGeneratedTaskFailureMessage(item.task, item.image) }}</span>
-                      <a-button shape="circle" class="icon-chip" @click.stop="handleReeditTask(item.task)">
-                        <template #icon><EditOutlined /></template>
-                      </a-button>
+                      </div>
+                      <div class="result-actions result-actions-failed">
+                        <a-tooltip title="重新生成">
+                          <a-button shape="circle" class="icon-chip" @click.stop="handleReeditTask(item.task)">
+                            <template #icon><ReloadOutlined /></template>
+                          </a-button>
+                        </a-tooltip>
                       </div>
                     </template>
 
@@ -4634,6 +4638,10 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
   flex: 0 0 auto;
 }
 
+.result-head-main :deep(.history-filter-board .ant-select-selection-item) {
+  font-weight: 700;
+}
+
 .result-head-meta :deep(.history-filter-columns) {
   width: 76px;
 }
@@ -4868,6 +4876,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
 .result-actions {
   position: absolute;
   inset: auto 12px 12px auto;
+  z-index: 2;
   display: flex;
   gap: 8px;
   opacity: 0;
