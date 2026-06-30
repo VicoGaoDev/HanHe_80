@@ -33,6 +33,7 @@ import { createBoard, listBoards, updateBoard } from "@/api/boards";
 import { getTaskScenes } from "@/api/config";
 import { deleteHistoryTask, fetchHistory } from "@/api/history";
 import { createTask, getTasks } from "@/api/tasks";
+import { createTemplateFromTaskImage, listTemplateTags, type TemplatePayload } from "@/api/templates";
 import { deleteImage, getDisplayImageUrl, getDownloadUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
 import { reversePrompt } from "@/api/promptReverse";
 import { uploadReferenceImage } from "@/api/upload";
@@ -44,6 +45,7 @@ import AspectRatioPicker from "@/components/generate/AspectRatioPicker.vue";
 import OptionGridPicker from "@/components/generate/OptionGridPicker.vue";
 import PromptInterceptionTip from "@/components/generate/PromptInterceptionTip.vue";
 import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
+import TemplateFormDialog from "@/components/templates/TemplateFormDialog.vue";
 import { withBaseUrl } from "@/lib/assets";
 import {
   formatGenerationErrorMessage,
@@ -64,7 +66,7 @@ import {
   readStoredBoardKey,
   writeStoredBoardKey,
 } from "@/lib/boardPreference";
-import type { BoardKey, GenerationModelOption, ImageResult, PromptHistoryItem, SceneOptionItem, TaskResult, TaskSceneConfig, UserBoardSummary, UserHistoryCard } from "@/types";
+import type { BoardKey, GenerationModelOption, ImageResult, PromptHistoryItem, SceneOptionItem, TaskResult, TaskSceneConfig, TemplateTag, UserBoardSummary, UserHistoryCard } from "@/types";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -162,6 +164,11 @@ const activeStatusPollTimer = ref<ReturnType<typeof setInterval> | null>(null);
 const activeStatusRefreshInFlight = ref(false);
 const remoteActiveGenerationImageCount = ref(0);
 const remoteActiveTaskIds = ref<Set<string>>(new Set());
+const templateDialogOpen = ref(false);
+const templateDialogSaving = ref(false);
+const templateSourceImageId = ref<number | null>(null);
+const templateInitialValue = ref<TemplatePayload | null>(null);
+const templateTags = ref<TemplateTag[]>([]);
 
 type UploadItemStatus = "uploading" | "success" | "failed";
 
@@ -335,6 +342,13 @@ const imageEditModels = computed(() => {
     .filter((item) => item.scene_type === "image_edit")
     .map(toGenerationModelOption);
   return models.length ? models : textGenerateModels.value;
+});
+const templateModelOptions = computed(() => {
+  const optionMap = new Map<string, GenerationModelOption>();
+  [...textGenerateModels.value, ...imageEditModels.value].forEach((item) => {
+    if (!optionMap.has(item.model_key)) optionMap.set(item.model_key, item);
+  });
+  return Array.from(optionMap.values());
 });
 const generationModels = computed(() => (isImageEditMode.value ? imageEditModels.value : textGenerateModels.value));
 const hasBlockedUploads = computed(() => {
@@ -1315,6 +1329,7 @@ const actualSubmitCreditCost = computed(() => (
     : actualSubmitImageCount.value * selectedModelCreditCost.value
 ));
 const userCredits = computed(() => auth.user?.credits ?? 0);
+const canCreateTemplateFromTask = computed(() => auth.isAdmin);
 const isSuperAdmin = computed(() => auth.isSuperAdmin);
 const generateButtonText = computed(() => {
   if (generateMode.value === "inpaint" && sourceUploading.value) {
@@ -1657,6 +1672,60 @@ function getGeneratedResultPreviewUrl(task: GeneratedTaskItem, img: ImageResult)
 
 function canEditGeneratedImage(task: GeneratedTaskItem, img: ImageResult) {
   return img.status === "success" && !isGeneratedTaskExpired(task) && !!(img.image_url || img.preview_url);
+}
+
+async function ensureTemplateTagsLoaded() {
+  if (templateTags.value.length) return;
+  try {
+    templateTags.value = await listTemplateTags();
+  } catch {
+    templateTags.value = [];
+  }
+}
+
+async function openTemplateDialogFromGeneratedImage(task: GeneratedTaskItem, img: ImageResult) {
+  if (!canCreateTemplateFromTask.value) return;
+  if (img.status !== "success" || !img.id) {
+    message.warning("当前结果图暂不可创建模版");
+    return;
+  }
+  if (isGeneratedTaskExpired(task)) {
+    message.warning("原图已过期，无法重新上传为模版");
+    return;
+  }
+  await ensureTemplateTagsLoaded();
+  templateSourceImageId.value = img.id;
+  templateInitialValue.value = {
+    prompt: task.prompt || "",
+    model: task.model || templateModelOptions.value[0]?.model_key || "banana_pro",
+    reference_images: [...task.referenceImages],
+    num_images: 1,
+    size: task.size || "9:16",
+    resolution: task.resolution || "2K",
+    custom_size: task.customSize || "",
+    result_image: img.image_url || img.preview_url || "",
+    sort_order: 0,
+    tag_names: [],
+  };
+  templateDialogOpen.value = true;
+}
+
+async function handleSaveGeneratedTemplate(payload: TemplatePayload) {
+  if (!templateSourceImageId.value) return;
+  templateDialogSaving.value = true;
+  try {
+    const template = await createTemplateFromTaskImage(templateSourceImageId.value, payload);
+    message.success(`已创建模版 #${template.id}`);
+    templateDialogOpen.value = false;
+    templateSourceImageId.value = null;
+    templateInitialValue.value = null;
+    templateTags.value = await listTemplateTags();
+  } catch (err: any) {
+    const detail = err?.response?.data?.detail || "创建模版失败";
+    message.error(detail);
+  } finally {
+    templateDialogSaving.value = false;
+  }
 }
 
 function handleDownload(imageId: number, imageUrl: string, previewUrl?: string) {
@@ -2922,6 +2991,19 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                             <template #icon><EditOutlined /></template>
                           </a-button>
                         </a-tooltip>
+                        <a-tooltip
+                          v-if="canCreateTemplateFromTask"
+                          :title="isGeneratedTaskExpired(item.task) ? '原图已过期，无法创建模版' : '设为创意模版'"
+                        >
+                          <a-button
+                            shape="circle"
+                            class="icon-chip result-template-trigger"
+                            :disabled="isGeneratedTaskExpired(item.task)"
+                            @click.stop="openTemplateDialogFromGeneratedImage(item.task, item.image)"
+                          >
+                            <template #icon><PictureOutlined /></template>
+                          </a-button>
+                        </a-tooltip>
                         <a-tooltip title="重新生成">
                           <a-button
                             shape="circle"
@@ -3081,6 +3163,16 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
       :model="feedbackTarget?.model"
       :prompt="feedbackTarget?.prompt"
       :created-at="feedbackTarget?.createdAt"
+    />
+    <TemplateFormDialog
+      v-model:open="templateDialogOpen"
+      title="新增模版"
+      ok-text="确认创建"
+      :initial-value="templateInitialValue"
+      :generation-models="templateModelOptions"
+      :tags="templateTags"
+      :confirm-loading="templateDialogSaving"
+      @save="handleSaveGeneratedTemplate"
     />
   </div>
 </template>
@@ -4998,6 +5090,17 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
   }
 }
 
+.result-template-trigger.icon-chip {
+  background: rgba(121, 80, 26, 0.64) !important;
+  color: #fff4d8 !important;
+
+  &:hover,
+  &:focus {
+    background: rgba(143, 94, 30, 0.82) !important;
+    color: #fffaf0 !important;
+  }
+}
+
 .result-more-icon {
   font-size: 14px;
 }
@@ -5110,6 +5213,19 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-mor
   background: rgba(var(--theme-page-base-rgb), 0.94) !important;
   border-color: var(--theme-border-strong) !important;
   color: #ffffff !important;
+}
+
+html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-template-trigger.icon-chip {
+  background: rgba(143, 94, 30, 0.72) !important;
+  border-color: rgba(255, 218, 150, 0.24) !important;
+  color: #fff4d8 !important;
+}
+
+html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-template-trigger.icon-chip:hover,
+html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-template-trigger.icon-chip:focus {
+  background: rgba(168, 112, 38, 0.86) !important;
+  border-color: rgba(255, 226, 170, 0.34) !important;
+  color: #fffaf0 !important;
 }
 
 html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-more-trigger-failed.icon-chip {

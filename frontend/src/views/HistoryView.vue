@@ -11,6 +11,7 @@ import {
   EyeOutlined,
   LoadingOutlined,
   MessageOutlined,
+  PictureOutlined,
   PushpinOutlined,
   ReloadOutlined,
 } from "@ant-design/icons-vue";
@@ -20,10 +21,12 @@ import { listBoards } from "@/api/boards";
 import { getGenerationModels, getTaskScenes } from "@/api/config";
 import { deleteHistoryTask, fetchHistory, toggleHistoryPin } from "@/api/history";
 import { getDisplayImageUrl, getDownloadUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
+import { createTemplateFromTaskImage, listTemplateTags, type TemplatePayload } from "@/api/templates";
 import { deletePromptHistory } from "@/api/auth";
 import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
 import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
 import HistoryDetailDialog from "@/components/history/HistoryDetailDialog.vue";
+import TemplateFormDialog from "@/components/templates/TemplateFormDialog.vue";
 import { withApiBaseUrl, withBaseUrl } from "@/lib/assets";
 import { useAuthStore } from "@/stores/auth";
 import {
@@ -32,7 +35,7 @@ import {
   writeStoredGridColumnCount,
 } from "@/lib/gridColumnPreference";
 import { boardIdFromKey, boardKeyFromId, DEFAULT_BOARD_KEY } from "@/lib/boardPreference";
-import type { AdminUser, BoardKey, GenerationModelOption, TaskSceneConfig, TaskSource, TaskType, UserBoardSummary, UserHistoryCard } from "@/types";
+import type { AdminUser, BoardKey, GenerationModelOption, TaskSceneConfig, TaskSource, TaskType, TemplateTag, UserBoardSummary, UserHistoryCard } from "@/types";
 
 const props = withDefaults(defineProps<{
   adminUserTasks?: boolean;
@@ -108,6 +111,11 @@ const previewSrc = ref("");
 const feedbackDialogOpen = ref(false);
 const feedbackTarget = ref<UserHistoryCard | null>(null);
 const pinningKeys = ref<string[]>([]);
+const templateDialogOpen = ref(false);
+const templateDialogSaving = ref(false);
+const templateSourceImageId = ref<number | null>(null);
+const templateInitialValue = ref<TemplatePayload | null>(null);
+const templateTags = ref<TemplateTag[]>([]);
 const isAdminHistoryView = computed(() => props.adminUserTasks && auth.isAdmin);
 const isBoardHistoryView = computed(() => !isAdminHistoryView.value && !!props.boardKey);
 const userInfoDialogOpen = ref(false);
@@ -543,6 +551,66 @@ function canHistoryViewOriginal(item: UserHistoryCard) {
 
 function canEditHistoryImage(item: UserHistoryCard) {
   return item.status !== "failed" && !isHistoryItemExpired(item);
+}
+
+function canCreateTemplateFromHistoryItem(item: UserHistoryCard) {
+  return (
+    auth.isAdmin
+    && item.item_type === "task"
+    && item.status === "success"
+    && item.mode !== "promptReverse"
+    && typeof item.image_id === "number"
+  );
+}
+
+async function ensureTemplateTagsLoaded() {
+  if (templateTags.value.length) return;
+  try {
+    templateTags.value = await listTemplateTags();
+  } catch {
+    templateTags.value = [];
+  }
+}
+
+async function openTemplateDialogFromHistoryItem(item: UserHistoryCard) {
+  if (!canCreateTemplateFromHistoryItem(item) || typeof item.image_id !== "number") return;
+  if (isHistoryItemExpired(item)) {
+    message.warning("原图已过期，无法重新上传为模版");
+    return;
+  }
+  await ensureTemplateTagsLoaded();
+  templateSourceImageId.value = item.image_id;
+  templateInitialValue.value = {
+    prompt: item.prompt || "",
+    model: item.model || generationModels.value[0]?.model_key || "banana_pro",
+    reference_images: [...(item.reference_images || [])],
+    num_images: 1,
+    size: item.size || "9:16",
+    resolution: item.resolution || "2K",
+    custom_size: item.custom_size || "",
+    result_image: item.image_url || item.preview_url || "",
+    sort_order: 0,
+    tag_names: [],
+  };
+  templateDialogOpen.value = true;
+}
+
+async function handleSaveHistoryTemplate(payload: TemplatePayload) {
+  if (!templateSourceImageId.value) return;
+  templateDialogSaving.value = true;
+  try {
+    const template = await createTemplateFromTaskImage(templateSourceImageId.value, payload);
+    message.success(`已创建模版 #${template.id}`);
+    templateDialogOpen.value = false;
+    templateSourceImageId.value = null;
+    templateInitialValue.value = null;
+    templateTags.value = await listTemplateTags();
+  } catch (err: any) {
+    const detail = err?.response?.data?.detail || "创建模版失败";
+    message.error(detail);
+  } finally {
+    templateDialogSaving.value = false;
+  }
 }
 
 function handleViewOriginal(item: UserHistoryCard) {
@@ -1172,6 +1240,20 @@ function handleEditImage(item: UserHistoryCard) {
                   <template #icon><EditOutlined /></template>
                 </a-button>
               </a-tooltip>
+              <a-tooltip
+                v-if="canCreateTemplateFromHistoryItem(item)"
+                :title="isHistoryItemExpired(item) ? '原图已过期，无法创建模版' : '设为创意模版'"
+              >
+                <a-button
+                  shape="circle"
+                  type="text"
+                  class="history-overlay-btn history-overlay-btn-template"
+                  :disabled="isHistoryItemExpired(item)"
+                  @click.stop="openTemplateDialogFromHistoryItem(item)"
+                >
+                  <template #icon><PictureOutlined /></template>
+                </a-button>
+              </a-tooltip>
               <a-tooltip title="重新生成">
                 <a-button shape="circle" type="text" class="history-overlay-btn" @click.stop="handleReedit(item)">
                   <template #icon><ReloadOutlined /></template>
@@ -1238,6 +1320,16 @@ function handleEditImage(item: UserHistoryCard) {
       :user="selectedUserInfo"
       show-view-data
       @view-data="filterBySelectedUser"
+    />
+    <TemplateFormDialog
+      v-model:open="templateDialogOpen"
+      title="新增模版"
+      ok-text="确认创建"
+      :initial-value="templateInitialValue"
+      :generation-models="generationModels"
+      :tags="templateTags"
+      :confirm-loading="templateDialogSaving"
+      @save="handleSaveHistoryTemplate"
     />
   </div>
 </template>
@@ -2138,6 +2230,17 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
   }
 }
 
+.history-overlay-btn-template {
+  background: rgba(121, 80, 26, 0.64) !important;
+  color: #fff4d8 !important;
+
+  &:hover,
+  &:focus {
+    background: rgba(143, 94, 30, 0.82) !important;
+    color: #fffaf0 !important;
+  }
+}
+
 .history-overlay-btn-active {
   border-color: rgba(255, 214, 76, 0.98) !important;
   background: linear-gradient(180deg, rgba(255, 212, 59, 0.96), rgba(245, 176, 0, 0.96)) !important;
@@ -2188,6 +2291,19 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .history-ove
     color: var(--text-muted) !important;
     box-shadow: none;
   }
+}
+
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .history-overlay-btn-template {
+  background: rgba(143, 94, 30, 0.72) !important;
+  border-color: rgba(255, 218, 150, 0.24) !important;
+  color: #fff4d8 !important;
+}
+
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .history-overlay-btn-template:hover,
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .history-overlay-btn-template:focus {
+  background: rgba(168, 112, 38, 0.86) !important;
+  border-color: rgba(255, 226, 170, 0.34) !important;
+  color: #fffaf0 !important;
 }
 
 html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .history-overlay-btn-danger,

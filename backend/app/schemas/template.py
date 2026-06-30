@@ -35,6 +35,10 @@ class TemplateUpdate(TemplateBase):
     pass
 
 
+class TemplateFromTaskImageCreate(TemplateBase):
+    image_id: int
+
+
 class TemplateListItemOut(BaseModel):
     id: int
     prompt: str

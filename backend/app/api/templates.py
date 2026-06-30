@@ -5,19 +5,23 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_admin
 from app.database import get_db
+from app.models.image import Image
 from app.models.template import Template
 from app.models.template_tag import TemplateTag
 from app.models.template_tag_relation import TemplateTagRelation
+from app.models.task import Task
 from app.models.user import User
 from app.schemas.template import (
     TemplateCreate,
     TemplateDetailOut,
+    TemplateFromTaskImageCreate,
     TemplateListItemOut,
     TemplateListResponse,
     TemplateTagPayload,
     TemplateTagOut,
     TemplateUpdate,
 )
+from app.services.cos_service import build_object_key, load_image_bytes, upload_bytes_to_cos
 from app.services.image_delivery_service import get_optional_cos_config, serialize_asset_urls
 
 router = APIRouter(prefix="/api/templates", tags=["创意模版"])
@@ -96,6 +100,22 @@ def _sync_template_tags(db: Session, template: Template, tag_names: list[str]):
             db.add(tag)
             db.flush()
         template.tag_relations.append(TemplateTagRelation(tag_id=tag.id))
+
+
+def _copy_image_to_template_folder(db: Session, image_url: str, *, label: str) -> str:
+    image_data = load_image_bytes(image_url)
+    if not image_data:
+        raise HTTPException(status_code=400, detail=f"{label}不存在或已过期，无法创建模版")
+
+    data, content_type = image_data
+    key = build_object_key("template", f"{label}.jpg", content_type)
+    return upload_bytes_to_cos(
+        db,
+        data=data,
+        key=key,
+        content_type=content_type,
+        cache_control="public, max-age=31536000, immutable",
+    )
 
 
 @router.get("", response_model=TemplateListResponse)
@@ -192,6 +212,52 @@ def list_admin_templates(
     cos_config = get_optional_cos_config(db)
     templates = db.query(Template).order_by(Template.sort_order.desc(), Template.created_at.desc()).all()
     return [_serialize_template_list_item(template, cos_config=cos_config) for template in templates]
+
+
+@router.post("/admin/from-task-image", response_model=TemplateDetailOut)
+def create_template_from_task_image(
+    body: TemplateFromTaskImageCreate,
+    _user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    image = (
+        db.query(Image)
+        .join(Task, Image.task_id == Task.id)
+        .filter(Image.id == body.image_id, Image.status == "success", Image.is_deleted == False)  # noqa: E712
+        .first()
+    )
+    if not image or not image.task:
+        raise HTTPException(status_code=404, detail="结果图不存在或不可用")
+
+    task = image.task
+    if not body.prompt.strip():
+        raise HTTPException(status_code=400, detail="提示词不能为空")
+    if task.mode == "promptReverse":
+        raise HTTPException(status_code=400, detail="提示词反推任务不能创建模版")
+
+    result_source = body.result_image or image.image_url or image.preview_url or ""
+    result_image = _copy_image_to_template_folder(db, result_source, label="结果图")
+    reference_images = [
+        _copy_image_to_template_folder(db, ref_url, label=f"参考图{index}")
+        for index, ref_url in enumerate(body.reference_images, start=1)
+    ]
+    template = Template(
+        prompt=body.prompt.strip(),
+        model=body.model.strip() or (task.model or "").strip() or "banana_pro",
+        reference_images=json.dumps(reference_images),
+        size=body.size or task.size or "1:1",
+        resolution=body.resolution or task.resolution or "2K",
+        custom_size=(body.custom_size or task.custom_size or "").strip(),
+        num_images=1,
+        result_image=result_image,
+        sort_order=body.sort_order,
+    )
+    db.add(template)
+    db.flush()
+    _sync_template_tags(db, template, body.tag_names)
+    db.commit()
+    db.refresh(template)
+    return _serialize_template_detail(template, cos_config=get_optional_cos_config(db))
 
 
 @router.get("/{template_id}", response_model=TemplateDetailOut)

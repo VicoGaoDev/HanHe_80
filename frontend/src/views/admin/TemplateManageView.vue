@@ -7,9 +7,7 @@ import {
   PictureOutlined,
   PlusOutlined,
   TagsOutlined,
-  UploadOutlined,
 } from "@ant-design/icons-vue";
-import { uploadReferenceImage } from "@/api/upload";
 import { getGenerationModels } from "@/api/config";
 import {
   createTemplateTag,
@@ -24,6 +22,7 @@ import {
   type TemplatePayload,
 } from "@/api/templates";
 import { resolveImageUrl } from "@/api/images";
+import TemplateFormDialog from "@/components/templates/TemplateFormDialog.vue";
 import type { CreativeTemplate, GenerationModelOption, TemplateTag } from "@/types";
 
 const templates = ref<CreativeTemplate[]>([]);
@@ -37,24 +36,7 @@ const activeTagId = ref<number | null>(null);
 const tagManageOpen = ref(false);
 const savingTag = ref(false);
 const editingTag = ref<TemplateTag | null>(null);
-
-const refInput = ref<HTMLInputElement | null>(null);
-const resultInput = ref<HTMLInputElement | null>(null);
-const refUploading = ref(false);
-const resultUploading = ref(false);
-
-const form = reactive<TemplatePayload>({
-  prompt: "",
-  model: "banana_pro",
-  reference_images: [],
-  num_images: 1,
-  size: "9:16",
-  resolution: "2K",
-  custom_size: "",
-  result_image: "",
-  sort_order: 0,
-  tag_names: [],
-});
+const formInitialValue = ref<TemplatePayload | null>(null);
 
 const columns = [
   { title: "结果图", dataIndex: "result_image", width: 110 },
@@ -66,32 +48,6 @@ const columns = [
   { title: "操作", key: "action", width: 160 },
 ];
 
-const sizeOptions = [
-  { label: "1:1", value: "1:1" },
-  { label: "2:3", value: "2:3" },
-  { label: "3:2", value: "3:2" },
-  { label: "3:4", value: "3:4" },
-  { label: "4:3", value: "4:3" },
-  { label: "9:16", value: "9:16" },
-  { label: "16:9", value: "16:9" },
-];
-
-const resolutionOptions = [
-  { label: "1K", value: "1K" },
-  { label: "2K", value: "2K" },
-  { label: "4K", value: "4K" },
-];
-
-const customSizeOptions = computed(() => (
-  selectedModelOption.value?.custom_size_options?.length
-    ? selectedModelOption.value.custom_size_options
-    : []
-));
-
-const tagOptions = computed(() => tags.value.map((tag) => ({ label: tag.name, value: tag.name })));
-const selectedModelOption = computed(() => modelOptions.value.find((item) => item.model_key === form.model) || null);
-const hideResolution = computed(() => !!selectedModelOption.value?.hide_resolution);
-const hideCustomSize = computed(() => !!selectedModelOption.value?.hide_custom_size);
 const filteredTemplates = computed(() => {
   if (activeTagId.value === null) return templates.value;
   return templates.value.filter((item) => item.tags.some((tag) => tag.id === activeTagId.value));
@@ -103,16 +59,18 @@ const renameForm = reactive({
 
 function resetForm() {
   editingId.value = null;
-  form.prompt = "";
-  form.model = modelOptions.value[0]?.model_key || "banana_pro";
-  form.reference_images = [];
-  form.num_images = 1;
-  form.size = "9:16";
-  form.resolution = "2K";
-  form.custom_size = "";
-  form.result_image = "";
-  form.sort_order = 0;
-  form.tag_names = [];
+  formInitialValue.value = {
+    prompt: "",
+    model: modelOptions.value[0]?.model_key || "banana_pro",
+    reference_images: [],
+    num_images: 1,
+    size: "9:16",
+    resolution: "2K",
+    custom_size: "",
+    result_image: "",
+    sort_order: 0,
+    tag_names: [],
+  };
 }
 
 function resetTagForm() {
@@ -145,9 +103,6 @@ async function loadTags() {
 async function loadModels() {
   try {
     modelOptions.value = await getGenerationModels();
-    if (!modelOptions.value.some((item) => item.model_key === form.model) && modelOptions.value.length) {
-      form.model = modelOptions.value[0].model_key;
-    }
   } catch {
     // ignore
   }
@@ -178,45 +133,27 @@ async function openEdit(item: CreativeTemplate) {
   try {
     const detail = await getTemplateDetail(item.id);
     editingId.value = item.id;
-    form.prompt = detail.prompt;
-    form.model = detail.model || modelOptions.value[0]?.model_key || "banana_pro";
-    form.reference_images = [...detail.reference_images];
-    form.num_images = 1;
-    form.size = detail.size;
-    form.resolution = detail.resolution;
-    form.custom_size = detail.custom_size || "";
-    form.result_image = detail.result_image;
-    form.sort_order = detail.sort_order ?? 0;
-    form.tag_names = detail.tags.map((tag) => tag.name);
+    formInitialValue.value = {
+      prompt: detail.prompt,
+      model: detail.model || modelOptions.value[0]?.model_key || "banana_pro",
+      reference_images: [...detail.reference_images],
+      num_images: 1,
+      size: detail.size,
+      resolution: detail.resolution,
+      custom_size: detail.custom_size || "",
+      result_image: detail.result_image,
+      sort_order: detail.sort_order ?? 0,
+      tag_names: detail.tags.map((tag) => tag.name),
+    };
     modalOpen.value = true;
   } catch {
     message.error("获取模版详情失败");
   }
 }
 
-async function handleSave() {
-  if (!form.prompt.trim()) {
-    message.warning("请输入提示词");
-    return;
-  }
-  if (!form.result_image) {
-    message.warning("请上传结果图");
-    return;
-  }
+async function handleSave(payload: TemplatePayload) {
   saving.value = true;
   try {
-    const payload: TemplatePayload = {
-      prompt: form.prompt.trim(),
-      model: form.model,
-      reference_images: [...form.reference_images],
-      num_images: 1,
-      size: form.size,
-      resolution: hideResolution.value ? "" : form.resolution,
-      custom_size: hideCustomSize.value ? "" : form.custom_size,
-      result_image: form.result_image,
-      sort_order: Number.isFinite(form.sort_order) ? form.sort_order : 0,
-      tag_names: [...form.tag_names],
-    };
     if (editingId.value) await updateTemplate(editingId.value, payload);
     else await createTemplate(payload);
     message.success(editingId.value ? "模版更新成功" : "模版创建成功");
@@ -280,54 +217,6 @@ function handleDeleteTag(tag: TemplateTag) {
       await Promise.all([load(), loadTags()]);
     },
   });
-}
-
-function triggerRefUpload() {
-  refInput.value?.click();
-}
-
-function triggerResultUpload() {
-  resultInput.value?.click();
-}
-
-async function handleRefUpload(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const files = Array.from(input.files || []);
-  if (!files.length) return;
-  refUploading.value = true;
-  try {
-    for (const file of files) {
-      const res = await uploadReferenceImage(file, "template");
-      form.reference_images.push(res.url);
-    }
-    message.success("参考图上传成功");
-  } catch {
-    message.error("参考图上传失败");
-  } finally {
-    refUploading.value = false;
-    input.value = "";
-  }
-}
-
-async function handleResultUpload(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
-  resultUploading.value = true;
-  try {
-    const res = await uploadReferenceImage(file, "template");
-    form.result_image = res.url;
-    message.success("结果图上传成功");
-  } catch {
-    message.error("结果图上传失败");
-  } finally {
-    resultUploading.value = false;
-    input.value = "";
-  }
-}
-
-function removeRef(index: number) {
-  form.reference_images.splice(index, 1);
 }
 
 function fmtTime(t: string) {
@@ -425,92 +314,16 @@ function fmtTime(t: string) {
       </a-table>
     </div>
 
-    <a-modal
+    <TemplateFormDialog
       v-model:open="modalOpen"
       :title="editingId ? '编辑模版' : '新增模版'"
+      :initial-value="formInitialValue"
+      :generation-models="modelOptions"
+      :tags="tags"
       :confirm-loading="saving"
-      :ok-button-props="{ class: 'warm-primary-btn' }"
-      :cancel-button-props="{ class: 'warm-secondary-btn' }"
-      ok-text="保存"
-      cancel-text="取消"
-      centered
-      :width="760"
-      @ok="handleSave"
+      @save="handleSave"
       @cancel="resetForm"
-    >
-      <a-form layout="vertical" style="margin-top: 16px">
-        <a-form-item label="提示词">
-          <a-textarea v-model:value="form.prompt" class="warm-textarea" :rows="5" :maxlength="2000" show-count />
-        </a-form-item>
-
-        <div class="form-grid">
-          <a-form-item label="模型">
-            <a-select v-model:value="form.model" class="warm-select" placeholder="请选择模型">
-              <a-select-option v-for="model in modelOptions" :key="model.model_key" :value="model.model_key">
-                {{ model.model_label }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item label="宽高比">
-            <a-select v-model:value="form.size" class="warm-select" :options="sizeOptions" />
-          </a-form-item>
-          <a-form-item label="排序值">
-            <a-input-number v-model:value="form.sort_order" class="warm-input-number" :min="0" :precision="0" />
-          </a-form-item>
-          <a-form-item v-if="!hideResolution" label="分辨率">
-            <a-select v-model:value="form.resolution" class="warm-select" :options="resolutionOptions" />
-          </a-form-item>
-          <a-form-item v-if="!hideCustomSize" label="自定义分辨率">
-            <a-select
-              v-model:value="form.custom_size"
-              class="warm-select"
-              :options="customSizeOptions"
-              allow-clear
-              placeholder="可选，带入 {{ custom_size }}"
-            />
-          </a-form-item>
-          <a-form-item label="所属标签">
-            <a-select
-              v-model:value="form.tag_names"
-              class="warm-select"
-              mode="tags"
-              :options="tagOptions"
-              placeholder="输入或选择标签"
-            />
-          </a-form-item>
-        </div>
-
-        <a-form-item label="结果图">
-          <div class="result-upload">
-            <div class="result-preview">
-              <img v-if="form.result_image" :src="form.result_image" alt="结果图" />
-              <div v-else class="result-placeholder">请上传结果图</div>
-            </div>
-            <input ref="resultInput" type="file" accept="image/*" hidden @change="handleResultUpload" />
-            <a-button class="template-secondary-btn" :loading="resultUploading" @click="triggerResultUpload">
-              <template #icon><UploadOutlined /></template>
-              上传结果图
-            </a-button>
-          </div>
-        </a-form-item>
-
-        <a-form-item label="参考图片（可选）" style="margin-bottom: 0">
-          <input ref="refInput" type="file" accept="image/*" multiple hidden @change="handleRefUpload" />
-          <div class="ref-grid">
-            <div v-for="(url, idx) in form.reference_images" :key="url + idx" class="ref-item">
-              <img :src="url" alt="参考图" />
-              <a-button type="text" danger shape="circle" class="ref-remove" @click="removeRef(idx)">
-                <template #icon><DeleteOutlined /></template>
-              </a-button>
-            </div>
-            <a-button class="ref-add template-secondary-btn" :loading="refUploading" @click="triggerRefUpload">
-              <template #icon><UploadOutlined /></template>
-              上传参考图
-            </a-button>
-          </div>
-        </a-form-item>
-      </a-form>
-    </a-modal>
+    />
 
     <a-modal
       v-model:open="tagManageOpen"

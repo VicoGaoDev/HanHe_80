@@ -50,6 +50,10 @@ export function listAdminTemplates(): Promise<CreativeTemplate[]> {
   return client.get("/templates/admin/list");
 }
 
+export function createTemplateFromTaskImage(imageId: number, data: TemplatePayload): Promise<CreativeTemplate> {
+  return client.post("/templates/admin/from-task-image", { ...data, image_id: imageId });
+}
+
 export function createTemplate(data: TemplatePayload): Promise<CreativeTemplate> {
   return client.post("/templates", data);
 }
