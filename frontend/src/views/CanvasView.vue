@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, h, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message, Modal } from "ant-design-vue";
 import {
@@ -187,7 +187,6 @@ const canvasFeedbackOpen = ref(false);
 const nodeSearchOpen = ref(false);
 const nodeSearchKeyword = ref("");
 const nodeSearchQuery = ref("");
-const textNodeEditOpen = ref(false);
 const textNodeEditSaving = ref(false);
 const textNodeEditTarget = ref<CanvasNode | null>(null);
 const textNodeEditContent = ref("");
@@ -300,7 +299,9 @@ let resizeState: {
   originWidth: number;
   originHeight: number;
 } | null = null;
+let lastNodePointerDown: { nodeId: number; time: number } | null = null;
 let lastNodeClick: { nodeId: number; time: number } | null = null;
+let lastTextNodePointerDown: { nodeId: number; time: number } | null = null;
 let localCanvasNodeId = -1;
 
 function revokeObjectUrl(url?: string) {
@@ -566,6 +567,37 @@ function startNodeDrag(event: PointerEvent, node: CanvasNode) {
   if (event.button !== 0) return;
   event.stopPropagation();
   selectedNodeId.value = node.id;
+  const now = Date.now();
+  if (lastNodePointerDown?.nodeId === node.id && now - lastNodePointerDown.time < 500) {
+    lastNodePointerDown = null;
+    handleNodeDoubleClick(node);
+    return;
+  }
+  lastNodePointerDown = { nodeId: node.id, time: now };
+  if (canvasReadOnly.value) return;
+  dragState = {
+    pointerId: event.pointerId,
+    nodeId: node.id,
+    startX: event.clientX,
+    startY: event.clientY,
+    originX: node.x,
+    originY: node.y,
+  };
+  canvasStageRef.value?.setPointerCapture(event.pointerId);
+}
+
+function handleTextNodePointerDown(event: PointerEvent, node: CanvasNode) {
+  if (event.button !== 0) return;
+  event.stopPropagation();
+  selectedNodeId.value = node.id;
+  const now = Date.now();
+  if (lastTextNodePointerDown?.nodeId === node.id && now - lastTextNodePointerDown.time < 600) {
+    lastTextNodePointerDown = null;
+    event.preventDefault();
+    openTextNodeEditor(node);
+    return;
+  }
+  lastTextNodePointerDown = { nodeId: node.id, time: now };
   if (canvasReadOnly.value) return;
   dragState = {
     pointerId: event.pointerId,
@@ -1024,14 +1056,18 @@ function convertNodeToHistoryCard(node: CanvasNode): UserHistoryCard | null {
 }
 
 function selectNode(node: CanvasNode) {
+  selectedNodeId.value = node.id;
+}
+
+function handleNodeClick(event: MouseEvent, node: CanvasNode) {
   const now = Date.now();
-  if (lastNodeClick?.nodeId === node.id && now - lastNodeClick.time < 320) {
+  if (event.detail >= 2 || (lastNodeClick?.nodeId === node.id && now - lastNodeClick.time < 500)) {
     lastNodeClick = null;
     handleNodeDoubleClick(node);
     return;
   }
   lastNodeClick = { nodeId: node.id, time: now };
-  selectedNodeId.value = node.id;
+  selectNode(node);
 }
 
 function openNodeDetail(node: CanvasNode) {
@@ -1129,7 +1165,12 @@ function openTextNodeEditor(node: CanvasNode) {
   }
   textNodeEditTarget.value = node;
   textNodeEditContent.value = node.content || "";
-  textNodeEditOpen.value = true;
+  focusCanvasNode(node, 1);
+  void nextTick(() => {
+    const editor = canvasStageRef.value?.querySelector<HTMLTextAreaElement>(`[data-text-node-editor="${node.id}"]`);
+    editor?.focus();
+    editor?.select();
+  });
 }
 
 async function saveTextNodeContent() {
@@ -1138,20 +1179,42 @@ async function saveTextNodeContent() {
   if (!node || !projectId) return;
   if (canvasReadOnly.value) {
     message.warning("只读模式下不能保存文本节点");
-    textNodeEditOpen.value = false;
+    textNodeEditTarget.value = null;
+    return;
+  }
+  const nextContent = textNodeEditContent.value;
+  if (nextContent === (node.content || "")) {
+    textNodeEditTarget.value = null;
     return;
   }
   textNodeEditSaving.value = true;
   try {
-    const updated = await updateCanvasNode(projectId, node.id, { content: textNodeEditContent.value });
+    const updated = await updateCanvasNode(projectId, node.id, { content: nextContent });
     nodes.value = nodes.value.map((item) => item.id === updated.id ? updated : item);
     selectedNodeId.value = updated.id;
-    textNodeEditOpen.value = false;
+    textNodeEditTarget.value = null;
     message.success("文本节点已更新");
   } catch (err: any) {
     message.error(err.response?.data?.detail || "更新文本节点失败");
   } finally {
     textNodeEditSaving.value = false;
+  }
+}
+
+function cancelTextNodeEdit() {
+  textNodeEditTarget.value = null;
+  textNodeEditContent.value = "";
+}
+
+function handleTextNodeEditorKeydown(event: KeyboardEvent) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    cancelTextNodeEdit();
+    return;
+  }
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault();
+    void saveTextNodeContent();
   }
 }
 
@@ -1682,10 +1745,10 @@ function getNodeSearchThumbUrl(node: CanvasNode) {
   return getDisplayImageUrl(image);
 }
 
-function focusCanvasNode(node: CanvasNode) {
+function focusCanvasNode(node: CanvasNode, targetZoom = 1) {
   const rect = canvasStageRef.value?.getBoundingClientRect();
   if (!rect) return;
-  const zoom = 1;
+  const zoom = clampZoom(targetZoom);
   const nodeCenterX = node.x + Number(node.width || DEFAULT_NODE_WIDTH) / 2;
   const nodeCenterY = node.y + getNodeCardHeight(node) / 2;
   viewport.value = {
@@ -2327,15 +2390,32 @@ onBeforeUnmount(() => {
             zIndex: node.z_index,
           }"
           @pointerdown="startNodeDrag($event, node)"
-          @click.stop="selectNode(node)"
-          @dblclick.stop.prevent="handleNodeDoubleClick(node)"
+          @click.stop="handleNodeClick($event, node)"
         >
           <div
             class="node-preview"
             :style="{ aspectRatio: getNodeAspectRatio(node) }"
           >
             <template v-if="node.node_type === 'text'">
-              <div class="canvas-free-text-node">
+              <textarea
+                v-if="textNodeEditTarget?.id === node.id"
+                v-model="textNodeEditContent"
+                class="canvas-free-text-editor"
+                :data-text-node-editor="node.id"
+                :maxlength="5000"
+                placeholder="请输入文本内容"
+                @pointerdown.stop
+                @click.stop
+                @keydown="handleTextNodeEditorKeydown"
+                @blur="saveTextNodeContent"
+              ></textarea>
+              <div
+                v-else
+                class="canvas-free-text-node"
+                @pointerdown="handleTextNodePointerDown($event, node)"
+                @click.stop="selectNode(node)"
+                @dblclick.stop.prevent="openTextNodeEditor(node)"
+              >
                 {{ node.content || '双击编辑文本' }}
               </div>
             </template>
@@ -2348,7 +2428,6 @@ onBeforeUnmount(() => {
               :src="getNodeImageUrl(node)"
               alt="generated"
               draggable="false"
-              @dblclick.stop="openPreview(node)"
               @load="handleNodeImageLoad(node)"
             />
             <div v-if="node.node_type === 'image' && node.uploadStatus && node.uploadStatus !== 'success'" class="node-upload-mask" :class="{ error: node.uploadStatus === 'failed' }">
@@ -2427,23 +2506,6 @@ onBeforeUnmount(() => {
       v-model:open="readonlyOwnerDialogOpen"
       :user="selectedReadonlyOwner"
     />
-    <a-modal
-      v-model:open="textNodeEditOpen"
-      title="编辑文本节点"
-      ok-text="保存"
-      cancel-text="取消"
-      :confirm-loading="textNodeEditSaving"
-      centered
-      @ok="saveTextNodeContent"
-    >
-      <a-textarea
-        v-model:value="textNodeEditContent"
-        :rows="6"
-        :maxlength="5000"
-        show-count
-        placeholder="请输入文本节点内容"
-      />
-    </a-modal>
     <a-modal
       v-model:open="nodeSearchOpen"
       title="搜索节点"
@@ -4171,6 +4233,22 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
   word-break: break-word;
   background: linear-gradient(180deg, var(--theme-panel-bg), var(--theme-panel-bg-soft));
+}
+
+.canvas-free-text-editor {
+  width: 100%;
+  height: 100%;
+  padding: 18px;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: linear-gradient(180deg, var(--theme-panel-bg), var(--theme-panel-bg-soft));
+  color: var(--theme-title);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.55;
+  white-space: pre-wrap;
 }
 
 .canvas-node.reference-selecting {
