@@ -1180,8 +1180,15 @@ function handleEditImage(item: UserHistoryCard) {
             >
               {{ formatRunTime(item.run_time) }}
             </div>
-            <div v-if="showSoftDeletedBadge(item)" class="result-card-soft-deleted-badge">
+            <div
+              v-if="showSoftDeletedBadge(item)"
+              class="result-card-soft-deleted-badge"
+              :class="{ 'result-card-soft-deleted-badge-stacked': item.canvas_id }"
+            >
               已软删
+            </div>
+            <div v-if="item.canvas_id" class="result-card-canvas-badge">
+              Canvas
             </div>
 
             <a-tooltip v-if="canPinHistoryItem(item) && item.is_pinned" title="取消置顶">
@@ -1783,7 +1790,8 @@ function handleEditImage(item: UserHistoryCard) {
 
   &:hover .result-card-model-badge,
   &:hover .result-card-run-time,
-  &:hover .result-card-soft-deleted-badge {
+  &:hover .result-card-soft-deleted-badge,
+  &:hover .result-card-canvas-badge {
     opacity: 0;
     transform: translateY(6px);
   }
@@ -1959,7 +1967,8 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
 
 html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-model-badge,
 html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-run-time,
-html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-soft-deleted-badge {
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-soft-deleted-badge,
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-canvas-badge {
   border-color: var(--theme-panel-border);
   background: rgba(var(--theme-surface-strong-rgb), 0.9);
   color: var(--theme-accent-text);
@@ -1981,7 +1990,8 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
 
 .result-card-model-badge,
 .result-card-run-time,
-.result-card-soft-deleted-badge {
+.result-card-soft-deleted-badge,
+.result-card-canvas-badge {
   position: absolute;
   z-index: 2;
   display: inline-flex;
@@ -2024,6 +2034,18 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
   background: rgba(166, 60, 47, 0.62);
   border-color: rgba(255, 224, 220, 0.22);
   box-shadow: 0 10px 20px rgba(96, 31, 22, 0.22);
+}
+
+.result-card-soft-deleted-badge-stacked {
+  bottom: 42px;
+}
+
+.result-card-canvas-badge {
+  right: 12px;
+  bottom: 12px;
+  border-color: rgba(210, 230, 255, 0.28);
+  background: rgba(38, 91, 166, 0.68);
+  color: #eef6ff;
 }
 
 .result-card-media {

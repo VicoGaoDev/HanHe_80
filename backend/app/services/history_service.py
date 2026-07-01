@@ -66,6 +66,11 @@ def _calculate_task_run_time(task: Task | None) -> int | None:
     return max(0, int((task.request_finished_at - task.created_at).total_seconds()))
 
 
+def _get_task_canvas_project_id(task: Task | None) -> str:
+    canvas = task.canvas if task else None
+    return canvas.project_id if canvas else ""
+
+
 def _build_history_pin_key(item_type: str, image_id: int | None = None, history_id: int | None = None) -> str:
     if item_type == "task" and isinstance(image_id, int):
         return f"task:{image_id}"
@@ -143,6 +148,8 @@ def _serialize_task_history_detail(task: Task, *, cos_config, scene_type_map: di
         "item_type": "task",
         "display_id": task_external_id(task),
         "task_id": task_external_id(task),
+        "canvas_id": task.canvas_id,
+        "canvas_project_id": _get_task_canvas_project_id(task),
         "image_id": primary_image.id if primary_image else None,
             "user_id": user_external_id(task.user),
             "username": task.user.username if task.user else "",
@@ -378,6 +385,8 @@ def get_user_history(
             "item_type": "task",
             "display_id": task_external_id(task),
             "task_id": task_external_id(task),
+            "canvas_id": task.canvas_id,
+            "canvas_project_id": _get_task_canvas_project_id(task),
             "image_id": image.id,
             "user_id": user_external_id(current_user),
             "username": current_user.username if current_user else "",
@@ -660,6 +669,8 @@ def get_all_history(
         items.append({
             "item_type": "task",
             "task_id": task_external_id(task),
+            "canvas_id": task.canvas_id,
+            "canvas_project_id": _get_task_canvas_project_id(task),
             "history_id": None,
             "display_id": task_external_id(task),
             "user_id": user_cache[task.user_id]["user_id"],
@@ -942,6 +953,8 @@ def get_admin_history_cards(
             "item_type": "task",
             "display_id": task_external_id(task),
             "task_id": task_external_id(task),
+            "canvas_id": task.canvas_id if task else None,
+            "canvas_project_id": _get_task_canvas_project_id(task),
             "image_id": image.id,
             "user_id": user_external_id(task_user),
             "username": task_user.username if task_user else "",
@@ -991,6 +1004,8 @@ def get_admin_history_cards(
             "item_type": "task",
             "display_id": task_external_id(task),
             "task_id": task_external_id(task),
+            "canvas_id": task.canvas_id,
+            "canvas_project_id": _get_task_canvas_project_id(task),
             "image_id": primary_image["id"] if primary_image else None,
             "user_id": user_external_id(task_user),
             "username": task_user.username if task_user else "",
@@ -1042,6 +1057,8 @@ def get_admin_history_cards(
             "item_type": "task",
             "display_id": task_external_id(task),
             "task_id": task_external_id(task),
+            "canvas_id": task.canvas_id,
+            "canvas_project_id": _get_task_canvas_project_id(task),
             "image_id": None,
             "user_id": user_external_id(task_user),
             "username": task_user.username if task_user else "",

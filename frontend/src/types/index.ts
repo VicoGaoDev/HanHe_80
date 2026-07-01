@@ -84,6 +84,8 @@ export interface TaskResult {
 export interface HistoryItem {
   item_type: "task" | "prompt_history";
   task_id?: string | null;
+  canvas_id?: number | null;
+  canvas_project_id?: string;
   history_id?: number | null;
   display_id?: string;
   user_id?: string;
@@ -136,6 +138,8 @@ export interface UserHistoryCard {
   item_type: "task" | "prompt_history";
   display_id?: string;
   task_id?: string | null;
+  canvas_id?: number | null;
+  canvas_project_id?: string;
   image_id?: number | null;
   user_id?: string;
   username?: string;

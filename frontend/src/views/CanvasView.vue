@@ -1396,6 +1396,9 @@ async function handleGenerate() {
       height: DEFAULT_NODE_HEIGHT,
     });
     nodes.value = [...nodes.value, ...res.nodes];
+    if (res.nodes.length) {
+      focusCanvasNodesAtCurrentZoom(res.nodes);
+    }
     prompt.value = "";
     promptSourceNodeId.value = null;
     getCanvas(projectId).then((detail) => {
@@ -1472,7 +1475,7 @@ function syncTaskPolling() {
   if (taskPollTimer.value) return;
   taskPollTimer.value = setInterval(() => {
     void refreshActiveTasks();
-  }, 4000);
+  }, 5000);
 }
 
 function openPreview(node: CanvasNode) {
@@ -1893,6 +1896,23 @@ function focusCanvasNode(node: CanvasNode, targetZoom = 1) {
     y: rect.height / 2 - nodeCenterY * zoom,
   };
   selectedNodeId.value = node.id;
+  nodeSearchOpen.value = false;
+  scheduleViewportSave();
+}
+
+function focusCanvasNodesAtCurrentZoom(targetNodes: CanvasNode[]) {
+  const rect = canvasStageRef.value?.getBoundingClientRect();
+  const bounds = getNodesBounds(targetNodes);
+  if (!rect || !bounds) return;
+  const zoom = viewport.value.zoom;
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerY = (bounds.minY + bounds.maxY) / 2;
+  viewport.value = {
+    zoom,
+    x: rect.width / 2 - centerX * zoom,
+    y: rect.height / 2 - centerY * zoom,
+  };
+  selectedNodeId.value = targetNodes[0]?.id ?? null;
   nodeSearchOpen.value = false;
   scheduleViewportSave();
 }

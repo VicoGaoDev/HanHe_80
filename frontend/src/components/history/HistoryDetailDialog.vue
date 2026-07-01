@@ -115,6 +115,11 @@ function detailMetaList(item: UserHistoryCard) {
   ].filter(Boolean);
 }
 
+function getCanvasAccessUrl(item: UserHistoryCard) {
+  if (!item.canvas_project_id) return "";
+  return `${window.location.origin}/canvas/${item.canvas_project_id}`;
+}
+
 function isHistoryItemExpired(item: Pick<UserHistoryCard, "created_at" | "status">) {
   if (item.status !== "success") return false;
   if (!item.created_at) return false;
@@ -265,6 +270,17 @@ function handleDownload(item: UserHistoryCard) {
             <div class="detail-meta">
               <span v-for="meta in detailMetaList(item)" :key="meta">{{ meta }}</span>
             </div>
+            <div v-if="getCanvasAccessUrl(item)" class="detail-canvas-link-row">
+              <span class="detail-canvas-link-label">Canvas 访问地址：</span>
+              <a
+                class="detail-canvas-link"
+                :href="getCanvasAccessUrl(item)"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ getCanvasAccessUrl(item) }}
+              </a>
+            </div>
           </div>
 
           <div v-if="item.mode === 'inpaint' && item.source_image" class="detail-section">
@@ -404,6 +420,28 @@ function handleDownload(item: UserHistoryCard) {
   border: 1px solid transparent;
   font-size: 13px;
   line-height: 1.7;
+}
+
+.detail-canvas-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.detail-canvas-link-label {
+  color: var(--theme-text-secondary);
+}
+
+.detail-canvas-link {
+  color: var(--theme-accent-text);
+  word-break: break-all;
+}
+
+.detail-canvas-link:hover {
+  color: var(--theme-accent-text-hover);
 }
 
 .detail-alert-danger {

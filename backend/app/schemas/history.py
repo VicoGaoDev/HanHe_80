@@ -19,6 +19,8 @@ class HistoryImageOut(BaseModel):
 class HistoryItem(BaseModel):
     item_type: str = "task"
     task_id: str | None = None
+    canvas_id: int | None = None
+    canvas_project_id: str = ""
     history_id: int | None = None
     display_id: str = ""
     user_id: str = ""
@@ -56,6 +58,8 @@ class UserHistoryCardItem(BaseModel):
     item_type: str = "task"
     display_id: str = ""
     task_id: str | None = None
+    canvas_id: int | None = None
+    canvas_project_id: str = ""
     image_id: int | None = None
     user_id: str = ""
     username: str = ""
