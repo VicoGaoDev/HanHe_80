@@ -1346,6 +1346,8 @@ watch(purchaseDialogOpen, (open) => {
           v-if="auth.isLoggedIn"
           :trigger="['hover']"
           placement="rightBottom"
+          :auto-adjust-overflow="false"
+          :align="{ offset: [8, 0], overflow: { adjustX: false, adjustY: false } }"
           :get-popup-container="getDropdownPopupContainer"
           overlay-class-name="warm-dropdown"
         >

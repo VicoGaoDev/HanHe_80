@@ -2972,6 +2972,19 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                     v-if="item.taskId || item.image.status !== 'pending'"
                     class="result-top-actions"
                   >
+                    <a-tooltip
+                      v-if="canCreateTemplateFromTask && item.image.status === 'success'"
+                      :title="isGeneratedTaskExpired(item.task) ? '原图已过期，无法创建模版' : '设为创意模版'"
+                    >
+                      <a-button
+                        shape="circle"
+                        class="icon-chip result-more-trigger result-template-trigger"
+                        :disabled="isGeneratedTaskExpired(item.task)"
+                        @click.stop="openTemplateDialogFromGeneratedImage(item.task, item.image)"
+                      >
+                        <template #icon><PictureOutlined /></template>
+                      </a-button>
+                    </a-tooltip>
                     <a-tooltip v-if="item.taskId" title="反馈">
                       <button
                         type="button"
@@ -3013,19 +3026,6 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                         <a-tooltip v-if="canEditGeneratedImage(item.task, item.image)" title="结果图编辑">
                           <a-button shape="circle" class="icon-chip" @click.stop="handleEditImageTask(item.task, item.image)">
                             <template #icon><EditOutlined /></template>
-                          </a-button>
-                        </a-tooltip>
-                        <a-tooltip
-                          v-if="canCreateTemplateFromTask"
-                          :title="isGeneratedTaskExpired(item.task) ? '原图已过期，无法创建模版' : '设为创意模版'"
-                        >
-                          <a-button
-                            shape="circle"
-                            class="icon-chip result-template-trigger"
-                            :disabled="isGeneratedTaskExpired(item.task)"
-                            @click.stop="openTemplateDialogFromGeneratedImage(item.task, item.image)"
-                          >
-                            <template #icon><PictureOutlined /></template>
                           </a-button>
                         </a-tooltip>
                         <a-tooltip title="重新生成">
