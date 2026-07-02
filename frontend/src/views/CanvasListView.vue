@@ -269,8 +269,8 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
 }
 
 .canvas-list-topbar-icon {
-  background: linear-gradient(135deg, #fff4db, #ffe0ad);
-  color: #b66a00;
+  background: linear-gradient(135deg, var(--theme-panel-bg-soft), var(--theme-panel-bg-strong));
+  color: var(--theme-accent-text);
 }
 
 .canvas-list-topbar-title {
@@ -289,11 +289,11 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
 }
 
 .canvas-list-search :deep(.ant-input-affix-wrapper) {
-  border-color: rgba(232, 210, 178, 0.95);
+  border-color: var(--theme-control-border);
 }
 
 .canvas-list-topbar-meta {
-  color: #8a6a43;
+  color: var(--theme-text-secondary);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -330,11 +330,11 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
   aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(236, 220, 198, 0.9);
+  border: 1px solid var(--theme-panel-border);
   border-radius: 14px;
   padding: 0;
   overflow: hidden;
-  background: #fffefb;
+  background: var(--theme-panel-bg);
   text-align: left;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
@@ -342,7 +342,7 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
 
 .canvas-list-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 42px rgba(141, 91, 27, 0.16);
+  box-shadow: 0 18px 42px var(--theme-card-shadow-strong);
 }
 
 .canvas-list-card-create {
@@ -351,8 +351,8 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
   align-items: center;
   justify-content: center;
   padding: 12px;
-  border: 1px dashed rgba(177, 112, 38, 0.45);
-  background: rgba(255, 253, 248, 0.95);
+  border: 1px dashed var(--theme-panel-border-strong);
+  background: var(--theme-panel-bg-soft);
 }
 
 .canvas-list-card-create:disabled {
@@ -367,8 +367,8 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
   place-items: center;
   border-radius: 18px;
   margin-bottom: 14px;
-  color: #b96c00;
-  background: #fff1d6;
+  color: var(--theme-accent-text);
+  background: var(--theme-control-hover-bg);
   font-size: 24px;
 }
 
@@ -380,21 +380,21 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
   gap: 3px;
   overflow: hidden;
   border-radius: 13px 13px 0 0;
-  background: #fff3e2;
+  background: var(--theme-panel-bg-muted);
 }
 
 .canvas-list-preview.empty {
   display: grid;
   grid-template-columns: 1fr 74px;
   gap: 3px;
-  background: #fffaf1;
+  background: var(--theme-empty-bg);
 }
 
 .canvas-list-preview-skeleton {
   min-width: 0;
   min-height: 0;
-  border: 0.5px solid rgba(232, 213, 188, 0.48);
-  background: #ffffff;
+  border: 0.5px solid var(--theme-panel-border);
+  background: var(--theme-panel-bg);
 }
 
 .canvas-list-preview-skeleton-main {
@@ -433,7 +433,7 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
 }
 
 .canvas-list-card-title {
-  color: #3f2a14;
+  color: var(--theme-title);
   font-size: 14px;
   line-height: 1.35;
   font-weight: 800;
@@ -441,7 +441,7 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
 
 .canvas-list-card-desc {
   margin-top: 3px;
-  color: #8c7353;
+  color: var(--theme-text-secondary);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -451,14 +451,14 @@ onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1"
   height: 32px;
   border: 0;
   border-radius: 50%;
-  color: #8a6233;
+  color: var(--theme-text-secondary);
   background: transparent;
   cursor: pointer;
   font-size: 16px;
 }
 
 .canvas-list-more-btn:hover {
-  background: #fff0d7;
+  background: var(--theme-control-hover-bg);
 }
 
 @media (max-width: 720px) {

@@ -1410,7 +1410,7 @@ function handleEditImage(item: UserHistoryCard) {
   gap: 12px;
   flex-wrap: wrap;
   font-size: 13px;
-  color: #9b825f;
+  color: var(--theme-text-secondary);
   padding-top: 3px;
 }
 
@@ -1552,7 +1552,7 @@ function handleEditImage(item: UserHistoryCard) {
 
 .history-filter-tip {
   font-size: 13px;
-  color: #9b825f;
+  color: var(--theme-text-secondary);
 }
 
 .history-filter-btn {

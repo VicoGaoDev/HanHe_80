@@ -428,6 +428,9 @@ watch(loadMoreAnchor, (target) => {
   cursor: pointer;
   border-radius: 999px;
   padding: 6px 12px;
+  border-color: var(--theme-pill-border);
+  background: var(--theme-pill-bg);
+  color: var(--theme-pill-text);
   font-weight: 600;
   transition:
     transform var(--motion-duration-press) var(--motion-ease-soft),
@@ -438,7 +441,9 @@ watch(loadMoreAnchor, (target) => {
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 22px rgba(236, 185, 88, 0.12);
+    border-color: var(--theme-border-strong);
+    background: var(--theme-pill-bg-strong);
+    box-shadow: 0 12px 22px var(--theme-pill-shadow);
   }
 
   &:active {
@@ -446,10 +451,10 @@ watch(loadMoreAnchor, (target) => {
   }
 
   &.active {
-    color: #8a5400;
-    background: linear-gradient(180deg, #fff0cc, #ffe2a9);
-    border-color: #f0c46d;
-    box-shadow: 0 12px 22px rgba(236, 185, 88, 0.14);
+    color: var(--theme-accent-contrast);
+    background: linear-gradient(180deg, var(--theme-accent-strong), var(--theme-accent));
+    border-color: var(--theme-border-accent);
+    box-shadow: 0 12px 22px var(--theme-shadow-medium);
   }
 }
 
