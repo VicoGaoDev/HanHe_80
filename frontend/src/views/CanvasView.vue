@@ -34,7 +34,7 @@ import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
 import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
 import HistoryDetailDialog from "@/components/history/HistoryDetailDialog.vue";
 import { withApiBaseUrl, withBaseUrl } from "@/lib/assets";
-import { getTaskImageFailureMessage } from "@/lib/generationErrors";
+import { formatGenerationErrorMessage, getTaskImageFailureMessage } from "@/lib/generationErrors";
 import { useAuthStore } from "@/stores/auth";
 import type { AdminUser, CanvasEdge, CanvasGroup, CanvasNode, TaskResult, TaskSceneConfig, UserCanvasSummary, UserHistoryCard } from "@/types";
 
@@ -4045,7 +4045,7 @@ onBeforeUnmount(() => {
                   <span>{{ getNodeFailureMessage(node) }}</span>
                 </div>
               </template>
-              <span v-else>{{ node.task?.error_message || '生成失败' }}</span>
+              <span v-else>{{ formatGenerationErrorMessage(node.task?.error_message, '生成失败') }}</span>
             </div>
             <button
               v-if="canvasReferenceSelectMode && getNodeReferenceOption(node)"
