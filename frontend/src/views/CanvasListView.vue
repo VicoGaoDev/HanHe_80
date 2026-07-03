@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { message, Modal } from "ant-design-vue";
 import dayjs from "dayjs";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import {
   AppstoreOutlined,
   DeleteOutlined,
@@ -15,7 +15,6 @@ import { createCanvas, deleteCanvas, listCanvases, updateCanvas } from "@/api/ca
 import type { UserCanvasSummary } from "@/types";
 
 const router = useRouter();
-const route = useRoute();
 const loading = ref(false);
 const creating = ref(false);
 const canvases = ref<UserCanvasSummary[]>([]);
@@ -41,12 +40,12 @@ function formatCanvasTime(value?: string | null) {
   return target.format("YYYY-MM-DD");
 }
 
-async function loadCanvases(options: { autoOpenSingle?: boolean } = {}) {
+async function loadCanvases(options: { autoCreateWhenEmpty?: boolean } = {}) {
   loading.value = true;
   try {
     canvases.value = (await listCanvases()).items;
-    if (options.autoOpenSingle && canvases.value.length === 1) {
-      openCanvas(canvases.value[0]);
+    if (options.autoCreateWhenEmpty && canvases.value.length === 0) {
+      await handleCreateCanvas();
     }
   } catch {
     message.error("获取画布列表失败");
@@ -132,7 +131,7 @@ function lockCanvasCardLeaveSize(el: Element) {
   element.style.height = `${height}px`;
 }
 
-onMounted(() => loadCanvases({ autoOpenSingle: route.query.fromWorkbench !== "1" }));
+onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
 </script>
 
 <template>
