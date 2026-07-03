@@ -106,8 +106,9 @@ const CANVAS_SELECTION_ARRANGE_GAP = 34;
 const CANVAS_GROUP_PADDING = 24;
 const CANVAS_GROUP_TITLE_HEIGHT = 40;
 const CANVAS_GROUP_COLORS = ["#8b8b98", "#12d98c", "#f4cc3c", "#24a7f2", "#e83d8b"];
-const MIN_ZOOM = 0.2;
+const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 2.4;
+const VIEWPORT_SAVE_DELAY_MS = 10000;
 const CANVAS_BACKGROUND_STORAGE_KEY = "banana-canvas-background";
 const failedResultAsset = withBaseUrl("failed-result.svg");
 const generateEmptyStateAsset = withBaseUrl("generate-task-card.svg");
@@ -485,6 +486,20 @@ function clampZoom(value: number) {
   return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Number(value.toFixed(3))));
 }
 
+async function flushViewportSave() {
+  const currentProjectId = selectedCanvasProjectId.value;
+  if (canvasReadOnly.value || !currentProjectId) return;
+  if (viewportSaveTimer.value) {
+    clearTimeout(viewportSaveTimer.value);
+    viewportSaveTimer.value = null;
+  }
+  await updateCanvasViewport(currentProjectId, {
+    viewport_x: viewport.value.x,
+    viewport_y: viewport.value.y,
+    zoom: viewport.value.zoom,
+  }).catch(() => {});
+}
+
 function scheduleViewportSave() {
   const projectId = selectedCanvasProjectId.value;
   if (canvasReadOnly.value) return;
@@ -498,7 +513,8 @@ function scheduleViewportSave() {
       viewport_y: viewport.value.y,
       zoom: viewport.value.zoom,
     }).catch(() => {});
-  }, 500);
+    viewportSaveTimer.value = null;
+  }, VIEWPORT_SAVE_DELAY_MS);
 }
 
 function screenToWorld(clientX: number, clientY: number) {
@@ -1596,6 +1612,9 @@ async function loadCanvasList(preferredProjectId?: string | null) {
 }
 
 async function selectCanvas(canvas: UserCanvasSummary, options: { replaceRoute?: boolean } = {}) {
+  if (selectedCanvasProjectId.value && selectedCanvasProjectId.value !== canvas.project_id) {
+    await flushViewportSave();
+  }
   canvasReadOnlyState.value = canvas.is_readonly === true;
   selectedCanvasId.value = canvas.id;
   const nextPath = `/canvas/${canvas.project_id}`;
