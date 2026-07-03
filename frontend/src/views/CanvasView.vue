@@ -126,6 +126,7 @@ const neutralIndicatorStyle = { fontSize: "24px", color: "var(--text-secondary)"
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const isAdminCanvasReadonlyRoute = computed(() => route.path.startsWith("/admin/user-canvases"));
 const openPurchaseEntry = inject<() => void>("openPurchaseEntry", () => {});
 
 function isInsufficientCreditsError(err: any) {
@@ -220,6 +221,7 @@ const canvasReferenceSelectMode = ref(false);
 const referenceDragActive = ref(false);
 const referenceDragCounter = ref(0);
 const referenceItems = ref<ReferenceItem[]>([]);
+const nodeToolbarSuppressed = ref(false);
 const referenceInputRef = ref<HTMLInputElement | null>(null);
 const freeNodeImageInputRef = ref<HTMLInputElement | null>(null);
 
@@ -556,6 +558,7 @@ let resizeState: {
 let lastGroupPointerDown: { groupId: number; time: number } | null = null;
 let lastNodePointerDown: { nodeId: number; time: number } | null = null;
 let lastNodeClick: { nodeId: number; time: number } | null = null;
+let suppressedNodeClick: { nodeId: number; time: number } | null = null;
 let lastTextNodePointerDown: { nodeId: number; time: number } | null = null;
 let suppressNextGroupClick = false;
 let localCanvasNodeId = -1;
@@ -784,6 +787,7 @@ function clearCanvasSelection() {
   selectedGroupId.value = null;
   selectedGroupName.value = "";
   selectedGroupRenaming.value = false;
+  nodeToolbarSuppressed.value = false;
 }
 
 function selectSingleNode(node: CanvasNode) {
@@ -1705,7 +1709,11 @@ function handleStagePointerUp(event: PointerEvent) {
     highlightedGroupId.value = null;
     const projectId = selectedCanvasProjectId.value;
     if (node && !state.moved) {
+      nodeToolbarSuppressed.value = false;
       expandGeneratePanel();
+    }
+    if (node && state.moved) {
+      suppressedNodeClick = { nodeId: node.id, time: Date.now() };
     }
     if (node && projectId && !canvasReadOnly.value && state.moved) {
       const targetGroup = getGroupDropTarget([node]);
@@ -1751,6 +1759,7 @@ function startNodeDrag(event: PointerEvent, node: CanvasNode) {
     startSelectionGroupDrag(event);
     return;
   }
+  nodeToolbarSuppressed.value = true;
   selectSingleNode(node);
   const now = Date.now();
   if (lastNodePointerDown?.nodeId === node.id && now - lastNodePointerDown.time < 500) {
@@ -1779,6 +1788,7 @@ function handleTextNodePointerDown(event: PointerEvent, node: CanvasNode) {
     startSelectionGroupDrag(event);
     return;
   }
+  nodeToolbarSuppressed.value = true;
   selectSingleNode(node);
   const now = Date.now();
   if (lastTextNodePointerDown?.nodeId === node.id && now - lastTextNodePointerDown.time < 600) {
@@ -1852,9 +1862,9 @@ async function selectCanvas(canvas: UserCanvasSummary, options: { replaceRoute?:
   if (selectedCanvasProjectId.value && selectedCanvasProjectId.value !== canvas.project_id) {
     await flushViewportSave();
   }
-  canvasReadOnlyState.value = canvas.is_readonly === true;
+  canvasReadOnlyState.value = isAdminCanvasReadonlyRoute.value || canvas.is_readonly === true;
   selectedCanvasId.value = canvas.id;
-  const nextPath = `/canvas/${canvas.project_id}`;
+  const nextPath = isAdminCanvasReadonlyRoute.value ? `/admin/user-canvases/${canvas.project_id}` : `/canvas/${canvas.project_id}`;
   if (options.replaceRoute) {
     await router.replace(nextPath);
   } else if (route.path !== nextPath) {
@@ -1925,7 +1935,7 @@ async function loadCanvasDetail(projectId = selectedCanvasProjectId.value) {
   try {
     const detail = await getCanvas(projectId);
     selectedCanvasId.value = detail.id;
-    canvasReadOnlyState.value = detail.is_readonly === true;
+    canvasReadOnlyState.value = isAdminCanvasReadonlyRoute.value || detail.is_readonly === true;
     if (!canvasReadOnlyState.value) {
       readonlyOwnerDialogOpen.value = false;
       selectedReadonlyOwner.value = null;
@@ -2279,11 +2289,16 @@ function convertNodeToHistoryCard(node: CanvasNode): UserHistoryCard | null {
 }
 
 function selectNode(node: CanvasNode) {
+  nodeToolbarSuppressed.value = false;
   selectSingleNode(node);
 }
 
 function handleNodeClick(event: MouseEvent, node: CanvasNode) {
   const now = Date.now();
+  if (suppressedNodeClick?.nodeId === node.id && now - suppressedNodeClick.time < 400) {
+    suppressedNodeClick = null;
+    return;
+  }
   if (event.detail >= 2 || (lastNodeClick?.nodeId === node.id && now - lastNodeClick.time < 500)) {
     lastNodeClick = null;
     handleNodeDoubleClick(node);
@@ -2826,7 +2841,7 @@ async function refreshActiveTasks() {
       if (!projectId) return;
       const detail = await getCanvas(projectId);
       if (detail.project_id !== selectedCanvasProjectId.value) return;
-      canvasReadOnlyState.value = detail.is_readonly === true;
+      canvasReadOnlyState.value = isAdminCanvasReadonlyRoute.value || detail.is_readonly === true;
       nodes.value = detail.nodes || [];
       edges.value = detail.edges || [];
       groups.value = detail.groups || [];
@@ -2908,7 +2923,7 @@ function handleDetailDownload(item: UserHistoryCard) {
 }
 
 function goCanvasList() {
-  router.push({ path: "/canvas", query: { fromWorkbench: "1" } });
+  router.push({ path: isAdminCanvasReadonlyRoute.value ? "/admin/user-canvases" : "/canvas", query: { fromWorkbench: "1" } });
 }
 
 function handleCanvasSideTool(action: "freeNode" | "searchNode" | "historyTasks") {
@@ -4152,7 +4167,7 @@ onBeforeUnmount(() => {
       </div>
 
       <div
-        v-if="selectedNode && !selectionActionNodes.length"
+        v-if="selectedNode && !selectionActionNodes.length && !nodeToolbarSuppressed"
         class="canvas-node-toolbar"
         :style="selectedNodeToolbarStyle"
         @pointerdown.stop

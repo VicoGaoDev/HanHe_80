@@ -167,6 +167,20 @@ const router = createRouter({
           props: { adminUserTasks: true },
         },
         {
+          path: "admin/user-canvases",
+          name: "AdminUserCanvases",
+          meta: { requiresAdmin: true },
+          component: () => import("@/views/CanvasListView.vue"),
+          props: { adminCanvases: true },
+        },
+        {
+          path: "admin/user-canvases/:projectId",
+          name: "AdminUserCanvasDetail",
+          meta: { requiresAdmin: true, hideTopMenu: true, workbenchLayout: true },
+          component: () => import("@/views/CanvasView.vue"),
+          props: (route) => ({ projectId: String(route.params.projectId || "") }),
+        },
+        {
           path: "admin/dashboard",
           name: "Dashboard",
           meta: { requiresAdmin: true },

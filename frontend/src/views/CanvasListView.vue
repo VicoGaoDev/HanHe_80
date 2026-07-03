@@ -12,22 +12,38 @@ import {
   SearchOutlined,
 } from "@ant-design/icons-vue";
 import { createCanvas, deleteCanvas, listCanvases, updateCanvas } from "@/api/canvases";
-import type { UserCanvasSummary } from "@/types";
+import { getAdminCanvases, listUsers } from "@/api/admin";
+import { withApiBaseUrl } from "@/lib/assets";
+import type { AdminUser, UserCanvasSummary } from "@/types";
+
+const props = withDefaults(defineProps<{
+  adminCanvases?: boolean;
+}>(), {
+  adminCanvases: false,
+});
 
 const router = useRouter();
 const loading = ref(false);
 const creating = ref(false);
 const canvases = ref<UserCanvasSummary[]>([]);
+const users = ref<AdminUser[]>([]);
 const canvasSearchKeyword = ref("");
+const userFilter = ref<string | undefined>(undefined);
 const renameDialogOpen = ref(false);
 const renameSaving = ref(false);
 const renameTarget = ref<UserCanvasSummary | null>(null);
 const renameName = ref("");
+const isAdminCanvasView = computed(() => props.adminCanvases);
 
 const filteredCanvases = computed(() => {
   const keyword = canvasSearchKeyword.value.trim().toLowerCase();
-  if (!keyword) return canvases.value;
-  return canvases.value.filter((canvas) => canvas.name.toLowerCase().includes(keyword));
+  return canvases.value.filter((canvas) => {
+    if (isAdminCanvasView.value && userFilter.value && canvas.owner_user_id !== userFilter.value) {
+      return false;
+    }
+    if (!keyword) return true;
+    return canvas.name.toLowerCase().includes(keyword);
+  });
 });
 
 function formatCanvasTime(value?: string | null) {
@@ -43,20 +59,31 @@ function formatCanvasTime(value?: string | null) {
 async function loadCanvases(options: { autoCreateWhenEmpty?: boolean } = {}) {
   loading.value = true;
   try {
-    canvases.value = (await listCanvases()).items;
-    if (options.autoCreateWhenEmpty && canvases.value.length === 0) {
+    canvases.value = isAdminCanvasView.value
+      ? (await getAdminCanvases()).items
+      : (await listCanvases()).items;
+    if (!isAdminCanvasView.value && options.autoCreateWhenEmpty && canvases.value.length === 0) {
       await handleCreateCanvas({ onboarding: true });
     }
   } catch {
-    message.error("获取画布列表失败");
+    message.error(isAdminCanvasView.value ? "获取用户画布失败" : "获取画布列表失败");
   } finally {
     loading.value = false;
   }
 }
 
+async function loadAdminUsers() {
+  if (!isAdminCanvasView.value) return;
+  try {
+    users.value = await listUsers();
+  } catch {
+    message.error("获取用户列表失败");
+  }
+}
+
 function openCanvas(canvas: UserCanvasSummary, options: { onboarding?: boolean } = {}) {
   router.push({
-    path: `/canvas/${canvas.project_id}`,
+    path: isAdminCanvasView.value ? `/admin/user-canvases/${canvas.project_id}` : `/canvas/${canvas.project_id}`,
     query: options.onboarding ? { onboarding: "1" } : undefined,
   });
 }
@@ -138,7 +165,12 @@ function lockCanvasCardLeaveSize(el: Element) {
   element.style.height = `${height}px`;
 }
 
-onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
+onMounted(async () => {
+  await Promise.all([
+    loadCanvases({ autoCreateWhenEmpty: !isAdminCanvasView.value }),
+    loadAdminUsers(),
+  ]);
+});
 </script>
 
 <template>
@@ -149,11 +181,31 @@ onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
           <AppstoreOutlined />
         </div>
         <div>
-          <div class="warm-page-title canvas-list-topbar-title">画布列表</div>
-          <div class="warm-page-desc">选择一个画布进入工作台，继续创作和整理你的生成任务。</div>
+          <div class="warm-page-title canvas-list-topbar-title">{{ isAdminCanvasView ? "用户画布" : "画布列表" }}</div>
+          <div class="warm-page-desc">
+            {{ isAdminCanvasView ? "管理员可查看所有用户的画布项目，并进入只读工作台查看画布内容。" : "选择一个画布进入工作台，继续创作和整理你的生成任务。" }}
+          </div>
         </div>
       </div>
       <div class="canvas-list-topbar-actions">
+        <a-select
+          v-if="isAdminCanvasView"
+          v-model:value="userFilter"
+          class="canvas-list-user-filter"
+          placeholder="全部用户"
+          allow-clear
+          show-search
+          option-filter-prop="label"
+        >
+          <a-select-option
+            v-for="user in users"
+            :key="user.id"
+            :value="user.id"
+            :label="user.username"
+          >
+            {{ user.username }}
+          </a-select-option>
+        </a-select>
         <a-input
           v-model:value="canvasSearchKeyword"
           class="canvas-list-search"
@@ -178,6 +230,7 @@ onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
         @before-leave="lockCanvasCardLeaveSize"
       >
         <button
+          v-if="!isAdminCanvasView"
           key="create"
           class="canvas-list-card canvas-list-card-create warm-card"
           type="button"
@@ -195,8 +248,18 @@ onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
           v-for="canvas in filteredCanvases"
           :key="canvas.project_id"
           class="canvas-list-card warm-card"
+          :class="{ 'is-soft-deleted': !!canvas.is_deleted }"
           @click="openCanvas(canvas)"
         >
+          <div v-if="isAdminCanvasView" class="canvas-list-owner-badge" :title="canvas.owner_username || '未知用户'">
+            <a-avatar :size="22" :src="withApiBaseUrl(canvas.owner_avatar_url) || undefined" class="canvas-list-owner-avatar">
+              {{ canvas.owner_username?.charAt(0)?.toUpperCase() }}
+            </a-avatar>
+            <span class="canvas-list-owner-name">{{ canvas.owner_username || "未知用户" }}</span>
+          </div>
+          <div v-if="isAdminCanvasView && canvas.is_deleted" class="canvas-list-soft-deleted-badge">
+            已软删
+          </div>
           <div class="canvas-list-preview" :class="{ empty: !canvas.preview_urls.length }">
             <template v-if="canvas.preview_urls.length">
               <img class="canvas-list-preview-main" :src="canvas.preview_urls[0]" alt="" />
@@ -220,7 +283,7 @@ onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
                 <div class="canvas-list-card-title">{{ canvas.name }}</div>
                 <div class="canvas-list-card-desc">{{ canvas.node_count }} 个节点 · {{ formatCanvasTime(canvas.updated_at) }}</div>
               </div>
-              <a-dropdown trigger="click" @click.stop>
+              <a-dropdown v-if="!isAdminCanvasView" trigger="click" @click.stop>
                 <button class="canvas-list-more-btn" type="button" @click.stop>
                   <MoreOutlined />
                 </button>
@@ -294,6 +357,10 @@ onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
   width: 220px;
 }
 
+.canvas-list-user-filter {
+  width: 180px;
+}
+
 .canvas-list-search :deep(.ant-input-affix-wrapper) {
   border-color: var(--theme-control-border);
 }
@@ -334,6 +401,7 @@ onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
 
 .canvas-list-card {
   aspect-ratio: 1 / 1;
+  position: relative;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--theme-panel-border);
@@ -351,6 +419,10 @@ onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
   box-shadow: 0 18px 42px var(--theme-card-shadow-strong);
 }
 
+.canvas-list-card.is-soft-deleted {
+  border-color: rgba(180, 92, 78, 0.38);
+}
+
 .canvas-list-card-create {
   display: flex;
   flex-direction: column;
@@ -359,6 +431,59 @@ onMounted(() => loadCanvases({ autoCreateWhenEmpty: true }));
   padding: 12px;
   border: 1px dashed var(--theme-panel-border-strong);
   background: var(--theme-panel-bg-soft);
+}
+
+.canvas-list-owner-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+  height: 34px;
+  padding: 0 12px 0 7px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(35, 27, 20, 0.74);
+  color: #fff7eb;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.canvas-list-owner-avatar {
+  flex: 0 0 auto;
+  background: var(--theme-accent);
+  color: var(--theme-accent-contrast);
+}
+
+.canvas-list-owner-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.canvas-list-soft-deleted-badge {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 224, 220, 0.22);
+  border-radius: 999px;
+  background: rgba(166, 60, 47, 0.62);
+  color: #fff3ef;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(96, 31, 22, 0.22);
 }
 
 .canvas-list-card-create:disabled {

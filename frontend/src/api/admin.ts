@@ -38,6 +38,7 @@ import type {
   UserHistoryCard,
   AdminUserPromoDashboard,
   CreateOfflineOrderPayload,
+  UserCanvasListResponse,
 } from "@/types";
 
 function buildAnalyticsParams(query: AdminAnalyticsQuery): Record<string, unknown> {
@@ -56,6 +57,10 @@ function buildAnalyticsParams(query: AdminAnalyticsQuery): Record<string, unknow
 
 export function listUsers(): Promise<AdminUser[]> {
   return client.get("/admin/users");
+}
+
+export function getAdminCanvases(): Promise<UserCanvasListResponse> {
+  return client.get("/admin/canvases");
 }
 
 export function createUser(data: { username: string; password: string; role?: string }): Promise<AdminUser> {

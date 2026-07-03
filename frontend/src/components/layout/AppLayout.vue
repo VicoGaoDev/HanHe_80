@@ -72,7 +72,7 @@ const isAdmin = computed(() => auth.isAdmin);
 const isSuperAdmin = computed(() => auth.isSuperAdmin);
 const hideTopMenu = computed(() => route.meta.hideTopMenu === true);
 const isWorkbenchLayout = computed(() => route.meta.workbenchLayout === true);
-const isCanvasRoute = computed(() => route.path.startsWith("/canvas"));
+const isCanvasRoute = computed(() => route.path.startsWith("/canvas") || route.path.startsWith("/admin/user-canvases/"));
 const showDesktopSideNav = computed(() => !hideTopMenu.value || (isWorkbenchLayout.value && isCanvasRoute.value));
 const mobileDrawerOpen = ref(false);
 const routeTransitionName = ref("route-page-forward");
@@ -97,17 +97,18 @@ const routeOrder = new Map<string, number>([
   ["/admin/templates", 14],
   ["/admin/users", 15],
   ["/admin/user-tasks", 16],
-  ["/admin/dashboard", 17],
-  ["/admin/error-analytics", 18],
-  ["/admin/general-settings", 19],
-  ["/admin/redeem-keys", 20],
-  ["/admin/revenue", 21],
-  ["/admin/payment-orders", 22],
-  ["/admin/feedbacks", 23],
-  ["/admin/feedbacks/:feedbackId", 24],
-  ["/admin/system-messages", 25],
-  ["/admin/cos-config", 26],
-  ["/admin/external-api-configs", 27],
+  ["/admin/user-canvases", 17],
+  ["/admin/dashboard", 18],
+  ["/admin/error-analytics", 19],
+  ["/admin/general-settings", 20],
+  ["/admin/redeem-keys", 21],
+  ["/admin/revenue", 22],
+  ["/admin/payment-orders", 23],
+  ["/admin/feedbacks", 24],
+  ["/admin/feedbacks/:feedbackId", 25],
+  ["/admin/system-messages", 26],
+  ["/admin/cos-config", 27],
+  ["/admin/external-api-configs", 28],
 ]);
 
 const currentTheme = ref<AppThemeName>(getCurrentTheme());
@@ -152,6 +153,7 @@ const adminMenuItems = computed(() =>
     { key: "/admin/templates", label: "模版管理", icon: PictureOutlined, superAdminOnly: false },
     { key: "/admin/users", label: "用户管理", icon: TeamOutlined, superAdminOnly: false },
     { key: "/admin/user-tasks", label: "用户任务", icon: PictureOutlined, superAdminOnly: false },
+    { key: "/admin/user-canvases", label: "用户画布", icon: NumberOutlined, superAdminOnly: false },
     { key: "/admin/dashboard", label: "数据统计", icon: BarChartOutlined, superAdminOnly: false },
     { key: "/admin/error-analytics", label: "错误统计", icon: BugOutlined, superAdminOnly: false },
     { key: "/admin/general-settings", label: "通用设置", icon: SettingOutlined, superAdminOnly: false },
@@ -169,6 +171,7 @@ const adminMenuBaseItems = computed(() =>
     "/admin/templates",
     "/admin/users",
     "/admin/user-tasks",
+    "/admin/user-canvases",
     "/admin/dashboard",
     "/admin/error-analytics",
     "/admin/general-settings",
@@ -241,6 +244,7 @@ const selectedKeys = computed(() => {
 const adminSelectedKeys = computed(() => {
   if (!route.path.startsWith("/admin")) return [];
   if (route.path.startsWith("/admin/feedbacks")) return ["/admin/feedbacks"];
+  if (route.path.startsWith("/admin/user-canvases")) return ["/admin/user-canvases"];
   return [route.path];
 });
 

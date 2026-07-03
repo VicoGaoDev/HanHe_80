@@ -65,6 +65,7 @@ def _serialize_canvas_summary(canvas: UserCanvas, node_count: int = 0, preview_u
         "viewport_y": float(canvas.viewport_y or 0),
         "zoom": float(canvas.zoom or 1),
         "is_readonly": bool(is_readonly),
+        "is_deleted": bool(canvas.is_deleted),
         "owner_user_id": user_external_id(owner),
         "owner_username": owner.username if owner else "",
         "owner_avatar_url": owner.avatar_url or "" if owner else "",
@@ -190,7 +191,7 @@ def _serialize_edge(edge: CanvasEdge) -> dict:
     }
 
 
-def _build_preview_map(db: Session, user_id: int, canvas_ids: list[int]) -> dict[int, list[str]]:
+def _build_preview_map(db: Session, user_id: int | None, canvas_ids: list[int]) -> dict[int, list[str]]:
     from app.services.image_delivery_service import serialize_image
 
     if not canvas_ids:
@@ -198,21 +199,21 @@ def _build_preview_map(db: Session, user_id: int, canvas_ids: list[int]) -> dict
     cos_config = get_optional_cos_config(db)
     wanted_ids = set(canvas_ids)
     preview_map: dict[int, list[str]] = {canvas_id: [] for canvas_id in wanted_ids}
-    recent_images = (
+    recent_images_query = (
         db.query(Image)
         .join(Task, Image.task_id == Task.id)
         .options(joinedload(Image.task))
         .filter(
-            Task.user_id == user_id,
             Task.canvas_id.in_(canvas_ids),
             Task.is_deleted.is_(False),
             Image.is_deleted.is_(False),
             Image.status == "success",
         )
         .order_by(Task.created_at.desc(), Image.id.desc())
-        .limit(max(60, len(canvas_ids) * DEFAULT_CANVAS_PREVIEW_LIMIT * 4))
-        .all()
     )
+    if user_id is not None:
+        recent_images_query = recent_images_query.filter(Task.user_id == user_id)
+    recent_images = recent_images_query.limit(max(60, len(canvas_ids) * DEFAULT_CANVAS_PREVIEW_LIMIT * 4)).all()
     for image in recent_images:
         canvas_id = image.task.canvas_id if image.task else None
         if canvas_id not in wanted_ids:
@@ -262,12 +263,18 @@ def get_user_canvas_or_404(db: Session, user_id: int, project_id: str) -> UserCa
     return canvas
 
 
-def get_canvas_for_read_or_404(db: Session, user_id: int, project_id: str, *, allow_admin_read: bool = False) -> tuple[UserCanvas, bool]:
+def get_canvas_for_read_or_404(
+    db: Session,
+    user_id: int,
+    project_id: str,
+    *,
+    allow_admin_read: bool = False,
+    allow_deleted_read: bool = False,
+) -> tuple[UserCanvas, bool]:
     normalized_project_id = _normalize_project_id(project_id)
-    query = db.query(UserCanvas).filter(
-        UserCanvas.project_id == normalized_project_id,
-        UserCanvas.is_deleted.is_(False),
-    )
+    query = db.query(UserCanvas).filter(UserCanvas.project_id == normalized_project_id)
+    if not allow_deleted_read:
+        query = query.filter(UserCanvas.is_deleted.is_(False))
     query = query.options(joinedload(UserCanvas.user))
     if not allow_admin_read:
         query = query.filter(UserCanvas.user_id == user_id)
@@ -301,6 +308,39 @@ def list_user_canvases(db: Session, user_id: int) -> dict:
     return {
         "items": [
             _serialize_canvas_summary(canvas, count_map.get(canvas.id, 0), preview_map.get(canvas.id, []))
+            for canvas in canvases
+        ]
+    }
+
+
+def list_all_canvases(db: Session) -> dict:
+    canvases = (
+        db.query(UserCanvas)
+        .options(joinedload(UserCanvas.user))
+        .order_by(UserCanvas.updated_at.desc(), UserCanvas.id.desc())
+        .all()
+    )
+    if not canvases:
+        return {"items": []}
+
+    canvas_ids = [canvas.id for canvas in canvases]
+    count_rows = (
+        db.query(CanvasNode.canvas_id, func.count(CanvasNode.id).label("node_count"))
+        .outerjoin(Task, Task.id == CanvasNode.task_id)
+        .filter(CanvasNode.canvas_id.in_(canvas_ids), (CanvasNode.task_id.is_(None)) | (Task.is_deleted.is_(False)))
+        .group_by(CanvasNode.canvas_id)
+        .all()
+    )
+    count_map = {row.canvas_id: int(row.node_count or 0) for row in count_rows}
+    preview_map = _build_preview_map(db, None, canvas_ids)
+    return {
+        "items": [
+            _serialize_canvas_summary(
+                canvas,
+                count_map.get(canvas.id, 0),
+                preview_map.get(canvas.id, []),
+                is_readonly=True,
+            )
             for canvas in canvases
         ]
     }
@@ -367,7 +407,13 @@ def get_canvas_node_count(db: Session, canvas_id: int) -> int:
 
 
 def get_canvas_detail(db: Session, user_id: int, project_id: str, *, allow_admin_read: bool = False) -> dict:
-    canvas, is_readonly = get_canvas_for_read_or_404(db, user_id, project_id, allow_admin_read=allow_admin_read)
+    canvas, is_readonly = get_canvas_for_read_or_404(
+        db,
+        user_id,
+        project_id,
+        allow_admin_read=allow_admin_read,
+        allow_deleted_read=allow_admin_read,
+    )
     task_visibility_filter = (
         (CanvasNode.task_id.is_(None)) | (Task.is_deleted.is_(False))
         if is_readonly

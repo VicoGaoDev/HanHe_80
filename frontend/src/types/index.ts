@@ -218,6 +218,7 @@ export interface UserCanvasSummary {
   viewport_y: number;
   zoom: number;
   is_readonly?: boolean;
+  is_deleted?: boolean;
   owner_user_id?: string;
   owner_username?: string;
   owner_avatar_url?: string;

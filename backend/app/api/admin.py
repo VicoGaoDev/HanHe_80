@@ -14,6 +14,7 @@ from app.schemas.admin import (
     AnalyticsSummaryOut, AnalyticsTimeseriesOut, AnalyticsBreakdownOut, AnalyticsRedeemRevenueOut, ErrorAnalyticsOut, ErrorCategoryTimeseriesOut, ErrorTaskListOut, DailyReportTestOut, DailyReportRangeRequest,
     AdminUserPromoDashboardOut,
 )
+from app.schemas.canvas import CanvasListResponse
 from app.schemas.feedback import (
     FeedbackDetail,
     FeedbackListResponse,
@@ -38,6 +39,7 @@ from app.services.feedback_service import (
     update_feedback,
 )
 from app.services.history_service import get_admin_history_cards, get_admin_history_detail, get_all_history
+from app.services.canvas_service import list_all_canvases
 from app.services.daily_report_service import DailyReportSendResult, send_previous_day_report, send_range_report
 
 router = APIRouter(prefix="/api/admin", tags=["管理员"])
@@ -90,6 +92,14 @@ def admin_list_users(
     db: Session = Depends(get_db),
 ):
     return list_users(db)
+
+
+@router.get("/canvases", response_model=CanvasListResponse)
+def admin_list_canvases(
+    _user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return list_all_canvases(db)
 
 
 @router.put("/users/{user_id}/status", response_model=UserOut)

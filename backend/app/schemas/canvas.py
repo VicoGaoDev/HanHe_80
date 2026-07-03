@@ -112,6 +112,7 @@ class CanvasSummary(BaseModel):
     viewport_y: float = 0
     zoom: float = 1
     is_readonly: bool = False
+    is_deleted: bool = False
     owner_user_id: str = ""
     owner_username: str = ""
     owner_avatar_url: str = ""
