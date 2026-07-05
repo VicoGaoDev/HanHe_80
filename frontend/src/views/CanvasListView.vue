@@ -14,6 +14,7 @@ import {
 import { createCanvas, deleteCanvas, listCanvases, updateCanvas } from "@/api/canvases";
 import { getAdminCanvases, listUsers } from "@/api/admin";
 import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
+import { appendImageTransform } from "@/api/images";
 import { withApiBaseUrl } from "@/lib/assets";
 import type { AdminUser, UserCanvasSummary } from "@/types";
 
@@ -37,6 +38,10 @@ const renameName = ref("");
 const userInfoDialogOpen = ref(false);
 const selectedUserInfo = ref<AdminUser | null>(null);
 const isAdminCanvasView = computed(() => props.adminCanvases);
+
+function getCanvasPreviewSrc(url?: string) {
+  return appendImageTransform(url || "", "imageMogr2/format/webp");
+}
 
 const filteredCanvases = computed(() => {
   const keyword = canvasSearchKeyword.value.trim().toLowerCase();
@@ -299,10 +304,10 @@ onMounted(async () => {
           </div>
           <div class="canvas-list-preview" :class="{ empty: !canvas.preview_urls.length }">
             <template v-if="canvas.preview_urls.length">
-              <img class="canvas-list-preview-main" :src="canvas.preview_urls[0]" alt="" />
+              <img class="canvas-list-preview-main" :src="getCanvasPreviewSrc(canvas.preview_urls[0])" alt="" />
               <div class="canvas-list-preview-side">
-                <img v-if="canvas.preview_urls[1]" :src="canvas.preview_urls[1]" alt="" />
-                <img v-if="canvas.preview_urls[2]" :src="canvas.preview_urls[2]" alt="" />
+                <img v-if="canvas.preview_urls[1]" :src="getCanvasPreviewSrc(canvas.preview_urls[1])" alt="" />
+                <img v-if="canvas.preview_urls[2]" :src="getCanvasPreviewSrc(canvas.preview_urls[2])" alt="" />
               </div>
             </template>
             <template v-else>

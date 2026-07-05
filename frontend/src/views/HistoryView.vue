@@ -20,7 +20,7 @@ import { getAdminHistoryCards, listUsers } from "@/api/admin";
 import { listBoards } from "@/api/boards";
 import { getGenerationModels, getTaskScenes } from "@/api/config";
 import { deleteHistoryTask, fetchHistory, toggleHistoryPin } from "@/api/history";
-import { getDisplayImageUrl, getDownloadUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
+import { getDisplayImageUrl, getDownloadUrl, getPreviewImageSrc, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
 import { createTemplateFromTaskImage, listTemplateTags, type TemplatePayload } from "@/api/templates";
 import { deletePromptHistory } from "@/api/auth";
 import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
@@ -466,7 +466,7 @@ function getHistoryCardMedia(item: UserHistoryCard) {
     return expiredResultAsset;
   }
   if (item.mode === "promptReverse") {
-    return resolveImageUrl(item.source_image_thumb || item.source_image);
+    return getPreviewImageSrc(item.source_image_thumb || item.source_image);
   }
   return getHistoryImageSrc(item);
 }
@@ -484,7 +484,7 @@ function getHistoryCardPreview(item: UserHistoryCard) {
     return "";
   }
   if (item.mode === "promptReverse") {
-    return resolveImageUrl(item.source_image);
+    return getPreviewImageSrc(item.source_image);
   }
   return getHistoryPreviewSrc(item);
 }

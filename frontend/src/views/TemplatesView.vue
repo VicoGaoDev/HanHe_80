@@ -5,7 +5,7 @@ import { AppstoreOutlined, PictureOutlined, ThunderboltOutlined } from "@ant-des
 import { useRouter } from "vue-router";
 import { getGenerationModels } from "@/api/config";
 import { getTemplateDetail, listTemplates, listTemplateTags } from "@/api/templates";
-import { resolveImageUrl } from "@/api/images";
+import { getPreviewImageSrc } from "@/api/images";
 import type { CreativeTemplate, GenerationModelOption, TemplateTag } from "@/types";
 import TemplateDetailDialog from "@/components/templates/TemplateDetailDialog.vue";
 
@@ -263,7 +263,7 @@ watch(loadMoreAnchor, (target) => {
             <div class="template-cover">
               <img
                 v-if="item.result_image"
-                :src="resolveImageUrl(item.result_image_thumb || item.result_image)"
+                :src="getPreviewImageSrc(item.result_image_thumb || item.result_image)"
                 alt="模版结果图"
                 loading="lazy"
               />

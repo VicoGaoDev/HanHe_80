@@ -14,20 +14,21 @@ export function resolveImageUrl(imageUrl?: string): string {
   return withApiBaseUrl(imageUrl || "");
 }
 
-function appendImageTransform(url: string, transform: string): string {
+export function appendImageTransform(url: string, transform: string): string {
   if (!url || url.startsWith("data:") || url.startsWith("blob:")) return url;
   return `${url}${url.includes("?") ? "&" : "?"}${transform}`;
 }
 
 export function getDisplayImageUrl(image?: Pick<ImageResult, "thumb_url" | "image_url" | "preview_url">): string {
-  return resolveImageUrl(image?.thumb_url || image?.image_url || image?.preview_url || "");
+  return getPreviewImageSrc(image?.thumb_url || image?.image_url || image?.preview_url || "");
+}
+
+export function getPreviewImageSrc(imageUrl?: string): string {
+  return appendImageTransform(resolveImageUrl(imageUrl || ""), "imageMogr2/format/webp");
 }
 
 export function getPreviewImageUrl(image?: Pick<ImageResult, "image_url" | "preview_url" | "thumb_url">): string {
-  return appendImageTransform(
-    resolveImageUrl(image?.image_url || image?.preview_url || image?.thumb_url || ""),
-    "imageMogr2/format/webp",
-  );
+  return getPreviewImageSrc(image?.image_url || image?.preview_url || image?.thumb_url || "");
 }
 
 function buildDownloadFilename(imageId: number, imageUrl: string): string {

@@ -7,7 +7,7 @@ import {
   MAX_IMAGE_UPLOAD_SIZE_TEXT,
   uploadReferenceImage,
 } from "@/api/upload";
-import { resolveImageUrl } from "@/api/images";
+import { getPreviewImageSrc } from "@/api/images";
 import type { TemplatePayload } from "@/api/templates";
 import type { GenerationModelOption, TemplateTag } from "@/types";
 
@@ -274,7 +274,7 @@ function removeRef(index: number) {
       <a-form-item label="结果图">
         <div class="template-result-upload">
           <div class="template-result-preview">
-            <img v-if="form.result_image" :src="resolveImageUrl(form.result_image)" alt="结果图" />
+            <img v-if="form.result_image" :src="getPreviewImageSrc(form.result_image)" alt="结果图" />
             <div v-else class="template-result-placeholder">请上传结果图</div>
           </div>
           <input ref="resultInput" type="file" accept="image/*" hidden @change="handleResultUpload" />
@@ -289,7 +289,7 @@ function removeRef(index: number) {
         <input ref="refInput" type="file" accept="image/*" multiple hidden @change="handleRefUpload" />
         <div class="template-ref-grid">
           <div v-for="(url, idx) in form.reference_images" :key="url + idx" class="template-ref-item">
-            <img :src="resolveImageUrl(url)" alt="参考图" />
+            <img :src="getPreviewImageSrc(url)" alt="参考图" />
             <a-button type="text" danger shape="circle" class="template-ref-remove" @click="removeRef(idx)">
               <template #icon><DeleteOutlined /></template>
             </a-button>

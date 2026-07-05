@@ -35,7 +35,7 @@ import { getTaskScenes } from "@/api/config";
 import { deleteHistoryTask, fetchHistory } from "@/api/history";
 import { createTask, getTasks } from "@/api/tasks";
 import { createTemplateFromTaskImage, listTemplateTags, type TemplatePayload } from "@/api/templates";
-import { deleteImage, getDisplayImageUrl, getDownloadUrl, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
+import { deleteImage, getDisplayImageUrl, getDownloadUrl, getPreviewImageSrc, getPreviewImageUrl, resolveImageUrl } from "@/api/images";
 import { reversePrompt } from "@/api/promptReverse";
 import {
   isImageUploadTooLarge,
@@ -339,7 +339,7 @@ const referenceUrls = computed(() => (
 const uploading = computed(() => referenceItems.value.some((item) => item.status === "uploading"));
 const hasPendingReferenceUploads = computed(() => referenceItems.value.some((item) => item.status === "uploading"));
 const hasFailedReferenceUploads = computed(() => referenceItems.value.some((item) => item.status === "failed"));
-const sourceDisplayUrl = computed(() => resolveImageUrl(sourcePreviewUrl.value || sourceImageUrl.value));
+const sourceDisplayUrl = computed(() => getPreviewImageSrc(sourcePreviewUrl.value || sourceImageUrl.value));
 const isTextGenerateMode = computed(() => generateMode.value === "textGenerate");
 const isImageEditMode = computed(() => generateMode.value === "imageEdit");
 const textGenerateModels = computed(() => (
@@ -1033,7 +1033,11 @@ function syncReferenceItems(urls: string[]) {
 }
 
 function getReferencePreviewUrl(item: UploadPreviewItem) {
-  return resolveImageUrl(item.localUrl || item.remoteUrl);
+  return getPreviewImageSrc(item.localUrl || item.remoteUrl);
+}
+
+function getReversePreviewUrl() {
+  return getPreviewImageSrc(reverseImageUrl.value);
 }
 
 function updateReferenceItem(id: string, patch: Partial<UploadPreviewItem>) {
@@ -2679,11 +2683,11 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                   </template>
                 </div>
 
-                <div v-else class="reverse-preview-shell" @click="handlePreview(reverseImageUrl)">
+                <div v-else class="reverse-preview-shell" @click="handlePreview(getReversePreviewUrl())">
                   <button type="button" class="canvas-remove-btn" @click.stop="removeReverseImage">
                     <CloseOutlined />
                   </button>
-                  <img :src="reverseImageUrl" alt="提示词反推图片" class="reverse-preview-image" />
+                  <img :src="getReversePreviewUrl()" alt="提示词反推图片" class="reverse-preview-image" />
                 </div>
               </div>
 
@@ -3163,7 +3167,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
             @click="useHistoryPrompt(item.prompt)"
           >
             <div v-if="item.source_image" class="history-thumb">
-              <img :src="resolveImageUrl(item.source_image)" alt="历史图片" />
+              <img :src="getPreviewImageSrc(item.source_image)" alt="历史图片" />
             </div>
             <div class="history-content">
               <div class="history-meta">

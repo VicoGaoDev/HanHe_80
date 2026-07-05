@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import dayjs from "dayjs";
 import { message } from "ant-design-vue";
 import { CopyOutlined, PictureOutlined, ThunderboltOutlined } from "@ant-design/icons-vue";
-import { resolveImageUrl } from "@/api/images";
+import { getPreviewImageSrc } from "@/api/images";
 import type { CreativeTemplate, GenerationModelOption } from "@/types";
 
 const props = withDefaults(defineProps<{
@@ -85,9 +85,9 @@ const detailMetaList = computed(() => {
               <div
                 class="detail-result-card single"
                 :class="{ empty: !detail.result_image }"
-                @click="detail.result_image && openPreview(resolveImageUrl(detail.result_image))"
+                @click="detail.result_image && openPreview(getPreviewImageSrc(detail.result_image))"
               >
-                <img v-if="detail.result_image" :src="resolveImageUrl(detail.result_image)" alt="模版结果图" />
+                <img v-if="detail.result_image" :src="getPreviewImageSrc(detail.result_image)" alt="模版结果图" />
                 <div v-else class="detail-result-empty">暂无结果图</div>
               </div>
             </div>
@@ -111,10 +111,10 @@ const detailMetaList = computed(() => {
                 v-for="(url, idx) in detail.reference_images"
                 :key="url + idx"
                 class="detail-thumb"
-                @click="openPreview(resolveImageUrl(url))"
+                @click="openPreview(getPreviewImageSrc(url))"
               >
                 <img
-                  :src="resolveImageUrl(detail.reference_image_thumbs?.[idx] || url)"
+                  :src="getPreviewImageSrc(detail.reference_image_thumbs?.[idx] || url)"
                   alt="参考图"
                   loading="lazy"
                 />

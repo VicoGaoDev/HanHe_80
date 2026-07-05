@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import FeedbackTaskResultGrid from "@/components/feedback/FeedbackTaskResultGrid.vue";
 import { getGenerationModels } from "@/api/config";
 import { getMyFeedbackDetail } from "@/api/feedback";
+import { getPreviewImageSrc } from "@/api/images";
 import type { FeedbackDetail, FeedbackStatus, GenerationModelOption } from "@/types";
 
 const route = useRoute();
@@ -70,6 +71,10 @@ function getModelLabel(model?: string) {
 
 function getReferenceThumbSrc(url: string, index: number) {
   return taskReferenceThumbs.value[index] || url;
+}
+
+function getReferencePreviewSrc(url: string) {
+  return getPreviewImageSrc(url);
 }
 
 function openPreview(url: string) {
@@ -204,7 +209,7 @@ onMounted(() => {
                   :key="url + index"
                   type="button"
                   class="task-result-thumb task-reference-thumb clickable"
-                  @click="openPreview(url)"
+                  @click="openPreview(getReferencePreviewSrc(url))"
                 >
                   <img :src="getReferenceThumbSrc(url, index)" :alt="`任务参考图 ${index + 1}`" loading="lazy" />
                 </button>
