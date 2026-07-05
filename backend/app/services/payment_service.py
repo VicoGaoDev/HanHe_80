@@ -20,6 +20,7 @@ from fastapi import HTTPException, Request, status
 import httpx
 from sqlalchemy.orm import Session
 
+from app.models.credit_log import CreditLog
 from app.models.payment_order import PaymentOrder
 from app.models.user import User
 from app.services.user_credit_service import change_user_credit_balance, get_user_credit_account
@@ -546,6 +547,54 @@ def sync_payment_order_from_alipay(
     return order
 
 
+def _online_purchase_credit_description(order_no: str) -> str:
+    return f"{ONLINE_PURCHASE_DESCRIPTION_PREFIX}{order_no}"
+
+
+def _payment_order_credit_already_applied(db: Session, *, order_no: str, user_id: int) -> bool:
+    return (
+        db.query(CreditLog.id)
+        .filter(
+            CreditLog.user_id == user_id,
+            CreditLog.type == "allocate",
+            CreditLog.description == _online_purchase_credit_description(order_no),
+        )
+        .first()
+        is not None
+    )
+
+
+def _mark_payment_order_credited(db: Session, order: PaymentOrder) -> None:
+    order.status = PAYMENT_STATUS_CREDITED
+    order.credited_at = order.credited_at or now_local()
+    order.paid_at = order.paid_at or now_local()
+    db.add(order)
+    db.flush()
+
+
+def _apply_payment_order_credit(db: Session, order: PaymentOrder) -> bool:
+    """Grant credits for a successful payment. Returns True only when credits are newly applied."""
+    if order.status == PAYMENT_STATUS_CREDITED or order.credited_at:
+        return False
+    if _payment_order_credit_already_applied(db, order_no=order.order_no, user_id=order.user_id):
+        _mark_payment_order_credited(db, order)
+        return False
+
+    order.status = PAYMENT_STATUS_PAID
+    order.paid_at = order.paid_at or now_local()
+    db.add(order)
+    db.flush()
+    change_user_credit_balance(
+        db,
+        order.user_id,
+        delta=int(order.credits or 0),
+        log_type="allocate",
+        description=_online_purchase_credit_description(order.order_no),
+    )
+    _mark_payment_order_credited(db, order)
+    return True
+
+
 def get_payment_order_by_order_no(
     db: Session,
     *,
@@ -554,7 +603,7 @@ def get_payment_order_by_order_no(
 ) -> PaymentOrder | None:
     query = db.query(PaymentOrder).filter(PaymentOrder.order_no == order_no)
     if for_update:
-        query = query.with_for_update()
+        query = query.with_for_update().populate_existing()
     return query.first()
 
 
@@ -817,28 +866,18 @@ def process_alipay_notification(
     order.buyer_id = buyer_id or order.buyer_id
     order.trade_status = trade_status
 
+    if trade_status in ALIPAY_TRADE_SUCCESS_STATUSES:
+        credits_applied = _apply_payment_order_credit(db, order)
+        if credits_applied:
+            _send_payment_success_notification(db, order)
+        else:
+            db.add(order)
+            db.flush()
+        return order
+
     if order.status == PAYMENT_STATUS_CREDITED or order.credited_at:
         db.add(order)
         db.flush()
-        return order
-
-    if trade_status in ALIPAY_TRADE_SUCCESS_STATUSES:
-        order.status = PAYMENT_STATUS_PAID
-        order.paid_at = order.paid_at or now_local()
-        db.add(order)
-        db.flush()
-        change_user_credit_balance(
-            db,
-            order.user_id,
-            delta=int(order.credits or 0),
-            log_type="allocate",
-            description=f"{ONLINE_PURCHASE_DESCRIPTION_PREFIX}{order.order_no}",
-        )
-        order.status = PAYMENT_STATUS_CREDITED
-        order.credited_at = now_local()
-        db.add(order)
-        db.flush()
-        _send_payment_success_notification(db, order)
         return order
 
     if trade_status == ALIPAY_TRADE_WAITING_STATUS:
