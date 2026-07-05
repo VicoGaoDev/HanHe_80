@@ -24,7 +24,7 @@ class UserCanvas(Base):
     name = Column(String(100), nullable=False, default="", server_default="")
     viewport_x = Column(Float, nullable=False, default=0, server_default="0")
     viewport_y = Column(Float, nullable=False, default=0, server_default="0")
-    zoom = Column(Float, nullable=False, default=1, server_default="1")
+    zoom = Column(Float, nullable=False, default=0.5, server_default="0.5")
     is_deleted = Column(Boolean, nullable=False, default=False, server_default="0")
     deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, server_default=func.now())

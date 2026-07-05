@@ -119,6 +119,7 @@ const CANVAS_SELECTION_ARRANGE_GAP = 34;
 const CANVAS_GROUP_PADDING = 24;
 const CANVAS_GROUP_TITLE_HEIGHT = 40;
 const CANVAS_GROUP_COLORS = ["#8b8b98", "#12d98c", "#f4cc3c", "#24a7f2", "#e83d8b"];
+const DEFAULT_CANVAS_ZOOM = 0.5;
 const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 2.4;
 const VIEWPORT_SAVE_DELAY_MS = 10000;
@@ -197,7 +198,7 @@ const canvasToolbarRef = ref<HTMLElement | null>(null);
 const canvasComposerRef = ref<HTMLElement | null>(null);
 const canvasGuideTriggerRef = ref<HTMLElement | null>(null);
 const canvasGuideCardRef = ref<HTMLElement | null>(null);
-const viewport = ref({ x: 0, y: 0, zoom: 1 });
+const viewport = ref({ x: 0, y: 0, zoom: DEFAULT_CANVAS_ZOOM });
 const viewportSaveTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const canvasOnboardingOpen = ref(false);
 const canvasOnboardingStepIndex = ref(0);
@@ -1421,7 +1422,7 @@ function resetViewport() {
   const rect = canvasStageRef.value?.getBoundingClientRect();
   const bounds = getNodesBounds();
   if (!rect || !bounds) {
-    viewport.value = { x: 80, y: 70, zoom: 1 };
+    viewport.value = { x: 80, y: 70, zoom: DEFAULT_CANVAS_ZOOM };
     scheduleViewportSave();
     return;
   }
@@ -1947,7 +1948,7 @@ async function loadCanvasDetail(projectId = selectedCanvasProjectId.value) {
     viewport.value = {
       x: Number(detail.viewport_x || 0),
       y: Number(detail.viewport_y || 0),
-      zoom: clampZoom(Number(detail.zoom || 1)),
+      zoom: clampZoom(Number(detail.zoom ?? DEFAULT_CANVAS_ZOOM)),
     };
     revokeLocalNodeObjectUrls();
     nodes.value = detail.nodes || [];

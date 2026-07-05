@@ -1565,7 +1565,7 @@ def _ensure_user_canvas_schema():
         if "viewport_y" not in canvas_columns:
             conn.execute(text("ALTER TABLE user_canvas ADD COLUMN viewport_y DOUBLE NOT NULL DEFAULT 0"))
         if "zoom" not in canvas_columns:
-            conn.execute(text("ALTER TABLE user_canvas ADD COLUMN zoom DOUBLE NOT NULL DEFAULT 1"))
+            conn.execute(text("ALTER TABLE user_canvas ADD COLUMN zoom DOUBLE NOT NULL DEFAULT 0.5"))
         if "is_deleted" not in canvas_columns:
             conn.execute(text("ALTER TABLE user_canvas ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT 0"))
         if "deleted_at" not in canvas_columns:

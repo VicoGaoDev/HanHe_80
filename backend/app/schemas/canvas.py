@@ -20,7 +20,7 @@ class CanvasUpdate(BaseModel):
 class CanvasViewportUpdate(BaseModel):
     viewport_x: float = 0
     viewport_y: float = 0
-    zoom: float = Field(default=1, ge=0.1, le=3)
+    zoom: float = Field(default=0.5, ge=0.1, le=3)
 
 
 class CanvasNodeUpdate(BaseModel):
@@ -110,7 +110,7 @@ class CanvasSummary(BaseModel):
     preview_urls: list[str] = []
     viewport_x: float = 0
     viewport_y: float = 0
-    zoom: float = 1
+    zoom: float = 0.5
     is_readonly: bool = False
     is_deleted: bool = False
     owner_user_id: str = ""

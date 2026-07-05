@@ -17,6 +17,7 @@ from app.utils.datetime_utils import now_local
 
 DEFAULT_CANVAS_NAME_PREFIX = "新画板"
 MAX_CANVAS_NAME_LENGTH = 100
+DEFAULT_CANVAS_ZOOM = 0.5
 DEFAULT_NODE_WIDTH = 320
 DEFAULT_NODE_HEIGHT = 420
 NODE_X_SPACING = 360
@@ -63,7 +64,7 @@ def _serialize_canvas_summary(canvas: UserCanvas, node_count: int = 0, preview_u
         "preview_urls": preview_urls or [],
         "viewport_x": float(canvas.viewport_x or 0),
         "viewport_y": float(canvas.viewport_y or 0),
-        "zoom": float(canvas.zoom or 1),
+        "zoom": float(canvas.zoom if canvas.zoom is not None else DEFAULT_CANVAS_ZOOM),
         "is_readonly": bool(is_readonly),
         "is_deleted": bool(canvas.is_deleted),
         "owner_user_id": user_external_id(owner),
@@ -347,7 +348,12 @@ def list_all_canvases(db: Session) -> dict:
 
 
 def create_user_canvas(db: Session, user_id: int, name: str | None = None) -> dict:
-    canvas = UserCanvas(user_id=user_id, project_id=_generate_unique_project_id(db), name=_normalize_canvas_name(name))
+    canvas = UserCanvas(
+        user_id=user_id,
+        project_id=_generate_unique_project_id(db),
+        name=_normalize_canvas_name(name),
+        zoom=DEFAULT_CANVAS_ZOOM,
+    )
     db.add(canvas)
     db.commit()
     db.refresh(canvas)
