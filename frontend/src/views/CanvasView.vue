@@ -191,11 +191,13 @@ const guideOpen = ref(false);
 const canvasSettingsOpen = ref(false);
 const freeNodeMenuOpen = ref(false);
 const canvasContextMenuOpen = ref(false);
+const nodeContextMenuOpen = ref(false);
 const generatePanelCollapsed = ref(false);
 const composerPopover = ref<ComposerPopover | null>(null);
 const projectSwitcherRef = ref<HTMLElement | null>(null);
 const canvasStageRef = ref<HTMLElement | null>(null);
 const canvasContextMenuRef = ref<HTMLElement | null>(null);
+const nodeContextMenuRef = ref<HTMLElement | null>(null);
 const canvasSideToolboxRef = ref<HTMLElement | null>(null);
 const canvasToolbarRef = ref<HTMLElement | null>(null);
 const canvasComposerRef = ref<HTMLElement | null>(null);
@@ -211,6 +213,8 @@ const canvasOnboardingCardHeight = ref(220);
 const canvasOnboardingGuideInitialOpen = ref(false);
 const canvasOnboardingGuideAutoOpened = ref(false);
 const canvasContextMenuPosition = ref({ x: 0, y: 0 });
+const nodeContextMenuPosition = ref({ x: 0, y: 0 });
+const nodeContextMenuNode = ref<CanvasNode | null>(null);
 const pendingFreeImageAnchor = ref<{ x: number; y: number } | null>(null);
 
 const taskScenes = ref<TaskSceneConfig[]>([]);
@@ -1501,7 +1505,13 @@ function closeCanvasContextMenu() {
   canvasContextMenuOpen.value = false;
 }
 
+function closeNodeContextMenu() {
+  nodeContextMenuOpen.value = false;
+  nodeContextMenuNode.value = null;
+}
+
 function openCanvasContextMenu(clientX: number, clientY: number, worldPoint: { x: number; y: number }) {
+  closeNodeContextMenu();
   pendingFreeImageAnchor.value = worldPoint;
   canvasContextMenuPosition.value = { x: clientX, y: clientY };
   canvasContextMenuOpen.value = true;
@@ -1510,6 +1520,22 @@ function openCanvasContextMenu(clientX: number, clientY: number, worldPoint: { x
     if (!menu || !canvasContextMenuOpen.value) return;
     const padding = 12;
     canvasContextMenuPosition.value = {
+      x: Math.min(window.innerWidth - menu.offsetWidth - padding, Math.max(padding, clientX)),
+      y: Math.min(window.innerHeight - menu.offsetHeight - padding, Math.max(padding, clientY)),
+    };
+  });
+}
+
+function openNodeContextMenu(clientX: number, clientY: number, node: CanvasNode) {
+  closeCanvasContextMenu();
+  nodeContextMenuNode.value = node;
+  nodeContextMenuPosition.value = { x: clientX, y: clientY };
+  nodeContextMenuOpen.value = true;
+  void nextTick(() => {
+    const menu = nodeContextMenuRef.value;
+    if (!menu || !nodeContextMenuOpen.value) return;
+    const padding = 12;
+    nodeContextMenuPosition.value = {
       x: Math.min(window.innerWidth - menu.offsetWidth - padding, Math.max(padding, clientX)),
       y: Math.min(window.innerHeight - menu.offsetHeight - padding, Math.max(padding, clientY)),
     };
@@ -1568,6 +1594,7 @@ function handleStagePointerDown(event: PointerEvent) {
   if (target.closest(".canvas-node") || target.closest(".canvas-panel")) return;
   clearCanvasSelection();
   closeCanvasContextMenu();
+  closeNodeContextMenu();
   composerPopover.value = null;
   if (!generatePanelCollapsed.value && !hasComposerDraftContent.value) {
     collapseGeneratePanel();
@@ -1605,6 +1632,7 @@ function handleStageContextMenu(event: MouseEvent) {
     || target.closest(".canvas-group-toolbar")
   ) {
     closeCanvasContextMenu();
+    closeNodeContextMenu();
     return;
   }
   const rect = canvasStageRef.value?.getBoundingClientRect();
@@ -1831,6 +1859,7 @@ function handleStagePointerUp(event: PointerEvent) {
 function startNodeDrag(event: PointerEvent, node: CanvasNode) {
   if (event.button !== 0) return;
   event.stopPropagation();
+  closeNodeContextMenu();
   if (canvasInteractionMode.value === "select" && selectedNodeIds.value.size > 1 && selectedNodeIds.value.has(node.id)) {
     startSelectionGroupDrag(event);
     return;
@@ -1855,6 +1884,17 @@ function startNodeDrag(event: PointerEvent, node: CanvasNode) {
     moved: false,
   };
   canvasStageRef.value?.setPointerCapture(event.pointerId);
+}
+
+function handleNodeContextMenu(event: MouseEvent, node: CanvasNode) {
+  event.preventDefault();
+  event.stopPropagation();
+  nodeToolbarSuppressed.value = true;
+  selectSingleNode(node);
+  composerPopover.value = null;
+  freeNodeMenuOpen.value = false;
+  canvasMenuOpen.value = false;
+  openNodeContextMenu(event.clientX, event.clientY, node);
 }
 
 function handleTextNodePointerDown(event: PointerEvent, node: CanvasNode) {
@@ -2004,6 +2044,9 @@ function handleDocumentPointerDown(event: PointerEvent) {
   }
   if (canvasContextMenuOpen.value && !target?.closest(".canvas-context-menu")) {
     closeCanvasContextMenu();
+  }
+  if (nodeContextMenuOpen.value && !target?.closest(".canvas-context-menu")) {
+    closeNodeContextMenu();
   }
   if (!canvasMenuOpen.value) return;
   if (target && projectSwitcherRef.value?.contains(target)) return;
@@ -2544,6 +2587,59 @@ function handleSelectionPrimaryAction() {
     return;
   }
   handleGenerateFromSelection();
+}
+
+function handleNodeContextPrimaryAction() {
+  const node = nodeContextMenuNode.value;
+  if (!node) return;
+  closeNodeContextMenu();
+  if (node.node_type === "image") {
+    useNodeImageForEditing(node);
+    return;
+  }
+  if (!node.node_type || node.node_type === "task") {
+    refillGenerateConfigFromNode(node);
+    return;
+  }
+  useFreeNodeForGeneration(node);
+}
+
+function handleNodeContextEditImage() {
+  const node = nodeContextMenuNode.value;
+  if (!node) return;
+  closeNodeContextMenu();
+  useNodeImageForEditing(node);
+}
+
+function isTaskCanvasNode(node: CanvasNode) {
+  return !node.node_type || node.node_type === "task";
+}
+
+function canNodeEditImage(node: CanvasNode) {
+  return !!getNodeReferenceOption(node);
+}
+
+function isNodeContextPrimaryDisabled(node: CanvasNode) {
+  const workbenchNode = node as CanvasWorkbenchNode;
+  return node.node_type === "image" && workbenchNode.uploadStatus !== "success" && !node.image_url;
+}
+
+function getNodeContextPrimaryLabel(node: CanvasNode) {
+  const workbenchNode = node as CanvasWorkbenchNode;
+  if (node.node_type === "image") {
+    return workbenchNode.uploadStatus === "uploading" ? "上传中" : "编辑图片";
+  }
+  if (!node.node_type || node.node_type === "task") {
+    return "重新生成";
+  }
+  return "生成图片";
+}
+
+function handleNodeContextDelete() {
+  const node = nodeContextMenuNode.value;
+  if (!node) return;
+  closeNodeContextMenu();
+  deleteNode(node);
 }
 
 async function arrangeSelectedNodes() {
@@ -4375,6 +4471,40 @@ onBeforeUnmount(() => {
       </div>
 
       <div
+        v-if="nodeContextMenuOpen && nodeContextMenuNode"
+        ref="nodeContextMenuRef"
+        class="canvas-context-menu canvas-panel"
+        :style="{ left: `${nodeContextMenuPosition.x}px`, top: `${nodeContextMenuPosition.y}px` }"
+        @pointerdown.stop
+        @click.stop
+        @contextmenu.prevent
+      >
+        <button
+          type="button"
+          :disabled="isNodeContextPrimaryDisabled(nodeContextMenuNode)"
+          @click="handleNodeContextPrimaryAction"
+        >
+          <EditOutlined v-if="nodeContextMenuNode.node_type === 'image'" />
+          <ReloadOutlined v-else-if="isTaskCanvasNode(nodeContextMenuNode)" />
+          <ThunderboltOutlined v-else />
+          <span>{{ getNodeContextPrimaryLabel(nodeContextMenuNode) }}</span>
+        </button>
+        <button
+          v-if="isTaskCanvasNode(nodeContextMenuNode)"
+          type="button"
+          :disabled="!canNodeEditImage(nodeContextMenuNode)"
+          @click="handleNodeContextEditImage"
+        >
+          <EditOutlined />
+          <span>编辑图片</span>
+        </button>
+        <button v-if="!canvasReadOnly" type="button" class="danger" @click="handleNodeContextDelete">
+          <DeleteOutlined />
+          <span>删除节点</span>
+        </button>
+      </div>
+
+      <div
         class="canvas-world"
         :style="{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }"
       >
@@ -4452,6 +4582,7 @@ onBeforeUnmount(() => {
           }"
           @pointerdown="startNodeDrag($event, node)"
           @click.stop="handleNodeClick($event, node)"
+          @contextmenu.stop.prevent="handleNodeContextMenu($event, node)"
         >
           <div
             class="node-preview"
@@ -5831,6 +5962,15 @@ onBeforeUnmount(() => {
 
 .canvas-context-menu button:hover {
   background: var(--theme-panel-bg-muted);
+}
+
+.canvas-context-menu button.danger {
+  color: #c85a49;
+}
+
+.canvas-context-menu button.danger:hover:not(:disabled) {
+  background: rgba(200, 90, 73, 0.12);
+  color: #b84b3b;
 }
 
 .canvas-context-menu button:disabled {
