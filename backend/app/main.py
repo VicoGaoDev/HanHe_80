@@ -115,6 +115,7 @@ def _run_startup_schema_sync():
     _ensure_history_pin_schema()
     _ensure_user_board_schema()
     _ensure_user_canvas_schema()
+    _ensure_example_canvas_schema()
     if settings.should_run_schema_compat:
         _ensure_schema_compat()
     _backfill_task_credit_costs()
@@ -1558,6 +1559,8 @@ def _ensure_user_canvas_schema():
     with engine.begin() as conn:
         if "project_id" not in canvas_columns:
             conn.execute(text("ALTER TABLE user_canvas ADD COLUMN project_id VARCHAR(16) NULL"))
+        if "source_example_id" not in canvas_columns:
+            conn.execute(text("ALTER TABLE user_canvas ADD COLUMN source_example_id INTEGER NULL"))
         if "name" not in canvas_columns:
             conn.execute(text("ALTER TABLE user_canvas ADD COLUMN name VARCHAR(100) NOT NULL DEFAULT ''"))
         if "viewport_x" not in canvas_columns:
@@ -1591,6 +1594,8 @@ def _ensure_user_canvas_schema():
             conn.execute(text("CREATE INDEX idx_user_canvas_user_updated_at ON user_canvas (user_id, updated_at)"))
         if "idx_user_canvas_user_deleted_updated" not in canvas_indexes:
             conn.execute(text("CREATE INDEX idx_user_canvas_user_deleted_updated ON user_canvas (user_id, is_deleted, updated_at)"))
+        if "idx_user_canvas_source_example_id" not in canvas_indexes:
+            conn.execute(text("CREATE INDEX idx_user_canvas_source_example_id ON user_canvas (source_example_id)"))
 
     inspector = inspect(engine)
     table_names = set(inspector.get_table_names())
@@ -1728,6 +1733,64 @@ def _ensure_user_canvas_schema():
             conn.execute(text("CREATE INDEX idx_canvas_edges_target_node_id ON canvas_edges (target_node_id)"))
 
 
+def _ensure_example_canvas_schema():
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "users" not in table_names or "user_canvas" not in table_names:
+        return
+    if "example_canvas_projects" not in table_names:
+        from app.models.example_canvas_project import ExampleCanvasProject
+
+        ExampleCanvasProject.__table__.create(bind=engine)
+        inspector = inspect(engine)
+
+    example_columns = {col["name"] for col in inspector.get_columns("example_canvas_projects")}
+    example_index_defs = inspector.get_indexes("example_canvas_projects")
+    example_indexes = {index["name"] for index in example_index_defs}
+    has_source_canvas_unique = any(index.get("unique") and (index.get("column_names") or []) == ["source_canvas_id"] for index in example_index_defs)
+    has_source_project_unique = any(index.get("unique") and (index.get("column_names") or []) == ["source_project_id"] for index in example_index_defs)
+    with engine.begin() as conn:
+        if "source_canvas_id" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN source_canvas_id INTEGER NOT NULL"))
+        if "source_project_id" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN source_project_id VARCHAR(16) NOT NULL DEFAULT ''"))
+        if "title" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN title VARCHAR(100) NOT NULL DEFAULT ''"))
+        if "subtitle" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN subtitle VARCHAR(255) NOT NULL DEFAULT ''"))
+        if "cover_url" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN cover_url VARCHAR(1000) NOT NULL DEFAULT ''"))
+        if "status" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'draft'"))
+        if "sort_order" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0"))
+        if "preview_urls_json" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN preview_urls_json TEXT"))
+        if "snapshot_json" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN snapshot_json TEXT"))
+        if "created_by" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN created_by INTEGER NULL"))
+        if "updated_by" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN updated_by INTEGER NULL"))
+        if "created_at" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+        if "updated_at" not in example_columns:
+            conn.execute(text("ALTER TABLE example_canvas_projects ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+        conn.execute(text("UPDATE example_canvas_projects SET status = 'draft' WHERE status IS NULL OR status = ''"))
+        conn.execute(text("UPDATE example_canvas_projects SET preview_urls_json = '[]' WHERE preview_urls_json IS NULL OR preview_urls_json = ''"))
+        conn.execute(text("UPDATE example_canvas_projects SET snapshot_json = '{}' WHERE snapshot_json IS NULL OR snapshot_json = ''"))
+        if not has_source_canvas_unique and "uq_example_canvas_projects_source_canvas_id" not in example_indexes:
+            conn.execute(text("CREATE UNIQUE INDEX uq_example_canvas_projects_source_canvas_id ON example_canvas_projects (source_canvas_id)"))
+        if not has_source_project_unique and "uq_example_canvas_projects_source_project_id" not in example_indexes:
+            conn.execute(text("CREATE UNIQUE INDEX uq_example_canvas_projects_source_project_id ON example_canvas_projects (source_project_id)"))
+        if "idx_example_canvas_projects_status_sort" not in example_indexes:
+            conn.execute(text("CREATE INDEX idx_example_canvas_projects_status_sort ON example_canvas_projects (status, sort_order, id)"))
+        if "idx_example_canvas_projects_created_by" not in example_indexes:
+            conn.execute(text("CREATE INDEX idx_example_canvas_projects_created_by ON example_canvas_projects (created_by)"))
+        if "idx_example_canvas_projects_updated_by" not in example_indexes:
+            conn.execute(text("CREATE INDEX idx_example_canvas_projects_updated_by ON example_canvas_projects (updated_by)"))
+
+
 def _backfill_task_credit_costs():
     from app.database import SessionLocal
     from app.models.task import Task
@@ -1837,11 +1900,12 @@ upload_path = Path(settings.UPLOAD_DIR)
 upload_path.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
 
-from app.api import auth, boards, canvases, tasks, images, history, admin, upload, api_key, templates, prompt_reverse, external_api_config, feedback, system_messages, user_api_keys, payment  # noqa: E402
+from app.api import auth, boards, canvases, tasks, images, history, admin, upload, api_key, templates, prompt_reverse, external_api_config, feedback, system_messages, user_api_keys, payment, example_canvases  # noqa: E402
 app.include_router(auth.router)
 app.include_router(user_api_keys.router)
 app.include_router(templates.router)
 app.include_router(boards.router)
+app.include_router(example_canvases.router)
 app.include_router(canvases.router)
 app.include_router(tasks.router)
 app.include_router(images.router)
@@ -1851,6 +1915,7 @@ app.include_router(feedback.router)
 app.include_router(system_messages.router)
 app.include_router(system_messages.admin_router)
 app.include_router(admin.router)
+app.include_router(example_canvases.admin_router)
 app.include_router(upload.router)
 app.include_router(api_key.router)
 app.include_router(api_key.cos_router)

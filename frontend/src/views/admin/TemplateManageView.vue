@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { message, Modal } from "ant-design-vue";
+import { useRouter } from "vue-router";
 import {
   DeleteOutlined,
   EditOutlined,
+  NumberOutlined,
   PictureOutlined,
   PlusOutlined,
   TagsOutlined,
@@ -25,6 +27,7 @@ import { getPreviewImageSrc } from "@/api/images";
 import TemplateFormDialog from "@/components/templates/TemplateFormDialog.vue";
 import type { CreativeTemplate, GenerationModelOption, TemplateTag } from "@/types";
 
+const router = useRouter();
 const templates = ref<CreativeTemplate[]>([]);
 const tags = ref<TemplateTag[]>([]);
 const modelOptions = ref<GenerationModelOption[]>([]);
@@ -122,6 +125,10 @@ function openCreate() {
 function openTagManage() {
   resetTagForm();
   tagManageOpen.value = true;
+}
+
+function goExampleCanvases() {
+  router.push("/admin/example-canvases");
 }
 
 function openRenameTag(tag: TemplateTag) {
@@ -237,6 +244,10 @@ function fmtTime(t: string) {
         </div>
       </div>
       <div class="page-actions">
+        <a-button class="warm-secondary-btn" @click="goExampleCanvases">
+          <template #icon><NumberOutlined /></template>
+          示例画布
+        </a-button>
         <a-button type="primary" class="warm-primary-btn" @click="openTagManage">
           <template #icon><TagsOutlined /></template>
           标签管理

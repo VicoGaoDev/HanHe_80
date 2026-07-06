@@ -295,6 +295,52 @@ export interface UserCanvasListResponse {
   items: UserCanvasSummary[];
 }
 
+export type ExampleCanvasStatus = "draft" | "published" | "disabled";
+
+export interface ExampleCanvasProject {
+  id: number;
+  source_canvas_id: number;
+  source_project_id: string;
+  source_canvas_name: string;
+  title: string;
+  subtitle: string;
+  cover_url: string;
+  status: ExampleCanvasStatus;
+  sort_order: number;
+  preview_urls: string[];
+  created_by: string;
+  updated_by: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface ExampleCanvasProjectListResponse {
+  items: ExampleCanvasProject[];
+}
+
+export interface ExampleCanvasProjectCreatePayload {
+  project_id: string;
+  title?: string;
+  subtitle?: string;
+  cover_url?: string;
+  sort_order?: number;
+  status?: ExampleCanvasStatus;
+}
+
+export interface ExampleCanvasProjectUpdatePayload {
+  project_id?: string;
+  title?: string;
+  subtitle?: string;
+  cover_url?: string;
+  sort_order?: number;
+  status?: ExampleCanvasStatus;
+  refresh_snapshot?: boolean;
+}
+
+export interface ExampleCanvasCopyResponse {
+  canvas: UserCanvasSummary;
+}
+
 export interface CanvasTaskPayload {
   model?: string;
   source?: "web" | "app" | "api";

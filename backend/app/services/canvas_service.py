@@ -15,7 +15,7 @@ from app.services.image_delivery_service import get_optional_cos_config, seriali
 from app.services.task_service import create_tasks
 from app.utils.datetime_utils import now_local
 
-DEFAULT_CANVAS_NAME_PREFIX = "新画板"
+DEFAULT_CANVAS_NAME_PREFIX = "新画布"
 MAX_CANVAS_NAME_LENGTH = 100
 DEFAULT_CANVAS_ZOOM = 0.5
 DEFAULT_NODE_WIDTH = 320

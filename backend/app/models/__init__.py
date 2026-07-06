@@ -24,6 +24,7 @@ from app.models.system_message import SystemMessage, SystemMessageRecipient
 from app.models.template import Template
 from app.models.template_tag import TemplateTag
 from app.models.template_tag_relation import TemplateTagRelation
+from app.models.example_canvas_project import ExampleCanvasProject
 
 __all__ = [
     "User",
@@ -53,4 +54,5 @@ __all__ = [
     "Template",
     "TemplateTag",
     "TemplateTagRelation",
+    "ExampleCanvasProject",
 ]

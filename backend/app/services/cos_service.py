@@ -20,6 +20,7 @@ UPLOAD_PURPOSE_PREFIXES = {
     "mask": "mask",
     "reverse": "reverse",
     "misc": "misc",
+    "canvas": "canvas",
     "template": "template",
     "generated": "generated",
 }
