@@ -368,7 +368,12 @@ const templateModelOptions = computed(() => {
   });
   return Array.from(optionMap.values());
 });
+const NEW_MODEL_KEYS = new Set(["banana2_lite", "banana2_lite_edit"]);
 const generationModels = computed(() => (isImageEditMode.value ? imageEditModels.value : textGenerateModels.value));
+function isNewModel(model?: Pick<GenerationModelOption, "model_key" | "model_label"> | null) {
+  if (!model) return false;
+  return NEW_MODEL_KEYS.has(model.model_key) || /lite/i.test(model.model_label);
+}
 const hasBlockedUploads = computed(() => {
   if (generateMode.value === "inpaint") {
     return !!sourcePreviewUrl.value && !sourceImageUrl.value;
@@ -2302,19 +2307,25 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                       </div>
                     </div>
                   </div>
-                  <a-select
-                    v-model:value="selectedModel"
-                    :bordered="false"
-                    class="flat-select"
-                    popup-class-name="generate-dropdown"
-                  >
-                    <a-select-option v-for="model in generationModels" :key="model.model_key" :value="model.model_key">
-                      <div class="model-option">
-                        <div class="model-option-label">{{ model.model_label }}</div>
-                        <div v-if="model.model_description" class="model-option-desc">{{ model.model_description }}</div>
-                      </div>
-                    </a-select-option>
-                  </a-select>
+                  <div class="model-select-wrap">
+                    <a-select
+                      v-model:value="selectedModel"
+                      :bordered="false"
+                      class="flat-select flat-select-has-badge"
+                      popup-class-name="generate-dropdown"
+                    >
+                      <a-select-option v-for="model in generationModels" :key="model.model_key" :value="model.model_key">
+                        <div class="model-option">
+                          <div class="model-option-label-row">
+                            <div class="model-option-label">{{ model.model_label }}</div>
+                            <span v-if="isNewModel(model)" class="model-new-badge">NEW</span>
+                          </div>
+                          <div v-if="model.model_description" class="model-option-desc">{{ model.model_description }}</div>
+                        </div>
+                      </a-select-option>
+                    </a-select>
+                    <span class="model-new-badge model-new-badge-selected">新模型</span>
+                  </div>
                 </div>
               </div>
 
@@ -2542,19 +2553,25 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                       </div>
                     </div>
                   </div>
-                  <a-select
-                    v-model:value="selectedModel"
-                    :bordered="false"
-                    class="flat-select"
-                    popup-class-name="generate-dropdown"
-                  >
-                    <a-select-option v-for="model in generationModels" :key="model.model_key" :value="model.model_key">
-                      <div class="model-option">
-                        <div class="model-option-label">{{ model.model_label }}</div>
-                        <div v-if="model.model_description" class="model-option-desc">{{ model.model_description }}</div>
-                      </div>
-                    </a-select-option>
-                  </a-select>
+                  <div class="model-select-wrap">
+                    <a-select
+                      v-model:value="selectedModel"
+                      :bordered="false"
+                      class="flat-select flat-select-has-badge"
+                      popup-class-name="generate-dropdown"
+                    >
+                      <a-select-option v-for="model in generationModels" :key="model.model_key" :value="model.model_key">
+                        <div class="model-option">
+                          <div class="model-option-label-row">
+                            <div class="model-option-label">{{ model.model_label }}</div>
+                            <span v-if="isNewModel(model)" class="model-new-badge">NEW</span>
+                          </div>
+                          <div v-if="model.model_description" class="model-option-desc">{{ model.model_description }}</div>
+                        </div>
+                      </a-select-option>
+                    </a-select>
+                    <span class="model-new-badge model-new-badge-selected">新模型</span>
+                  </div>
                 </div>
               </div>
 
@@ -4349,6 +4366,12 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
   gap: 2px;
 }
 
+.model-option-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .model-option-label {
   font-weight: 700;
   color: var(--theme-title);
@@ -4357,6 +4380,41 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
 .model-option-desc {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.model-select-wrap {
+  position: relative;
+}
+
+.flat-select.flat-select-has-badge {
+  :deep(.ant-select-selector) {
+    padding-right: 86px !important;
+  }
+}
+
+.model-new-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff8a34, #ff5f6d);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  box-shadow: 0 6px 14px rgba(255, 106, 77, 0.24);
+}
+
+.model-new-badge-selected {
+  position: absolute;
+  top: 50%;
+  right: 34px;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 /* --- Slider --- */
