@@ -3509,6 +3509,9 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .warm-dropdown .ant-dropdo
 }
 
 .announcement-content {
+  max-height: min(52vh, 520px);
+  overflow-x: hidden;
+  overflow-y: auto;
   white-space: pre-wrap;
   line-height: 1.85;
   color: var(--theme-text);
@@ -3517,6 +3520,27 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .warm-dropdown .ant-dropdo
   border-radius: 18px;
   background: var(--theme-panel-bg-soft);
   border: 1px solid var(--theme-panel-border);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(191, 148, 79, 0.55) rgba(255, 244, 220, 0.78);
+}
+
+.announcement-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.announcement-content::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 244, 220, 0.78);
+}
+
+.announcement-content::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  border: 2px solid rgba(255, 244, 220, 0.78);
+  background: rgba(191, 148, 79, 0.55);
+}
+
+.announcement-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 124, 52, 0.72);
 }
 
 .announcement-actions {

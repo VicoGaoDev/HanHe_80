@@ -324,7 +324,10 @@ function handleDeleteCategory() {
       </aside>
 
       <section class="prompt-main">
-        <a-spin :spinning="loading" class="prompt-content-spin">
+        <div class="prompt-content-shell">
+          <div v-if="loading" class="prompt-loading-mask">
+            <a-spin />
+          </div>
           <div class="prompt-content">
             <div v-if="prompts.length" class="prompt-list">
               <div v-for="item in prompts" :key="item.id" class="prompt-card">
@@ -352,7 +355,7 @@ function handleDeleteCategory() {
               <div class="prompt-empty-desc">新建后可在这里统一管理，并一键回填到当前编辑区。</div>
             </div>
           </div>
-        </a-spin>
+        </div>
       </section>
     </div>
 
@@ -401,7 +404,9 @@ function handleDeleteCategory() {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   gap: 18px;
-  min-height: 620px;
+  height: 620px;
+  max-height: calc(100vh - 220px);
+  min-height: 0;
 }
 
 .prompt-sidebar {
@@ -518,19 +523,43 @@ function handleDeleteCategory() {
 
 .prompt-main {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
-.prompt-content-spin {
+.prompt-content-shell {
+  position: relative;
+  display: flex;
+  flex: 1;
+  margin-top: 14px;
   min-height: 0;
+  overflow: hidden;
+}
+
+.prompt-loading-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(255, 250, 242, 0.48);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: none;
 }
 
 .prompt-content {
-  max-height: 540px;
-  overflow: auto;
-  padding-right: 4px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  padding: 0 4px 4px 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(191, 148, 79, 0.55) rgba(255, 244, 220, 0.78);
 }
@@ -613,7 +642,9 @@ function handleDeleteCategory() {
 .prompt-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
   gap: 14px;
+  min-height: 100%;
 }
 
 .prompt-card {
@@ -668,7 +699,7 @@ function handleDeleteCategory() {
 }
 
 .prompt-empty {
-  min-height: 420px;
+  min-height: 100%;
   padding: 28px 20px;
   border-radius: 22px;
   border: 1px dashed rgba(220, 185, 125, 0.42);
@@ -713,6 +744,8 @@ function handleDeleteCategory() {
 @media (max-width: 900px) {
   .prompt-picker {
     grid-template-columns: 1fr;
+    height: auto;
+    max-height: none;
     min-height: auto;
   }
 
@@ -721,7 +754,8 @@ function handleDeleteCategory() {
   }
 
   .prompt-content {
-    max-height: none;
+    height: auto;
+    min-height: auto;
     overflow: visible;
     padding-right: 0;
   }

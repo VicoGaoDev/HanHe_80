@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineComponent, h, inject, onActivated, onBeforeUnmount, onMounted, watch, type Ref } from "vue";
+import { ref, computed, defineComponent, h, inject, nextTick, onActivated, onBeforeUnmount, onMounted, watch, type Ref } from "vue";
 import { message, Modal, notification } from "ant-design-vue";
 import dayjs from "dayjs";
 import { useRouter } from "vue-router";
@@ -285,6 +285,7 @@ const VNodes = defineComponent({
 
 const promptLibraryVisible = ref(false);
 const sceneConfigLoading = ref(true);
+const submittingGenerate = ref(false);
 const HISTORY_DRAFT_KEY = "generateDraftFromHistory";
 const TEMPLATE_DRAFT_KEY = "generateDraftFromTemplate";
 const taskScenes = ref<TaskSceneConfig[]>([]);
@@ -957,12 +958,8 @@ async function submitGeneratedTask(
       if (taskIds.length < localTasks.length) {
         message.info(`当前剩余 ${taskIds.length} 个生成名额，已自动发起 ${taskIds.length} 个任务`);
       }
-      try {
-        const items = await refreshTasks(taskIds);
-        if (items.some((item) => item.status !== "success" && item.status !== "failed")) startTaskPolling();
-      } catch {
-        startTaskPolling();
-      }
+      startTaskPolling();
+      void refreshTasks(taskIds);
     } else if (taskIds.length === 1) {
       const legacyTaskId = taskIds[0];
       const [primaryTask, ...extraTasks] = localTasks;
@@ -982,12 +979,8 @@ async function submitGeneratedTask(
             : task
         ));
 
-      try {
-        const items = await refreshTasks([legacyTaskId]);
-        if (items.some((item) => item.status !== "success" && item.status !== "failed")) startTaskPolling();
-      } catch {
-        startTaskPolling();
-      }
+      startTaskPolling();
+      void refreshTasks([legacyTaskId]);
     } else {
       throw new Error("服务端返回的任务数量异常");
     }
@@ -1415,6 +1408,9 @@ const userCredits = computed(() => auth.user?.credits ?? 0);
 const canCreateTemplateFromTask = computed(() => auth.isAdmin);
 const isSuperAdmin = computed(() => auth.isSuperAdmin);
 const generateButtonText = computed(() => {
+  if (submittingGenerate.value) {
+    return "提交中...";
+  }
   if (generateMode.value === "inpaint" && sourceUploading.value) {
     return "原图上传中...";
   }
@@ -1484,7 +1480,6 @@ function applyReversePrompt() {
 }
 
 async function handleGenerate() {
-  if (!(await ensureAuthenticated())) return;
   if (isImageEditMode.value && hasPendingReferenceUploads.value) {
     message.warning("参考图仍在上传中，请稍候再发起任务");
     return;
@@ -1501,76 +1496,87 @@ async function handleGenerate() {
     message.warning("请输入提示词");
     return;
   }
-  await loadGlobalActiveGenerationStatus();
-  const availableSlots = remainingGenerationImageSlots.value;
-  if (availableSlots <= 0) {
-    message.warning(`当前最多允许同时生成 ${MAX_ACTIVE_GENERATION_IMAGES} 张图片，请等待部分任务完成后再试`);
-    return;
-  }
-  if (!isSuperAdmin.value && userCredits.value < actualSubmitCreditCost.value) {
-    showInsufficientCreditsPurchase(`积分不足，需要 ${actualSubmitCreditCost.value} 积分，当前余额 ${userCredits.value}`);
+  if (!auth.isLoggedIn) {
+    loginModalVisible.value = true;
     return;
   }
 
-  let payload: GenerateTaskPayload;
-  let requestedImageCount = 1;
-
-  if (generateMode.value === "inpaint") {
-    if (!sourceImageUrl.value.trim()) {
-      message.warning(sourceUploading.value ? "原图上传中，请稍候再试" : "请先上传需要局部重绘的原图");
-      return;
-    }
-    if (!hasRepaintMask.value || !repaintCanvasRef.value?.hasDrawnMask()) {
-      message.warning("请先在原图上涂抹需要重绘的区域");
-      return;
-    }
-    const maskBlob = await repaintCanvasRef.value.exportMaskBlob();
-    if (!maskBlob) {
-      message.warning("蒙版生成失败，请重新涂抹后再试");
-      return;
-    }
-    const maskFile = new File([maskBlob], `mask-${Date.now()}.png`, { type: "image/png" });
-    let maskUploadUrl = "";
-    try {
-      const uploaded = await uploadReferenceImage(maskFile, "mask");
-      maskUploadUrl = uploaded.url;
-    } catch {
-      message.error("蒙版上传失败，请重试");
-      return;
-    }
-    payload = {
-      mode: "inpaint",
-      prompt: repaintPrompt.value,
-      num_images: 1,
-      size: size.value,
-      resolution: resolution.value,
-      custom_size: customSize.value,
-      source_image: sourceImageUrl.value,
-      mask_image: maskUploadUrl,
-    };
-  } else {
-    requestedImageCount = Math.min(numImages.value, availableSlots);
-    payload = {
-      mode: "generate",
-      model: selectedModel.value,
-      prompt: prompt.value,
-      num_images: requestedImageCount,
-      size: hideAspectRatio.value ? "" : size.value,
-      resolution: hideResolution.value ? "" : resolution.value,
-      custom_size: hideCustomSize.value ? "" : customSize.value,
-      reference_images: isImageEditMode.value && referenceUrls.value.length ? referenceUrls.value : undefined,
-    };
-    if (requestedImageCount < numImages.value) {
-      message.info(`当前剩余 ${requestedImageCount} 个生成名额，已自动发起 ${requestedImageCount} 个任务`);
-    }
-  }
-
-  const submitMode: SubmitMode = generateMode.value === "imageEdit"
-    ? "imageEdit"
-    : generateMode.value === "textGenerate"
-      ? "textGenerate"
-      : "inpaint";
+  submittingGenerate.value = true;
+  await nextTick();
   try {
+    const [authenticated] = await Promise.all([
+      ensureAuthenticated(),
+      loadGlobalActiveGenerationStatus(),
+    ]);
+    if (!authenticated) return;
+    const availableSlots = remainingGenerationImageSlots.value;
+    if (availableSlots <= 0) {
+      message.warning(`当前最多允许同时生成 ${MAX_ACTIVE_GENERATION_IMAGES} 张图片，请等待部分任务完成后再试`);
+      return;
+    }
+    if (!isSuperAdmin.value && userCredits.value < actualSubmitCreditCost.value) {
+      showInsufficientCreditsPurchase(`积分不足，需要 ${actualSubmitCreditCost.value} 积分，当前余额 ${userCredits.value}`);
+      return;
+    }
+
+    let payload: GenerateTaskPayload;
+    let requestedImageCount = 1;
+
+    if (generateMode.value === "inpaint") {
+      if (!sourceImageUrl.value.trim()) {
+        message.warning(sourceUploading.value ? "原图上传中，请稍候再试" : "请先上传需要局部重绘的原图");
+        return;
+      }
+      if (!hasRepaintMask.value || !repaintCanvasRef.value?.hasDrawnMask()) {
+        message.warning("请先在原图上涂抹需要重绘的区域");
+        return;
+      }
+      const maskBlob = await repaintCanvasRef.value.exportMaskBlob();
+      if (!maskBlob) {
+        message.warning("蒙版生成失败，请重新涂抹后再试");
+        return;
+      }
+      const maskFile = new File([maskBlob], `mask-${Date.now()}.png`, { type: "image/png" });
+      let maskUploadUrl = "";
+      try {
+        const uploaded = await uploadReferenceImage(maskFile, "mask");
+        maskUploadUrl = uploaded.url;
+      } catch {
+        message.error("蒙版上传失败，请重试");
+        return;
+      }
+      payload = {
+        mode: "inpaint",
+        prompt: repaintPrompt.value,
+        num_images: 1,
+        size: size.value,
+        resolution: resolution.value,
+        custom_size: customSize.value,
+        source_image: sourceImageUrl.value,
+        mask_image: maskUploadUrl,
+      };
+    } else {
+      requestedImageCount = Math.min(numImages.value, availableSlots);
+      payload = {
+        mode: "generate",
+        model: selectedModel.value,
+        prompt: prompt.value,
+        num_images: requestedImageCount,
+        size: hideAspectRatio.value ? "" : size.value,
+        resolution: hideResolution.value ? "" : resolution.value,
+        custom_size: hideCustomSize.value ? "" : customSize.value,
+        reference_images: isImageEditMode.value && referenceUrls.value.length ? referenceUrls.value : undefined,
+      };
+      if (requestedImageCount < numImages.value) {
+        message.info(`当前剩余 ${requestedImageCount} 个生成名额，已自动发起 ${requestedImageCount} 个任务`);
+      }
+    }
+
+    const submitMode: SubmitMode = generateMode.value === "imageEdit"
+      ? "imageEdit"
+      : generateMode.value === "textGenerate"
+        ? "textGenerate"
+        : "inpaint";
     await submitGeneratedTask(payload, {
       mode: submitMode,
       prompt: activePrompt.value.trim(),
@@ -1583,7 +1589,7 @@ async function handleGenerate() {
       sourceImage: payload.source_image,
       maskImage: payload.mask_image,
     });
-    await loadGlobalActiveGenerationStatus();
+    void loadGlobalActiveGenerationStatus();
   } catch (err: any) {
     const detail = err.response?.data?.detail || "";
     if (isInsufficientCreditsError(err)) {
@@ -1591,6 +1597,8 @@ async function handleGenerate() {
       return;
     }
     message.error(formatGenerationErrorMessage(detail, "创建任务失败"));
+  } finally {
+    submittingGenerate.value = false;
   }
 }
 
@@ -2396,7 +2404,8 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                   <a-button
                     type="primary"
                     size="large"
-                    :disabled="sceneConfigLoading || !canClickGenerate"
+                    :loading="submittingGenerate"
+                    :disabled="sceneConfigLoading || !canClickGenerate || submittingGenerate"
                     class="generate-btn"
                     @click="handleGenerate"
                   >
@@ -2704,7 +2713,8 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                   <a-button
                     type="primary"
                     size="large"
-                    :disabled="sceneConfigLoading || !canClickGenerate"
+                    :loading="submittingGenerate"
+                    :disabled="sceneConfigLoading || !canClickGenerate || submittingGenerate"
                     class="generate-btn"
                     @click="handleGenerate"
                   >
@@ -2955,8 +2965,8 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                   type="primary"
                   block
                   size="large"
-                  :loading="sourceUploading"
-                  :disabled="!canClickGenerate"
+                  :loading="sourceUploading || submittingGenerate"
+                  :disabled="!canClickGenerate || submittingGenerate"
                   class="generate-btn"
                   @click="handleGenerate"
                 >

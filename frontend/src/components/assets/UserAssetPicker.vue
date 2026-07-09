@@ -413,7 +413,10 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
 
       <section class="asset-main">
         <input ref="fileInputRef" type="file" accept="image/*" multiple hidden @change="handleFileChange" />
-        <a-spin :spinning="loading" class="asset-content-spin">
+        <div class="asset-content-shell">
+          <div v-if="loading" class="asset-loading-mask">
+            <a-spin />
+          </div>
           <div class="asset-content">
             <div v-if="assets.length" class="asset-grid">
               <div
@@ -470,7 +473,7 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
               <div class="asset-empty-desc">上传参考图后会永久保存到素材库，可在画布页和 AI 生图页复用。每个用户最多可保存 50 个素材。</div>
             </div>
           </div>
-        </a-spin>
+        </div>
       </section>
     </div>
   </a-modal>
@@ -540,7 +543,9 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   gap: 18px;
-  min-height: 620px;
+  height: 620px;
+  max-height: calc(100vh - 220px);
+  min-height: 0;
 }
 
 .asset-sidebar {
@@ -657,19 +662,43 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
 
 .asset-main {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
-.asset-content-spin {
+.asset-content-shell {
+  position: relative;
+  display: flex;
+  flex: 1;
+  margin-top: 14px;
   min-height: 0;
+  overflow: hidden;
+}
+
+.asset-loading-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(255, 250, 242, 0.48);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: none;
 }
 
 .asset-content {
-  max-height: 540px;
-  overflow: auto;
-  padding-right: 4px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  padding: 0 4px 4px 0;
   scrollbar-width: thin;
   scrollbar-color: rgba(191, 148, 79, 0.55) rgba(255, 244, 220, 0.78);
 }
@@ -782,7 +811,9 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
 .asset-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  align-content: start;
   gap: 14px;
+  min-height: 100%;
 }
 
 .asset-card {
@@ -1059,7 +1090,7 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
 .asset-empty {
   display: grid;
   place-items: center;
-  min-height: 420px;
+  min-height: 100%;
   text-align: center;
   color: var(--text-secondary);
 }
@@ -1079,6 +1110,8 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
 @media (max-width: 960px) {
   .asset-picker {
     grid-template-columns: 1fr;
+    height: auto;
+    max-height: none;
   }
 
   .asset-modal-header {
@@ -1104,7 +1137,8 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
   }
 
   .asset-content {
-    max-height: none;
+    height: auto;
+    min-height: auto;
     overflow: visible;
     padding-right: 0;
   }

@@ -4587,7 +4587,7 @@ onBeforeUnmount(() => {
                   {{ count }}x
                 </a-select-option>
               </a-select>
-              <a-button type="primary" class="composer-generate-btn" :loading="generating" :disabled="!canGenerate" @click="handleGenerate">
+              <a-button type="primary" class="composer-generate-btn" :loading="generating" :disabled="!canGenerate || generating" @click="handleGenerate">
                 <template #icon><ThunderboltOutlined /></template>
                 {{ generateButtonText }}
               </a-button>
