@@ -1728,6 +1728,96 @@ def _classify_error_message_for_analytics(error_message: str | None) -> str:
     return "其他错误"
 
 
+def _load_task_attempts_map(db: Session, task_ids: list[int]) -> dict[int, list[TaskApiAttempt]]:
+    normalized_task_ids = [int(task_id) for task_id in task_ids if task_id]
+    if not normalized_task_ids:
+        return {}
+    rows = (
+        db.query(TaskApiAttempt)
+        .filter(TaskApiAttempt.task_id.in_(normalized_task_ids))
+        .order_by(
+            TaskApiAttempt.task_id.asc(),
+            TaskApiAttempt.image_index.asc(),
+            TaskApiAttempt.attempt_index.asc(),
+            TaskApiAttempt.id.asc(),
+        )
+        .all()
+    )
+    attempts_map: dict[int, list[TaskApiAttempt]] = defaultdict(list)
+    for row in rows:
+        attempts_map[int(row.task_id)].append(row)
+    return dict(attempts_map)
+
+
+def _join_attempt_api_names(attempts: list[TaskApiAttempt]) -> str:
+    names: list[str] = []
+    seen_names: set[str] = set()
+    for attempt in attempts:
+        name = (attempt.api_config_name or "").strip()
+        if not name or name in seen_names:
+            continue
+        seen_names.add(name)
+        names.append(name)
+    return "、".join(names)
+
+
+def _summarize_task_attempts_for_error_row(
+    attempts: list[TaskApiAttempt],
+    *,
+    error_category: str | None = None,
+) -> dict | None:
+    primary_failed_attempts = [
+        attempt
+        for attempt in attempts
+        if not attempt.is_fallback and (attempt.status or "failed") == "failed"
+    ]
+    if not primary_failed_attempts:
+        return None
+
+    matched_primary: TaskApiAttempt | None = None
+    for attempt in primary_failed_attempts:
+        row_error_category = _classify_error_message_for_analytics(attempt.error_message)
+        if error_category and row_error_category != error_category:
+            continue
+        matched_primary = attempt
+        break
+    if matched_primary is None:
+        return None
+
+    fallback_attempts = [attempt for attempt in attempts if attempt.is_fallback]
+    fallback_success_attempts = [
+        attempt for attempt in fallback_attempts if (attempt.status or "failed") == "success"
+    ]
+    fallback_failed_attempts = [
+        attempt for attempt in fallback_attempts if (attempt.status or "failed") != "success"
+    ]
+    if not fallback_attempts:
+        fallback_status = "unused"
+    elif fallback_success_attempts and fallback_failed_attempts:
+        fallback_status = "partial"
+    elif fallback_success_attempts:
+        fallback_status = "success"
+    else:
+        fallback_status = "failed"
+
+    fallback_error_message = next(
+        (
+            (attempt.error_message or "").strip()
+            for attempt in fallback_failed_attempts
+            if (attempt.error_message or "").strip()
+        ),
+        "",
+    )
+    return {
+        "primary_api_config_name": (matched_primary.api_config_name or "").strip(),
+        "primary_http_status": matched_primary.http_status,
+        "primary_error_message": (matched_primary.error_message or "").strip(),
+        "fallback_api_config_name": _join_attempt_api_names(fallback_attempts),
+        "fallback_status": fallback_status,
+        "fallback_error_message": fallback_error_message,
+    }
+
+
 def get_error_analytics(
     db: Session,
     *,
@@ -1908,20 +1998,17 @@ def get_error_tasks(
 ) -> dict:
     if used_fallback_api is True:
         query = (
-            db.query(Task, User, TaskApiAttempt)
+            db.query(Task, User)
             .join(User, User.id == Task.user_id)
-            .join(TaskApiAttempt, TaskApiAttempt.task_id == Task.id)
             .filter(
                 Task.used_fallback_api.is_(True),
-                TaskApiAttempt.is_fallback.is_(False),
-                TaskApiAttempt.status == "failed",
                 User.role != "superadmin",
                 _non_whitelisted_user_filter(),
             )
         )
     else:
         query = (
-            db.query(Task, User, Task.error_message.label("attempt_error_message"))
+            db.query(Task, User)
             .join(User, User.id == Task.user_id)
             .filter(
                 Task.status == "failed",
@@ -1941,23 +2028,30 @@ def get_error_tasks(
     rows = query.order_by(Task.created_at.desc(), Task.id.desc()).all()
     items: list[dict] = []
     scene_type_map = get_task_scene_type_map(db)
-    seen_task_ids: set[int] = set()
-    for row in rows:
-        task = row[0]
-        user = row[1]
-        attempt_or_message = row[2]
-        row_error_message = (
-            attempt_or_message.error_message
-            if isinstance(attempt_or_message, TaskApiAttempt)
-            else str(attempt_or_message or "")
-        )
-        normalized_message = _normalize_error_message_for_analytics(row_error_message)
-        row_error_category = _classify_error_message_for_analytics(normalized_message)
-        if error_category and row_error_category != error_category:
-            continue
-        if used_fallback_api is True and task.id in seen_task_ids:
-            continue
-        seen_task_ids.add(task.id)
+    attempts_map = _load_task_attempts_map(db, [int(task.id) for task, _user in rows]) if used_fallback_api is True else {}
+    for task, user in rows:
+        attempt_summary = {
+            "primary_api_config_name": "",
+            "primary_http_status": None,
+            "fallback_api_config_name": "",
+            "fallback_status": "unused",
+            "fallback_error_message": "",
+        }
+        if used_fallback_api is True:
+            resolved_summary = _summarize_task_attempts_for_error_row(
+                attempts_map.get(int(task.id), []),
+                error_category=error_category,
+            )
+            if resolved_summary is None:
+                continue
+            attempt_summary = resolved_summary
+            row_error_message = resolved_summary["primary_error_message"] or str(task.error_message or "")
+        else:
+            row_error_message = str(task.error_message or "")
+            normalized_message = _normalize_error_message_for_analytics(row_error_message)
+            row_error_category = _classify_error_message_for_analytics(normalized_message)
+            if error_category and row_error_category != error_category:
+                continue
         items.append({
             "task_id": task_external_id(task),
             "user_id": user_external_id(user),
@@ -1973,6 +2067,11 @@ def get_error_tasks(
             "credit_cost": int(task.credit_cost or 0),
             "credit_refunded": bool(is_task_generation_failure_credit_refunded(db, task.id)) if task.id else False,
             "used_fallback_api": bool(task.used_fallback_api),
+            "primary_api_config_name": attempt_summary["primary_api_config_name"],
+            "primary_http_status": attempt_summary["primary_http_status"],
+            "fallback_api_config_name": attempt_summary["fallback_api_config_name"],
+            "fallback_status": attempt_summary["fallback_status"],
+            "fallback_error_message": attempt_summary["fallback_error_message"],
             "created_at": task.created_at,
         })
 

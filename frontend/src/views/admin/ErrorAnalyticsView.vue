@@ -46,17 +46,35 @@ let activeDetailRequestKey = "";
 
 const TASK_TABLE_PAGE_SIZE = 10;
 
-const taskColumns = [
-  { title: "用户", dataIndex: "username", width: 120 },
-  { title: "模型", dataIndex: "model", width: 180 },
-  { title: "类型", dataIndex: "task_type", width: 110 },
-  { title: "来源", dataIndex: "source", width: 90 },
-  { title: "状态", dataIndex: "status", width: 90 },
-  { title: "备用接口", dataIndex: "used_fallback_api", width: 110 },
-  { title: "错误信息", dataIndex: "error_message" },
-  { title: "时间", dataIndex: "created_at", width: 168 },
-  { title: "操作", key: "actions", width: 80, fixed: "right" as const },
-];
+const taskColumns = computed(() => {
+  const baseColumns = [
+    { title: "用户", dataIndex: "username", width: 120 },
+    { title: "模型", dataIndex: "model", width: 180 },
+    { title: "类型", dataIndex: "task_type", width: 110 },
+    { title: "来源", dataIndex: "source", width: 90 },
+    { title: "状态", dataIndex: "status", width: 90 },
+  ];
+  if (fallbackOnly.value) {
+    return [
+      ...baseColumns,
+      { title: "主接口", dataIndex: "primary_api_config_name", width: 150 },
+      { title: "主接口 HTTP", dataIndex: "primary_http_status", width: 110 },
+      { title: "主接口错误", dataIndex: "error_message", width: 320 },
+      { title: "备用接口", dataIndex: "fallback_api_config_name", width: 150 },
+      { title: "备用结果", dataIndex: "fallback_status", width: 110 },
+      { title: "备用错误", dataIndex: "fallback_error_message", width: 320 },
+      { title: "时间", dataIndex: "created_at", width: 168 },
+      { title: "操作", key: "actions", width: 80, fixed: "right" as const },
+    ];
+  }
+  return [
+    ...baseColumns,
+    { title: "备用接口", dataIndex: "used_fallback_api", width: 110 },
+    { title: "错误信息", dataIndex: "error_message" },
+    { title: "时间", dataIndex: "created_at", width: 168 },
+    { title: "操作", key: "actions", width: 80, fixed: "right" as const },
+  ];
+});
 
 const columns = [
   { title: "错误次数", dataIndex: "count", width: 120 },
@@ -375,7 +393,24 @@ function statusLabel(value: string) {
 }
 
 function taskErrorText(record: AdminErrorTaskItem) {
+  if (fallbackOnly.value) {
+    return record.error_message || "-";
+  }
   return formatGenerationTaskFailureMessage(record.error_message, record.credit_refunded);
+}
+
+function fallbackStatusLabel(value?: AdminErrorTaskItem["fallback_status"]) {
+  if (value === "success") return "成功";
+  if (value === "failed") return "失败";
+  if (value === "partial") return "部分成功";
+  return "未调用";
+}
+
+function fallbackStatusClass(value?: AdminErrorTaskItem["fallback_status"]) {
+  if (value === "success") return "category-badge-success";
+  if (value === "failed") return "category-badge-danger";
+  if (value === "partial") return "category-badge-warning";
+  return "";
 }
 
 async function openTaskDetail(record: AdminErrorTaskItem) {
@@ -418,7 +453,7 @@ onMounted(async () => {
         </div>
         <div>
           <div class="warm-page-title">错误统计</div>
-          <div class="warm-page-desc">查看失败任务分布，并按错误类别聚合分析趋势与明细。</div>
+          <div class="warm-page-desc">查看失败任务分布，并按错误类别聚合分析趋势与明细；使用备用接口时可直接查看主接口报错和备用结果。</div>
         </div>
       </div>
       <div v-if="analytics" class="page-period-chip">
@@ -581,7 +616,7 @@ onMounted(async () => {
         :loading="taskTableLoading"
         :pagination="false"
         :row-key="(record: AdminErrorTaskItem) => record.task_id"
-        :scroll="{ x: 1180 }"
+        :scroll="{ x: fallbackOnly ? 1700 : 1180 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'model'">
@@ -600,8 +635,23 @@ onMounted(async () => {
             <span v-if="record.used_fallback_api" class="category-badge">已调用</span>
             <span v-else class="table-muted">未调用</span>
           </template>
+          <template v-else-if="column.dataIndex === 'primary_api_config_name'">
+            <span class="table-single-line" :title="record.primary_api_config_name || '-'">{{ record.primary_api_config_name || "-" }}</span>
+          </template>
+          <template v-else-if="column.dataIndex === 'primary_http_status'">
+            {{ typeof record.primary_http_status === "number" ? record.primary_http_status : "-" }}
+          </template>
           <template v-else-if="column.dataIndex === 'error_message'">
             <div class="error-message-cell">{{ taskErrorText(record) }}</div>
+          </template>
+          <template v-else-if="column.dataIndex === 'fallback_api_config_name'">
+            <span class="table-single-line" :title="record.fallback_api_config_name || '-'">{{ record.fallback_api_config_name || "-" }}</span>
+          </template>
+          <template v-else-if="column.dataIndex === 'fallback_status'">
+            <span class="category-badge" :class="fallbackStatusClass(record.fallback_status)">{{ fallbackStatusLabel(record.fallback_status) }}</span>
+          </template>
+          <template v-else-if="column.dataIndex === 'fallback_error_message'">
+            <div class="error-message-cell">{{ record.fallback_error_message || "-" }}</div>
           </template>
           <template v-else-if="column.dataIndex === 'created_at'">
             {{ fmtTime(record.created_at) }}
@@ -772,6 +822,16 @@ onMounted(async () => {
 .category-badge-danger {
   background: rgba(255, 242, 239, 0.96);
   color: #cf3f36;
+}
+
+.category-badge-success {
+  background: rgba(240, 255, 244, 0.96);
+  color: #389e0d;
+}
+
+.category-badge-warning {
+  background: rgba(255, 247, 230, 0.96);
+  color: #d48806;
 }
 
 .clear-filter-btn {

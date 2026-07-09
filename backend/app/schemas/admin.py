@@ -269,6 +269,11 @@ class ErrorTaskItemOut(BaseModel):
     credit_cost: int = 0
     credit_refunded: bool = False
     used_fallback_api: bool = False
+    primary_api_config_name: str = ""
+    primary_http_status: int | None = None
+    fallback_api_config_name: str = ""
+    fallback_status: str = "unused"
+    fallback_error_message: str = ""
     created_at: datetime | None = None
 
 

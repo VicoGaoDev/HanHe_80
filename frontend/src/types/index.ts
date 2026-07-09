@@ -924,6 +924,11 @@ export interface AdminErrorTaskItem {
   credit_cost: number;
   credit_refunded: boolean;
   used_fallback_api?: boolean;
+  primary_api_config_name?: string;
+  primary_http_status?: number | null;
+  fallback_api_config_name?: string;
+  fallback_status?: "unused" | "success" | "failed" | "partial";
+  fallback_error_message?: string;
   created_at?: string | null;
 }
 
