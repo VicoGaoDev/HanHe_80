@@ -132,6 +132,25 @@ export function useUserAssets() {
     ]);
   }
 
+  async function moveAssets(
+    assetIds: number[],
+    categoryId: number | null,
+    options?: {
+      category?: UserAssetCategoryFilter;
+      keyword?: string;
+      limit?: number;
+    },
+  ) {
+    if (!assetIds.length) return;
+    for (const assetId of assetIds) {
+      await updateUserAsset(assetId, { categoryId });
+    }
+    await Promise.all([
+      loadCategories(),
+      loadAssets(options),
+    ]);
+  }
+
   async function renameAsset(
     assetId: number,
     fileName: string,
@@ -199,6 +218,7 @@ export function useUserAssets() {
     removeAsset,
     removeAssets,
     moveAsset,
+    moveAssets,
     renameAsset,
     uncategorizedCount,
     uploadFiles,

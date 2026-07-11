@@ -160,6 +160,23 @@ export function useUserPrompts() {
     ]);
   }
 
+  async function movePrompts(
+    promptIds: number[],
+    categoryId: number | null,
+    options?: {
+      category?: UserPromptCategoryFilter;
+      keyword?: string;
+      limit?: number;
+    },
+  ) {
+    if (!promptIds.length) return;
+    await Promise.all(promptIds.map((promptId) => updateUserPrompt(promptId, { categoryId })));
+    await Promise.all([
+      loadCategories(),
+      loadPrompts(options),
+    ]);
+  }
+
   return {
     categories,
     uncategorizedCount,
@@ -177,5 +194,6 @@ export function useUserPrompts() {
     editPrompt,
     removePrompt,
     removePrompts,
+    movePrompts,
   };
 }

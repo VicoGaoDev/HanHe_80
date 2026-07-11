@@ -38,7 +38,7 @@ const {
   quota,
   refresh,
   createCategory,
-  moveAsset,
+  moveAssets,
   renameAsset,
   removeAsset,
   removeAssets,
@@ -60,7 +60,7 @@ const categoryNameDialogMode = ref<"create" | "rename">("create");
 const categoryNameDialogValue = ref("");
 const categoryDialogOpen = ref(false);
 const categoryDialogSaving = ref(false);
-const categoryDialogAsset = ref<UserAsset | null>(null);
+const categoryDialogAssetIds = ref<number[]>([]);
 const categoryDialogValue = ref<number | "uncategorized">("uncategorized");
 const assetNameDialogOpen = ref(false);
 const assetNameDialogSaving = ref(false);
@@ -88,6 +88,9 @@ const selectedCount = computed(() => selectedAssetIds.value.length);
 const allVisibleSelected = computed(() => (
   allVisibleAssetIds.value.length > 0
   && allVisibleAssetIds.value.every((id) => selectedAssetIds.value.includes(id))
+));
+const categoryDialogTitle = computed(() => (
+  categoryDialogAssetIds.value.length > 1 ? "批量修改分类" : "修改分类"
 ));
 
 watch(() => props.open, (open) => {
@@ -461,21 +464,6 @@ function handleInsertAsset(asset: UserAsset) {
   emit("insert-asset", asset);
 }
 
-async function handleChangeAssetCategory(asset: UserAsset, nextValue: number | "uncategorized") {
-  const nextCategoryId = nextValue === "uncategorized" ? null : nextValue;
-  if ((asset.category_id ?? null) === nextCategoryId) return;
-  try {
-    await moveAsset(asset.id, nextCategoryId, {
-      category: activeCategory.value,
-      keyword: keyword.value,
-      limit: 120,
-    });
-    message.success("素材分类已更新");
-  } catch (err: any) {
-    message.error(err?.response?.data?.detail || "更新素材分类失败");
-  }
-}
-
 function openAssetNameDialog(asset: UserAsset) {
   assetNameDialogAsset.value = asset;
   assetNameDialogValue.value = asset.file_name || "";
@@ -538,17 +526,48 @@ async function submitCategoryNameDialog() {
 }
 
 function openCategoryDialog(asset: UserAsset) {
-  categoryDialogAsset.value = asset;
+  categoryDialogAssetIds.value = [asset.id];
   categoryDialogValue.value = asset.category_id ?? "uncategorized";
   categoryDialogOpen.value = true;
 }
 
+function openBatchCategoryDialog() {
+  if (!selectedAssetIds.value.length) {
+    message.warning("请先选择要修改分类的素材");
+    return;
+  }
+  categoryDialogAssetIds.value = [...selectedAssetIds.value];
+  categoryDialogValue.value = typeof activeCategory.value === "number" ? activeCategory.value : "uncategorized";
+  categoryDialogOpen.value = true;
+}
+
 async function submitCategoryDialog() {
-  if (!categoryDialogAsset.value) return;
+  const ids = [...categoryDialogAssetIds.value];
+  if (!ids.length) return;
+  const nextCategoryId = categoryDialogValue.value === "uncategorized" ? null : categoryDialogValue.value;
+  if (ids.length === 1) {
+    const asset = assets.value.find((item) => item.id === ids[0]);
+    if (asset && (asset.category_id ?? null) === nextCategoryId) {
+      categoryDialogOpen.value = false;
+      return;
+    }
+  }
   categoryDialogSaving.value = true;
   try {
-    await handleChangeAssetCategory(categoryDialogAsset.value, categoryDialogValue.value);
+    await moveAssets(ids, nextCategoryId, {
+      category: activeCategory.value,
+      keyword: keyword.value,
+      limit: 120,
+    });
     categoryDialogOpen.value = false;
+    if (ids.length > 1) {
+      selectedAssetIds.value = [];
+      message.success(`已更新 ${ids.length} 个素材的分类`);
+    } else {
+      message.success("素材分类已更新");
+    }
+  } catch (err: any) {
+    message.error(err?.response?.data?.detail || "更新素材分类失败");
   } finally {
     categoryDialogSaving.value = false;
   }
@@ -680,6 +699,9 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
               <a-button size="small" :disabled="!selectedCount" @click="clearAssetSelection">
                 清空
               </a-button>
+              <a-button size="small" :disabled="!selectedCount" @click="openBatchCategoryDialog">
+                批量修改分类
+              </a-button>
               <a-button size="small" danger :loading="batchDeleting" :disabled="!selectedCount" @click="handleBatchDeleteAssets">
                 批量删除
               </a-button>
@@ -765,13 +787,16 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
 
   <a-modal
     v-model:open="categoryDialogOpen"
-    title="修改分类"
+    :title="categoryDialogTitle"
     centered
     ok-text="保存"
     cancel-text="取消"
     :confirm-loading="categoryDialogSaving"
     @ok="submitCategoryDialog"
   >
+    <div v-if="categoryDialogAssetIds.length > 1" class="asset-category-dialog-hint">
+      将已选 {{ categoryDialogAssetIds.length }} 项移动到：
+    </div>
     <a-select v-model:value="categoryDialogValue" class="asset-category-dialog-select">
       <a-select-option value="uncategorized">未分类</a-select-option>
       <a-select-option v-for="item in categories" :key="item.id" :value="item.id">
@@ -1363,6 +1388,12 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
 
 .asset-category-dialog-select {
   width: 100%;
+}
+
+.asset-category-dialog-hint {
+  margin-bottom: 10px;
+  color: #7f551c;
+  font-size: 13px;
 }
 
 .asset-category-dialog-select :deep(.ant-select-selector) {

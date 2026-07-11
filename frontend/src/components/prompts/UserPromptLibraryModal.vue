@@ -32,6 +32,7 @@ const {
   editPrompt,
   removePrompt,
   removePrompts,
+  movePrompts,
 } = useUserPrompts();
 
 const keyword = ref("");
@@ -47,6 +48,9 @@ const categoryDialogOpen = ref(false);
 const categoryDialogMode = ref<"create" | "rename">("create");
 const categoryDialogSaving = ref(false);
 const categoryDialogValue = ref("");
+const moveCategoryDialogOpen = ref(false);
+const moveCategoryDialogSaving = ref(false);
+const moveCategoryDialogValue = ref<number | "uncategorized">("uncategorized");
 const batchMode = ref(false);
 const batchDeleting = ref(false);
 const selectedPromptIds = ref<number[]>([]);
@@ -267,6 +271,36 @@ function handleBatchDeletePrompts() {
   });
 }
 
+function openBatchMoveCategoryDialog() {
+  if (!selectedPromptIds.value.length) {
+    message.warning("请先选择要修改分类的提示词");
+    return;
+  }
+  moveCategoryDialogValue.value = typeof activeCategory.value === "number" ? activeCategory.value : "uncategorized";
+  moveCategoryDialogOpen.value = true;
+}
+
+async function submitBatchMoveCategoryDialog() {
+  const ids = [...selectedPromptIds.value];
+  if (!ids.length) return;
+  const nextCategoryId = moveCategoryDialogValue.value === "uncategorized" ? null : moveCategoryDialogValue.value;
+  moveCategoryDialogSaving.value = true;
+  try {
+    await movePrompts(ids, nextCategoryId, {
+      category: activeCategory.value,
+      keyword: keyword.value,
+      limit: 120,
+    });
+    moveCategoryDialogOpen.value = false;
+    selectedPromptIds.value = [];
+    message.success(`已更新 ${ids.length} 条提示词的分类`);
+  } catch (err: any) {
+    message.error(err?.response?.data?.detail || "批量修改分类失败");
+  } finally {
+    moveCategoryDialogSaving.value = false;
+  }
+}
+
 function handleUsePrompt(prompt: UserPrompt) {
   emit("select-prompt", prompt);
   emit("update:open", false);
@@ -433,6 +467,9 @@ function handleDeleteCategory() {
               <a-button size="small" :disabled="!selectedCount" @click="clearPromptSelection">
                 清空
               </a-button>
+              <a-button size="small" :disabled="!selectedCount" @click="openBatchMoveCategoryDialog">
+                批量修改分类
+              </a-button>
               <a-button size="small" danger :loading="batchDeleting" :disabled="!selectedCount" @click="handleBatchDeletePrompts">
                 批量删除
               </a-button>
@@ -523,6 +560,25 @@ function handleDeleteCategory() {
       @ok="submitCategoryDialog"
     >
       <a-input v-model:value="categoryDialogValue" :maxlength="100" placeholder="请输入分类名称" />
+    </a-modal>
+
+    <a-modal
+      v-model:open="moveCategoryDialogOpen"
+      title="批量修改分类"
+      :confirm-loading="moveCategoryDialogSaving"
+      ok-text="保存"
+      cancel-text="取消"
+      @ok="submitBatchMoveCategoryDialog"
+    >
+      <div class="user-prompt-form">
+        <div class="user-prompt-form-item">
+          <label>将已选 {{ selectedCount }} 项移动到</label>
+          <a-select v-model:value="moveCategoryDialogValue" :get-popup-container="getBodyPopupContainer">
+            <a-select-option value="uncategorized">未分类</a-select-option>
+            <a-select-option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</a-select-option>
+          </a-select>
+        </div>
+      </div>
     </a-modal>
   </a-modal>
 </template>
