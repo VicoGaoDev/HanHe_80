@@ -13,6 +13,8 @@ import {
   resetUserCredits,
   getUserPromoDashboard,
 } from "@/api/admin";
+import UserCreditLogsDialog from "@/components/admin/UserCreditLogsDialog.vue";
+import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
 import { withApiBaseUrl } from "@/lib/assets";
 import { useAuthStore } from "@/stores/auth";
 import type { AdminUser, AdminUserPromoDashboard } from "@/types";
@@ -47,6 +49,10 @@ const whitelistLoadingId = ref<string | null>(null);
 const promoDashboardOpen = ref(false);
 const promoDashboardLoading = ref(false);
 const promoDashboard = ref<AdminUserPromoDashboard | null>(null);
+const creditLogsOpen = ref(false);
+const creditLogsTarget = ref<AdminUser | null>(null);
+const userInfoOpen = ref(false);
+const userInfoTarget = ref<AdminUser | null>(null);
 const currentPage = ref(1);
 const pageSize = 30;
 
@@ -58,7 +64,7 @@ const columns = [
   { title: "已消耗积分", dataIndex: "consumed_credits", width: 108 },
   { title: "状态", dataIndex: "status", width: 82 },
   { title: "创建时间", dataIndex: "created_at", width: 154 },
-  { title: "操作", key: "action", width: 340 },
+  { title: "操作", key: "action", width: 400 },
 ];
 
 const filteredUsers = computed(() => {
@@ -201,6 +207,16 @@ function openCredits(u: AdminUser) {
   creditsForm.amount = 0;
   creditsForm.description = "";
   creditsOpen.value = true;
+}
+
+function openCreditLogs(u: AdminUser) {
+  creditLogsTarget.value = u;
+  creditLogsOpen.value = true;
+}
+
+function openUserInfo(u: AdminUser) {
+  userInfoTarget.value = u;
+  userInfoOpen.value = true;
 }
 
 async function handleAllocateCredits() {
@@ -407,9 +423,11 @@ function promoActivityRowKey(record: {
           </template>
           <template v-if="column.dataIndex === 'username'">
             <div class="user-cell">
-              <a-avatar :size="34" :src="withApiBaseUrl(record.avatar_url) || undefined" class="table-avatar">
-                {{ record.username?.charAt(0)?.toUpperCase() }}
-              </a-avatar>
+              <button type="button" class="table-avatar-btn" @click="openUserInfo(record)">
+                <a-avatar :size="34" :src="withApiBaseUrl(record.avatar_url) || undefined" class="table-avatar">
+                  {{ record.username?.charAt(0)?.toUpperCase() }}
+                </a-avatar>
+              </button>
               <div class="user-cell-meta">
                 <span class="user-cell-name">{{ record.username }}</span>
                 <span v-if="record.email" class="user-cell-sub">{{ record.email }}</span>
@@ -439,6 +457,14 @@ function promoActivityRowKey(record: {
               <a-button type="link" size="small" class="user-action-btn user-action-btn-primary" @click="openCredits(record)">
                 <template #icon><WalletOutlined /></template>
                 分配积分
+              </a-button>
+              <a-button
+                type="link"
+                size="small"
+                class="user-action-btn user-action-btn-secondary"
+                @click="openCreditLogs(record)"
+              >
+                积分明细
               </a-button>
               <a-button
                 v-if="record.is_whitelisted"
@@ -629,6 +655,9 @@ function promoActivityRowKey(record: {
       </div>
     </a-modal>
 
+    <UserCreditLogsDialog v-model:open="creditLogsOpen" :user="creditLogsTarget" />
+    <AdminUserInfoDialog v-model:open="userInfoOpen" :user="userInfoTarget" />
+
     <a-modal
       v-model:open="promoDashboardOpen"
       :title="`推广数据 - ${promoDashboard?.username || ''}`"
@@ -818,6 +847,26 @@ function promoActivityRowKey(record: {
   font-weight: 700;
 }
 
+.table-avatar-btn {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(177, 109, 16, 0.18);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #ffb02b;
+    outline-offset: 2px;
+  }
+}
+
 .user-cell-name {
   color: #4c341a;
   font-weight: 700;
@@ -853,11 +902,10 @@ function promoActivityRowKey(record: {
 
 .table-actions {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  max-width: 340px;
-  white-space: nowrap;
+  max-width: 400px;
 }
 
 .user-action-btn {

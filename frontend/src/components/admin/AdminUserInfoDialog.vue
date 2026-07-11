@@ -82,61 +82,63 @@ watch(() => [props.open, props.user?.id], () => {
   >
     <a-spin :spinning="loading">
       <div v-if="user" class="user-info-dialog">
-        <div class="user-info-header">
-          <a-avatar :size="54" :src="withApiBaseUrl(user.avatar_url) || undefined" class="user-info-avatar">
-            {{ user.username?.charAt(0)?.toUpperCase() }}
-          </a-avatar>
-          <div class="user-info-identity">
-            <div class="user-info-name">{{ user.username }}</div>
-            <div class="user-info-id">{{ user.id }}</div>
-          </div>
-        </div>
-
-        <div class="user-info-stats">
-          <div class="user-info-stat-card">
-            <span>已使用积分</span>
-            <strong>{{ user.consumed_credits || 0 }}</strong>
-          </div>
-          <div class="user-info-stat-card">
-            <span>剩余积分</span>
-            <strong>{{ user.credits || 0 }}</strong>
-          </div>
-          <div class="user-info-stat-card">
-            <span>兑换记录</span>
-            <strong>{{ redeemTotal }}</strong>
-          </div>
-          <div class="user-info-stat-card">
-            <span>购买记录</span>
-            <strong>{{ purchaseTotal }}</strong>
-          </div>
-        </div>
-
-        <div class="user-info-section">
-          <div class="user-info-section-title">最近在线购买记录</div>
-          <div v-if="purchaseOrders.length" class="user-redeem-list">
-            <div v-for="order in purchaseOrders" :key="order.order_no" class="user-redeem-item">
-              <div>
-                <strong>+{{ order.credits }} 积分</strong>
-                <span>{{ order.subject || "积分购买" }} · ¥{{ order.amount_yuan.toFixed(2) }}</span>
-              </div>
-              <small>{{ formatTime(order.credited_at || order.paid_at || order.created_at) }}</small>
+        <div class="user-info-scroll">
+          <div class="user-info-header">
+            <a-avatar :size="54" :src="withApiBaseUrl(user.avatar_url) || undefined" class="user-info-avatar">
+              {{ user.username?.charAt(0)?.toUpperCase() }}
+            </a-avatar>
+            <div class="user-info-identity">
+              <div class="user-info-name">{{ user.username }}</div>
+              <div class="user-info-id">{{ user.id }}</div>
             </div>
           </div>
-          <a-empty v-else description="暂无在线购买记录" />
-        </div>
 
-        <div class="user-info-section">
-          <div class="user-info-section-title">最近积分兑换记录</div>
-          <div v-if="redeemLogs.length" class="user-redeem-list">
-            <div v-for="log in redeemLogs" :key="log.id" class="user-redeem-item">
-              <div>
-                <strong>{{ log.amount > 0 ? `+${log.amount}` : log.amount }} 积分</strong>
-                <span>{{ log.description || "兑换积分" }}</span>
-              </div>
-              <small>{{ formatTime(log.created_at) }}</small>
+          <div class="user-info-stats">
+            <div class="user-info-stat-card">
+              <span>已使用积分</span>
+              <strong>{{ user.consumed_credits || 0 }}</strong>
+            </div>
+            <div class="user-info-stat-card">
+              <span>剩余积分</span>
+              <strong>{{ user.credits || 0 }}</strong>
+            </div>
+            <div class="user-info-stat-card">
+              <span>兑换记录</span>
+              <strong>{{ redeemTotal }}</strong>
+            </div>
+            <div class="user-info-stat-card">
+              <span>购买记录</span>
+              <strong>{{ purchaseTotal }}</strong>
             </div>
           </div>
-          <a-empty v-else description="暂无积分兑换记录" />
+
+          <div class="user-info-section">
+            <div class="user-info-section-title">最近在线购买记录</div>
+            <div v-if="purchaseOrders.length" class="user-redeem-list">
+              <div v-for="order in purchaseOrders" :key="order.order_no" class="user-redeem-item">
+                <div>
+                  <strong>+{{ order.credits }} 积分</strong>
+                  <span>{{ order.subject || "积分购买" }} · ¥{{ order.amount_yuan.toFixed(2) }}</span>
+                </div>
+                <small>{{ formatTime(order.credited_at || order.paid_at || order.created_at) }}</small>
+              </div>
+            </div>
+            <a-empty v-else description="暂无在线购买记录" />
+          </div>
+
+          <div class="user-info-section">
+            <div class="user-info-section-title">最近积分兑换记录</div>
+            <div v-if="redeemLogs.length" class="user-redeem-list">
+              <div v-for="log in redeemLogs" :key="log.id" class="user-redeem-item">
+                <div>
+                  <strong>{{ log.amount > 0 ? `+${log.amount}` : log.amount }} 积分</strong>
+                  <span>{{ log.description || "兑换积分" }}</span>
+                </div>
+                <small>{{ formatTime(log.created_at) }}</small>
+              </div>
+            </div>
+            <a-empty v-else description="暂无积分兑换记录" />
+          </div>
         </div>
 
         <div class="user-info-actions">
@@ -157,6 +159,17 @@ watch(() => [props.open, props.user?.id], () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: min(68vh, 640px);
+}
+
+.user-info-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .user-info-header {
@@ -167,6 +180,7 @@ watch(() => [props.open, props.user?.id], () => {
   border: 1px solid var(--theme-panel-border);
   border-radius: 18px;
   background: var(--theme-panel-bg-soft);
+  flex-shrink: 0;
 }
 
 .user-info-avatar {
@@ -196,6 +210,7 @@ watch(() => [props.open, props.user?.id], () => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .user-info-stat-card {
@@ -269,6 +284,8 @@ watch(() => [props.open, props.user?.id], () => {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  flex-shrink: 0;
+  padding-top: 4px;
 }
 
 .user-info-secondary-btn,
