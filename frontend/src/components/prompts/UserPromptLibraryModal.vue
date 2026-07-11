@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { DeleteOutlined, EditOutlined, FolderAddOutlined, FolderOpenOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons-vue";
+import { CheckSquareOutlined, DeleteOutlined, EditOutlined, FolderAddOutlined, FolderOpenOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
 
 import { useUserPrompts, type UserPromptCategoryFilter } from "@/composables/useUserPrompts";
@@ -31,6 +31,7 @@ const {
   createPrompt,
   editPrompt,
   removePrompt,
+  removePrompts,
 } = useUserPrompts();
 
 const keyword = ref("");
@@ -46,6 +47,9 @@ const categoryDialogOpen = ref(false);
 const categoryDialogMode = ref<"create" | "rename">("create");
 const categoryDialogSaving = ref(false);
 const categoryDialogValue = ref("");
+const batchMode = ref(false);
+const batchDeleting = ref(false);
+const selectedPromptIds = ref<number[]>([]);
 
 const libraryTotal = computed(() => (
   uncategorizedCount.value
@@ -62,12 +66,33 @@ const categoryTabs = computed(() => [
   })),
 ]);
 
+const allVisiblePromptIds = computed(() => prompts.value.map((item) => item.id));
+const selectedCount = computed(() => selectedPromptIds.value.length);
+const allVisibleSelected = computed(() => (
+  allVisiblePromptIds.value.length > 0
+  && allVisiblePromptIds.value.every((id) => selectedPromptIds.value.includes(id))
+));
+
 watch(() => props.open, (open) => {
   if (!open) return;
   void refreshCurrent().catch((err: any) => {
     message.error(err?.response?.data?.detail || "获取提示词库失败");
   });
 }, { immediate: true });
+
+watch(() => props.open, (open) => {
+  if (open) return;
+  batchMode.value = false;
+  selectedPromptIds.value = [];
+});
+
+watch(prompts, (nextPrompts) => {
+  const visibleIds = new Set(nextPrompts.map((item) => item.id));
+  selectedPromptIds.value = selectedPromptIds.value.filter((id) => visibleIds.has(id));
+  if (!nextPrompts.length) {
+    batchMode.value = false;
+  }
+});
 
 function getBodyPopupContainer() {
   return document.body;
@@ -92,6 +117,44 @@ async function changeCategory(category: UserPromptCategoryFilter) {
 
 async function handleSearch() {
   await refreshCurrent();
+}
+
+function toggleBatchMode() {
+  batchMode.value = !batchMode.value;
+  if (!batchMode.value) {
+    selectedPromptIds.value = [];
+  }
+}
+
+function handleSelectPromptChange(promptId: number, checked: boolean) {
+  if (checked) {
+    if (!selectedPromptIds.value.includes(promptId)) {
+      selectedPromptIds.value = [...selectedPromptIds.value, promptId];
+    }
+    return;
+  }
+  selectedPromptIds.value = selectedPromptIds.value.filter((id) => id !== promptId);
+}
+
+function toggleSelectAllPrompts() {
+  if (allVisibleSelected.value) {
+    selectedPromptIds.value = [];
+    return;
+  }
+  selectedPromptIds.value = [...allVisiblePromptIds.value];
+}
+
+function clearPromptSelection() {
+  selectedPromptIds.value = [];
+}
+
+function togglePromptSelection(promptId: number) {
+  handleSelectPromptChange(promptId, !selectedPromptIds.value.includes(promptId));
+}
+
+function handlePromptCardClick(promptId: number) {
+  if (!batchMode.value) return;
+  togglePromptSelection(promptId);
 }
 
 function openCreatePromptDialog() {
@@ -169,6 +232,36 @@ function handleDeletePrompt(prompt: UserPrompt) {
         message.success("提示词已删除");
       } catch (err: any) {
         message.error(err?.response?.data?.detail || "删除提示词失败");
+      }
+    },
+  });
+}
+
+function handleBatchDeletePrompts() {
+  if (!selectedPromptIds.value.length) {
+    message.warning("请先选择要删除的提示词");
+    return;
+  }
+  const ids = [...selectedPromptIds.value];
+  Modal.confirm({
+    title: "批量删除提示词",
+    content: `确定删除已选中的 ${ids.length} 条提示词吗？删除后不可恢复。`,
+    okText: "删除",
+    cancelText: "取消",
+    async onOk() {
+      batchDeleting.value = true;
+      try {
+        await removePrompts(ids, {
+          category: activeCategory.value,
+          keyword: keyword.value,
+          limit: 120,
+        });
+        selectedPromptIds.value = [];
+        message.success(`已删除 ${ids.length} 条提示词`);
+      } catch (err: any) {
+        message.error(err?.response?.data?.detail || "批量删除提示词失败");
+      } finally {
+        batchDeleting.value = false;
       }
     },
   });
@@ -270,6 +363,10 @@ function handleDeleteCategory() {
           </div>
         </div>
         <div class="prompt-toolbar-right">
+          <a-button type="text" :class="{ 'prompt-batch-toggle-active': batchMode }" @click="toggleBatchMode">
+            <template #icon><CheckSquareOutlined /></template>
+            {{ batchMode ? "退出批量" : "批量管理" }}
+          </a-button>
           <a-button :loading="loading" @click="refreshCurrent">
             <template #icon><ReloadOutlined /></template>
             刷新
@@ -325,15 +422,46 @@ function handleDeleteCategory() {
 
       <section class="prompt-main">
         <div class="prompt-content-shell">
+          <div v-if="batchMode && prompts.length" class="prompt-batch-bar">
+            <div class="prompt-batch-summary">
+              已选 {{ selectedCount }} 项 / 当前 {{ allVisiblePromptIds.length }} 项
+            </div>
+            <div class="prompt-batch-actions">
+              <a-button size="small" @click="toggleSelectAllPrompts">
+                {{ allVisibleSelected ? "取消全选" : "全选" }}
+              </a-button>
+              <a-button size="small" :disabled="!selectedCount" @click="clearPromptSelection">
+                清空
+              </a-button>
+              <a-button size="small" danger :loading="batchDeleting" :disabled="!selectedCount" @click="handleBatchDeletePrompts">
+                批量删除
+              </a-button>
+            </div>
+          </div>
           <div v-if="loading" class="prompt-loading-mask">
             <a-spin />
           </div>
           <div class="prompt-content">
             <div v-if="prompts.length" class="prompt-list">
-              <div v-for="item in prompts" :key="item.id" class="prompt-card">
+              <div
+                v-for="item in prompts"
+                :key="item.id"
+                class="prompt-card"
+                :class="{
+                  'prompt-card-selected': selectedPromptIds.includes(item.id),
+                  'prompt-card-batch-selectable': batchMode,
+                }"
+                @click="handlePromptCardClick(item.id)"
+              >
+                <div v-if="batchMode" class="prompt-card-check" @click.stop>
+                  <a-checkbox
+                    :checked="selectedPromptIds.includes(item.id)"
+                    @update:checked="handleSelectPromptChange(item.id, $event)"
+                  />
+                </div>
                 <div class="prompt-card-header">
                   <div class="prompt-card-title">{{ item.title }}</div>
-                  <div class="prompt-card-actions">
+                  <div v-if="!batchMode" class="prompt-card-actions">
                     <a-button type="link" size="small" @click="handleUsePrompt(item)">使用</a-button>
                     <a-button type="link" size="small" @click="openEditPromptDialog(item)">
                       <template #icon><EditOutlined /></template>
@@ -534,9 +662,35 @@ function handleDeleteCategory() {
   position: relative;
   display: flex;
   flex: 1;
-  margin-top: 14px;
+  flex-direction: column;
+  margin-top: 0;
   min-height: 0;
   overflow: hidden;
+}
+
+.prompt-batch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(236, 185, 88, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 247, 229, 0.92);
+}
+
+.prompt-batch-summary {
+  color: #7f551c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.prompt-batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .prompt-loading-mask {
@@ -630,6 +784,11 @@ function handleDeleteCategory() {
   cursor: pointer;
 }
 
+.prompt-batch-toggle-active {
+  color: #8a6323;
+  background: rgba(255, 242, 214, 0.9);
+}
+
 .prompt-count-pill {
   padding: 8px 12px;
   border-radius: 999px;
@@ -654,10 +813,27 @@ function handleDeleteCategory() {
   border: 1px solid rgba(220, 185, 125, 0.24);
   background: #fff;
   box-shadow: 0 12px 28px rgba(236, 185, 88, 0.08);
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+
+.prompt-card-selected {
+  border-color: rgba(236, 185, 88, 0.72);
+  box-shadow: 0 18px 34px rgba(236, 185, 88, 0.18);
+}
+
+.prompt-card-batch-selectable {
+  cursor: pointer;
+}
+
+.prompt-card-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  line-height: 1;
 }
 
 .prompt-card-header,
@@ -693,7 +869,7 @@ function handleDeleteCategory() {
   white-space: pre-wrap;
   word-break: break-word;
   display: -webkit-box;
-  -webkit-line-clamp: 8;
+  -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -780,6 +956,11 @@ function handleDeleteCategory() {
   .prompt-toolbar-right {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .prompt-batch-bar {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>

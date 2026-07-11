@@ -100,6 +100,22 @@ export function useUserAssets() {
     ]);
   }
 
+  async function removeAssets(assetIds: number[], options?: {
+    category?: UserAssetCategoryFilter;
+    keyword?: string;
+    limit?: number;
+  }) {
+    if (!assetIds.length) return;
+    for (const assetId of assetIds) {
+      const res = await deleteUserAsset(assetId);
+      quota.value = res.quota || quota.value;
+    }
+    await Promise.all([
+      loadCategories(),
+      loadAssets(options),
+    ]);
+  }
+
   async function moveAsset(
     assetId: number,
     categoryId: number | null,
@@ -181,6 +197,7 @@ export function useUserAssets() {
     renameCategory,
     removeCategory,
     removeAsset,
+    removeAssets,
     moveAsset,
     renameAsset,
     uncategorizedCount,

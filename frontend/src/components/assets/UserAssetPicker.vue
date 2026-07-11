@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import dayjs from "dayjs";
-import { DeleteOutlined, FolderAddOutlined, FolderOpenOutlined, MoreOutlined, PictureOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons-vue";
+import { CheckSquareOutlined, DeleteOutlined, FolderAddOutlined, FolderOpenOutlined, MoreOutlined, PictureOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
 
 import { getPreviewImageSrc } from "@/api/images";
@@ -41,6 +41,7 @@ const {
   moveAsset,
   renameAsset,
   removeAsset,
+  removeAssets,
   removeCategory,
   renameCategory,
   uncategorizedCount,
@@ -65,6 +66,11 @@ const assetNameDialogOpen = ref(false);
 const assetNameDialogSaving = ref(false);
 const assetNameDialogAsset = ref<UserAsset | null>(null);
 const assetNameDialogValue = ref("");
+const batchMode = ref(false);
+const batchDeleting = ref(false);
+const selectedAssetIds = ref<number[]>([]);
+const assetMainRef = ref<HTMLElement | null>(null);
+const assetDragActive = ref(false);
 
 const categoryTabs = computed(() => [
   { key: "all" as const, label: "全部", count: quota.value.used },
@@ -77,6 +83,12 @@ const categoryTabs = computed(() => [
 ]);
 
 const assetQuotaFull = computed(() => checkAssetQuotaFull(quota.value));
+const allVisibleAssetIds = computed(() => assets.value.map((asset) => asset.id));
+const selectedCount = computed(() => selectedAssetIds.value.length);
+const allVisibleSelected = computed(() => (
+  allVisibleAssetIds.value.length > 0
+  && allVisibleAssetIds.value.every((id) => selectedAssetIds.value.includes(id))
+));
 
 watch(() => props.open, (open) => {
   if (!open) return;
@@ -91,6 +103,21 @@ watch(() => props.open, (open) => {
 
 watch(() => props.initialCategory, (value) => {
   activeCategory.value = value;
+});
+
+watch(() => props.open, (open) => {
+  if (open) return;
+  batchMode.value = false;
+  selectedAssetIds.value = [];
+  resetAssetDragState();
+});
+
+watch(assets, (nextAssets) => {
+  const visibleIds = new Set(nextAssets.map((asset) => asset.id));
+  selectedAssetIds.value = selectedAssetIds.value.filter((id) => visibleIds.has(id));
+  if (!nextAssets.length) {
+    batchMode.value = false;
+  }
 });
 
 function closeDialog() {
@@ -118,9 +145,50 @@ async function handleSearch() {
   await reloadAssets();
 }
 
+function toggleBatchMode() {
+  batchMode.value = !batchMode.value;
+  if (!batchMode.value) {
+    selectedAssetIds.value = [];
+  }
+}
+
+function handleSelectAssetChange(assetId: number, checked: boolean) {
+  if (checked) {
+    if (!selectedAssetIds.value.includes(assetId)) {
+      selectedAssetIds.value = [...selectedAssetIds.value, assetId];
+    }
+    return;
+  }
+  selectedAssetIds.value = selectedAssetIds.value.filter((id) => id !== assetId);
+}
+
+function toggleSelectAllAssets() {
+  if (allVisibleSelected.value) {
+    selectedAssetIds.value = [];
+    return;
+  }
+  selectedAssetIds.value = [...allVisibleAssetIds.value];
+}
+
+function clearAssetSelection() {
+  selectedAssetIds.value = [];
+}
+
+function toggleAssetSelection(assetId: number) {
+  handleSelectAssetChange(assetId, !selectedAssetIds.value.includes(assetId));
+}
+
 function openPreview(asset: UserAsset) {
   previewSrc.value = getPreviewImageSrc(asset.image_url || asset.thumb_url);
   previewVisible.value = true;
+}
+
+function handleAssetThumbClick(asset: UserAsset) {
+  if (batchMode.value) {
+    toggleAssetSelection(asset.id);
+    return;
+  }
+  openPreview(asset);
 }
 
 function formatAssetDate(value?: string | null) {
@@ -156,6 +224,148 @@ async function handleFileChange(event: Event) {
     message.error(err?.response?.data?.detail || err?.message || "上传素材失败");
   }
 }
+
+function resetAssetDragState() {
+  assetDragActive.value = false;
+}
+
+function isPointInsideAssetMain(clientX: number, clientY: number) {
+  const element = assetMainRef.value;
+  if (!element) return false;
+  const rect = element.getBoundingClientRect();
+  return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+}
+
+function getFileExtension(fileName: string) {
+  const normalized = (fileName || "").trim().toLowerCase();
+  const parts = normalized.split(".");
+  return parts.length > 1 ? parts.pop() || "" : "";
+}
+
+function isImageUploadFile(file: File) {
+  if ((file.type || "").toLowerCase().startsWith("image/")) return true;
+  return ["jpg", "jpeg", "png", "webp", "gif"].includes(getFileExtension(file.name));
+}
+
+async function uploadDraggedAssetFiles(files: File[]) {
+  try {
+    const uploaded = await uploadFiles(files, {
+      categoryId: typeof activeCategory.value === "number" ? activeCategory.value : null,
+      onTruncated: (acceptedCount, _skippedCount, remaining) => {
+        message.warning(getAssetQuotaTruncatedMessage(acceptedCount, remaining));
+      },
+    });
+    await reloadAssets();
+    if (uploaded.length) {
+      message.success(`成功上传 ${uploaded.length} 个素材`);
+    }
+  } catch (err: any) {
+    message.error(err?.response?.data?.detail || err?.message || "上传素材失败");
+  }
+}
+
+function confirmDraggedAssetUpload(files: File[]) {
+  const imageFiles = files.filter(isImageUploadFile);
+  const skippedCount = files.length - imageFiles.length;
+  if (!imageFiles.length) {
+    message.warning("请拖拽图片文件上传");
+    return;
+  }
+
+  Modal.confirm({
+    title: "上传素材",
+    content: `检测到 ${imageFiles.length} 个图片文件${skippedCount ? `，将跳过 ${skippedCount} 个非图片文件` : ""}，确认上传吗？`,
+    okText: "确认上传",
+    cancelText: "取消",
+    async onOk() {
+      await uploadDraggedAssetFiles(imageFiles);
+    },
+  });
+}
+
+function showAssetDragOverlay(event: DragEvent) {
+  if (!props.open || !event.dataTransfer) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+  assetDragActive.value = true;
+}
+
+function handleAssetMainDragEnter(event: DragEvent) {
+  showAssetDragOverlay(event);
+}
+
+function handleAssetMainDragOver(event: DragEvent) {
+  showAssetDragOverlay(event);
+}
+
+function handleAssetMainDragLeave(event: DragEvent) {
+  if (!props.open) return;
+  const nextTarget = event.relatedTarget as Node | null;
+  if (nextTarget && assetMainRef.value?.contains(nextTarget)) return;
+  resetAssetDragState();
+}
+
+function handleAssetMainDrop(event: DragEvent) {
+  if (!props.open || !event.dataTransfer) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const files = Array.from(event.dataTransfer.files || []);
+  resetAssetDragState();
+  if (!files.length) return;
+  confirmDraggedAssetUpload(files);
+}
+
+function handleDocumentAssetDragOver(event: DragEvent) {
+  if (!props.open || !event.dataTransfer) return;
+  const inside = isPointInsideAssetMain(event.clientX, event.clientY);
+  assetDragActive.value = inside;
+  if (!inside) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+}
+
+function handleDocumentAssetDrop(event: DragEvent) {
+  if (!props.open || !event.dataTransfer) {
+    resetAssetDragState();
+    return;
+  }
+  const inside = isPointInsideAssetMain(event.clientX, event.clientY);
+  if (!inside) {
+    resetAssetDragState();
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  const files = Array.from(event.dataTransfer.files || []);
+  resetAssetDragState();
+  if (!files.length) return;
+  confirmDraggedAssetUpload(files);
+}
+
+function handleDocumentAssetDragLeave(event: DragEvent) {
+  if (!props.open) return;
+  if (event.clientX <= 0 || event.clientY <= 0 || event.clientX >= window.innerWidth || event.clientY >= window.innerHeight) {
+    resetAssetDragState();
+  }
+}
+
+function handleDocumentAssetDragEnd() {
+  resetAssetDragState();
+}
+
+onMounted(() => {
+  document.addEventListener("dragover", handleDocumentAssetDragOver, true);
+  document.addEventListener("drop", handleDocumentAssetDrop, true);
+  document.addEventListener("dragleave", handleDocumentAssetDragLeave, true);
+  document.addEventListener("dragend", handleDocumentAssetDragEnd, true);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("dragover", handleDocumentAssetDragOver, true);
+  document.removeEventListener("drop", handleDocumentAssetDrop, true);
+  document.removeEventListener("dragleave", handleDocumentAssetDragLeave, true);
+  document.removeEventListener("dragend", handleDocumentAssetDragEnd, true);
+});
 
 async function handleCreateCategory() {
   categoryNameDialogMode.value = "create";
@@ -208,6 +418,36 @@ function handleDeleteAsset(asset: UserAsset) {
         message.success("素材已删除");
       } catch (err: any) {
         message.error(err?.response?.data?.detail || "删除素材失败");
+      }
+    },
+  });
+}
+
+function handleBatchDeleteAssets() {
+  if (!selectedAssetIds.value.length) {
+    message.warning("请先选择要删除的素材");
+    return;
+  }
+  const ids = [...selectedAssetIds.value];
+  Modal.confirm({
+    title: "批量删除素材",
+    content: `确定删除已选中的 ${ids.length} 个素材吗？删除后会同步删除云端 COS 对象，并立即释放额度。`,
+    okText: "删除",
+    cancelText: "取消",
+    async onOk() {
+      batchDeleting.value = true;
+      try {
+        await removeAssets(ids, {
+          category: activeCategory.value,
+          keyword: keyword.value,
+          limit: 120,
+        });
+        selectedAssetIds.value = [];
+        message.success(`已删除 ${ids.length} 个素材`);
+      } catch (err: any) {
+        message.error(err?.response?.data?.detail || "批量删除素材失败");
+      } finally {
+        batchDeleting.value = false;
       }
     },
   });
@@ -357,6 +597,10 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
           </div>
         </div>
         <div class="asset-toolbar-right">
+          <a-button type="text" :class="{ 'asset-batch-toggle-active': batchMode }" @click="toggleBatchMode">
+            <template #icon><CheckSquareOutlined /></template>
+            {{ batchMode ? "退出批量" : "批量管理" }}
+          </a-button>
           <a-button :loading="loading" @click="reloadAssets">
             <template #icon><ReloadOutlined /></template>
             刷新
@@ -411,9 +655,36 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
         </div>
       </aside>
 
-      <section class="asset-main">
+      <section
+        ref="assetMainRef"
+        class="asset-main"
+        @dragenter="handleAssetMainDragEnter"
+        @dragover="handleAssetMainDragOver"
+        @dragleave="handleAssetMainDragLeave"
+        @drop="handleAssetMainDrop"
+      >
         <input ref="fileInputRef" type="file" accept="image/*" multiple hidden @change="handleFileChange" />
         <div class="asset-content-shell">
+          <div v-if="!assetQuotaFull" class="asset-drop-hint">支持拖拽上传素材</div>
+          <div v-if="assetDragActive" class="asset-drop-overlay">
+            <div class="asset-drop-overlay-text">松开即可上传素材</div>
+          </div>
+          <div v-if="batchMode && assets.length" class="asset-batch-bar">
+            <div class="asset-batch-summary">
+              已选 {{ selectedCount }} 项 / 当前 {{ allVisibleAssetIds.length }} 项
+            </div>
+            <div class="asset-batch-actions">
+              <a-button size="small" @click="toggleSelectAllAssets">
+                {{ allVisibleSelected ? "取消全选" : "全选" }}
+              </a-button>
+              <a-button size="small" :disabled="!selectedCount" @click="clearAssetSelection">
+                清空
+              </a-button>
+              <a-button size="small" danger :loading="batchDeleting" :disabled="!selectedCount" @click="handleBatchDeleteAssets">
+                批量删除
+              </a-button>
+            </div>
+          </div>
           <div v-if="loading" class="asset-loading-mask">
             <a-spin />
           </div>
@@ -423,11 +694,18 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
                 v-for="asset in assets"
                 :key="asset.id"
                 class="asset-card"
+                :class="{ 'asset-card-selected': selectedAssetIds.includes(asset.id) }"
                 :draggable="enableDrag"
                 @dragstart="handleAssetDragStart($event, asset)"
               >
+                <div v-if="batchMode" class="asset-card-check" @click.stop>
+                  <a-checkbox
+                    :checked="selectedAssetIds.includes(asset.id)"
+                    @update:checked="handleSelectAssetChange(asset.id, $event)"
+                  />
+                </div>
                 <div class="asset-card-media">
-                  <div class="asset-card-thumb" @click="openPreview(asset)">
+                  <div class="asset-card-thumb" :class="{ 'batch-selectable': batchMode }" @click="handleAssetThumbClick(asset)">
                     <img :src="getPreviewImageSrc(asset.thumb_url || asset.image_url)" :alt="asset.file_name" loading="lazy" />
                   </div>
                   <div class="asset-card-actions">
@@ -673,9 +951,69 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
   position: relative;
   display: flex;
   flex: 1;
-  margin-top: 14px;
+  flex-direction: column;
+  margin-top: 0;
   min-height: 0;
   overflow: hidden;
+}
+
+.asset-drop-hint {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  z-index: 2;
+  color: rgba(138, 79, 27, 0.55);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: none;
+  user-select: none;
+}
+
+.asset-drop-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  border: 2px dashed rgba(214, 102, 64, 0.72);
+  border-radius: 18px;
+  background: rgba(255, 248, 236, 0.88);
+  pointer-events: none;
+}
+
+.asset-drop-overlay-text {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #8a4f1b;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 12px 26px rgba(236, 185, 88, 0.18);
+}
+
+.asset-batch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(236, 185, 88, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 247, 229, 0.92);
+}
+
+.asset-batch-summary {
+  color: #7f551c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.asset-batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .asset-loading-mask {
@@ -799,6 +1137,11 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
   color: #7f551c;
 }
 
+.asset-batch-toggle-active {
+  color: #8a6323;
+  background: rgba(255, 242, 214, 0.9);
+}
+
 .asset-quota-pill {
   padding: 8px 12px;
   border-radius: 999px;
@@ -829,6 +1172,19 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
     border-color var(--motion-duration-fast, 0.18s) var(--motion-ease-soft, ease);
 }
 
+.asset-card-selected {
+  border-color: rgba(236, 185, 88, 0.72);
+  box-shadow: 0 18px 34px rgba(236, 185, 88, 0.18);
+}
+
+.asset-card-check {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  line-height: 1;
+}
+
 .asset-card:hover,
 .asset-card:focus-within {
   transform: translateY(-3px);
@@ -845,6 +1201,10 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
   cursor: zoom-in;
   background: #f8f4eb;
   overflow: hidden;
+}
+
+.asset-card-thumb.batch-selectable {
+  cursor: pointer;
 }
 
 .asset-card-thumb img {
@@ -1125,6 +1485,11 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
   .asset-toolbar-right {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .asset-batch-bar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .asset-search {

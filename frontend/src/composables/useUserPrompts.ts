@@ -144,6 +144,22 @@ export function useUserPrompts() {
     ]);
   }
 
+  async function removePrompts(
+    promptIds: number[],
+    options?: {
+      category?: UserPromptCategoryFilter;
+      keyword?: string;
+      limit?: number;
+    },
+  ) {
+    if (!promptIds.length) return;
+    await Promise.all(promptIds.map((promptId) => deleteUserPrompt(promptId)));
+    await Promise.all([
+      loadCategories(),
+      loadPrompts(options),
+    ]);
+  }
+
   return {
     categories,
     uncategorizedCount,
@@ -160,5 +176,6 @@ export function useUserPrompts() {
     createPrompt,
     editPrompt,
     removePrompt,
+    removePrompts,
   };
 }
