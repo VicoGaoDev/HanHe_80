@@ -250,6 +250,7 @@ def _serialize_task_history_detail(
         "credit_refunded": credit_refunded,
         "used_fallback_api": bool(task.used_fallback_api),
         "created_at": task.created_at,
+        "request_finished_at": task.request_finished_at,
         "error_message": task.error_message or "",
         "images": visible_images,
         "api_attempts": _serialize_task_api_attempts(resolved_attempts or []),
