@@ -104,7 +104,21 @@ function showInsufficientCreditsPurchase(detail?: string) {
 
 type GenerateMode = "textGenerate" | "imageEdit" | "inpaint" | "promptReverse";
 const MAX_RECENT_GENERATED_TASKS = 40;
-const MAX_ACTIVE_GENERATION_IMAGES = 8;
+const MAX_ACTIVE_GENERATION_IMAGES = 12;
+const GENERATION_IMAGE_COUNT_MARKS = {
+  1: "1",
+  2: "2",
+  3: "3",
+  4: "4",
+  5: "5",
+  6: "6",
+  7: "7",
+  8: "8",
+  9: "9",
+  10: "10",
+  11: "11",
+  12: "12",
+};
 const DEFAULT_SCENE_COSTS: Record<string, number> = {
   banana: 4,
   banana2: 4,
@@ -2371,7 +2385,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                     v-model:value="numImages"
                     :min="1"
                     :max="MAX_ACTIVE_GENERATION_IMAGES"
-                    :marks="{ 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8' }"
+                    :marks="GENERATION_IMAGE_COUNT_MARKS"
                     class="num-slider"
                   />
                 </div>
@@ -2394,7 +2408,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                     (400+模版)
                   </div>
                   <div class="generate-link-tip-right">
-                    支持 <strong>8</strong> 张图片同时生成（{{ activeGenerationImageCount }} / {{ MAX_ACTIVE_GENERATION_IMAGES }}）
+                    支持 <strong>{{ MAX_ACTIVE_GENERATION_IMAGES }}</strong> 张图片同时生成（{{ activeGenerationImageCount }} / {{ MAX_ACTIVE_GENERATION_IMAGES }}）
                   </div>
                 </div>
                 <div class="generate-action-row">
@@ -2680,7 +2694,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                     v-model:value="numImages"
                     :min="1"
                     :max="MAX_ACTIVE_GENERATION_IMAGES"
-                    :marks="{ 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8' }"
+                    :marks="GENERATION_IMAGE_COUNT_MARKS"
                     class="num-slider"
                   />
                 </div>
@@ -2703,7 +2717,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                     (400+模版)
                   </div>
                   <div class="generate-link-tip-right">
-                    支持 <strong>8</strong> 张图片同时生成（{{ activeGenerationImageCount }} / {{ MAX_ACTIVE_GENERATION_IMAGES }}）
+                    支持 <strong>{{ MAX_ACTIVE_GENERATION_IMAGES }}</strong> 张图片同时生成（{{ activeGenerationImageCount }} / {{ MAX_ACTIVE_GENERATION_IMAGES }}）
                   </div>
                 </div>
                 <div class="generate-action-row">

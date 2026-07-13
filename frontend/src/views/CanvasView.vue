@@ -2557,7 +2557,7 @@ function refillGenerateConfigFromNode(node: CanvasNode) {
   canvasMode.value = (task.reference_images || []).length ? "imageEdit" : "textGenerate";
   selectedModel.value = task.model || selectedModel.value;
   prompt.value = task.prompt || "";
-  numImages.value = Math.min(8, Math.max(1, Number(task.num_images || 1)));
+  numImages.value = Math.min(12, Math.max(1, Number(task.num_images || 1)));
   size.value = task.size || size.value;
   resolution.value = task.resolution || resolution.value;
   customSize.value = task.custom_size || "";
