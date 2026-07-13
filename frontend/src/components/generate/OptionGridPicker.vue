@@ -80,7 +80,7 @@ function selectOption(value: string) {
   <a-popover
     v-model:open="open"
     trigger="click"
-    placement="top"
+    placement="topLeft"
     overlay-class-name="option-grid-popover"
     class="option-grid-picker"
   >
@@ -312,6 +312,8 @@ function selectOption(value: string) {
 
 <style lang="scss">
 .option-grid-popover {
+  z-index: 1400;
+
   .ant-popover-inner {
     padding: 10px;
     border-radius: 16px;

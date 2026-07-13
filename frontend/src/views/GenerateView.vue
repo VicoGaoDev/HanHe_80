@@ -105,20 +105,13 @@ function showInsufficientCreditsPurchase(detail?: string) {
 type GenerateMode = "textGenerate" | "imageEdit" | "inpaint" | "promptReverse";
 const MAX_RECENT_GENERATED_TASKS = 40;
 const MAX_ACTIVE_GENERATION_IMAGES = 12;
-const GENERATION_IMAGE_COUNT_MARKS = {
-  1: "1",
-  2: "2",
-  3: "3",
-  4: "4",
-  5: "5",
-  6: "6",
-  7: "7",
-  8: "8",
-  9: "9",
-  10: "10",
-  11: "11",
-  12: "12",
-};
+const GENERATION_IMAGE_COUNT_OPTIONS: SceneOptionItem[] = Array.from(
+  { length: MAX_ACTIVE_GENERATION_IMAGES },
+  (_, index) => {
+    const value = String(index + 1);
+    return { label: value, value };
+  },
+);
 const DEFAULT_SCENE_COSTS: Record<string, number> = {
   banana: 4,
   banana2: 4,
@@ -164,6 +157,15 @@ const numImages = ref(1);
 const resolution = ref("2K");
 const size = ref("9:16");
 const customSize = ref("");
+const selectedNumImages = computed({
+  get: () => String(numImages.value),
+  set: (value: string) => {
+    numImages.value = Math.min(
+      MAX_ACTIVE_GENERATION_IMAGES,
+      Math.max(1, Number(value) || 1),
+    );
+  },
+});
 
 type GeneratedTaskStatus = TaskResult["status"] | "submitting";
 type SubmitMode = Exclude<GenerateMode, "promptReverse">;
@@ -2376,17 +2378,13 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                     show-preview
                   />
                 </div>
-              </div>
-
-              <div class="generate-actions-block config-section action-config-section">
-                <div class="field-block">
-                  <label>图片数量：{{ numImages }}</label>
-                  <a-slider
-                    v-model:value="numImages"
-                    :min="1"
-                    :max="MAX_ACTIVE_GENERATION_IMAGES"
-                    :marks="GENERATION_IMAGE_COUNT_MARKS"
-                    class="num-slider"
+                <div class="setting-item setting-item-inline">
+                  <label>图片数量</label>
+                  <OptionGridPicker
+                    v-model="selectedNumImages"
+                    :options="GENERATION_IMAGE_COUNT_OPTIONS"
+                    panel-title="选择图片数量"
+                    placeholder="选择图片数量"
                   />
                 </div>
               </div>
@@ -2685,17 +2683,13 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                     show-preview
                   />
                 </div>
-              </div>
-
-              <div class="generate-actions-block config-section action-config-section">
-                <div class="field-block">
-                  <label>图片数量：{{ numImages }}</label>
-                  <a-slider
-                    v-model:value="numImages"
-                    :min="1"
-                    :max="MAX_ACTIVE_GENERATION_IMAGES"
-                    :marks="GENERATION_IMAGE_COUNT_MARKS"
-                    class="num-slider"
+                <div class="setting-item setting-item-inline">
+                  <label>图片数量</label>
+                  <OptionGridPicker
+                    v-model="selectedNumImages"
+                    :options="GENERATION_IMAGE_COUNT_OPTIONS"
+                    panel-title="选择图片数量"
+                    placeholder="选择图片数量"
                   />
                 </div>
               </div>
@@ -3704,10 +3698,6 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
   padding-bottom: 10px;
 }
 
-.action-config-section {
-  padding-bottom: 0;
-}
-
 .prompt-block {
   display: flex;
   flex-direction: column;
@@ -3839,7 +3829,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
 }
 
 .settings-row-inline {
-  align-items: center;
+  align-items: stretch;
 }
 
 .setting-item {
@@ -3861,32 +3851,24 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
 }
 
 .setting-item-inline {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
+  flex: 1 1 0;
+  align-items: stretch;
+  gap: 10px;
 
   label {
     margin: 0;
-    min-width: auto;
-    flex: 0 0 auto;
-    white-space: nowrap;
+    white-space: normal;
   }
 
-  .flat-select {
-    flex: 1;
+  :deep(.option-grid-picker) {
+    display: flex;
+    width: 100%;
   }
 
-  .aspect-ratio-picker,
-  .option-grid-picker {
-    flex: 0 1 auto;
-    width: auto;
-    min-width: 0;
+  :deep(.option-grid-trigger) {
+    width: 100%;
+    justify-content: space-between;
   }
-}
-
-.generate-actions-block {
-  display: flex;
-  flex-direction: column;
 }
 
 .config-skeleton-shell {
@@ -4381,75 +4363,6 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
   right: 34px;
   transform: translateY(-50%);
   pointer-events: none;
-}
-
-/* --- Slider --- */
-.num-slider {
-  margin: 4px 8px 2px;
-
-  :deep(.ant-slider-rail) {
-    background: linear-gradient(90deg, var(--theme-control-border), var(--theme-control-border-strong));
-    height: 8px;
-    border-radius: 999px;
-  }
-
-  :deep(.ant-slider-track) {
-    background: var(--theme-accent);
-    height: 8px;
-    border-radius: 999px;
-  }
-
-  :deep(.ant-slider-handle) {
-    width: 22px;
-    height: 22px;
-    margin-top: -6px;
-    border: none;
-    background: transparent;
-    box-shadow: none;
-    outline: none !important;
-    transform: translateX(-50%);
-
-    &::after {
-      width: 22px;
-      height: 22px;
-      inset-inline-start: 0;
-      inset-block-start: 0;
-      border-radius: 50%;
-      border: 3px solid var(--theme-accent);
-      background: var(--theme-panel-bg);
-      box-shadow: 0 4px 12px var(--theme-shadow-medium);
-    }
-
-    &:hover::after,
-    &:focus::after {
-      border-color: var(--theme-accent-strong);
-      box-shadow: 0 4px 16px var(--theme-shadow-strong);
-    }
-  }
-
-  :deep(.ant-slider-dot) {
-    width: 10px;
-    height: 10px;
-    border: 2px solid var(--theme-control-border-strong);
-    background: var(--theme-control-bg);
-    top: -1px;
-    transform: translateX(-50%);
-  }
-
-  :deep(.ant-slider-dot-active) {
-    border-color: var(--theme-accent);
-  }
-
-  :deep(.ant-slider-mark-text) {
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 600;
-    margin-top: 5px;
-  }
-
-  :deep(.ant-slider-mark-text-active) {
-    color: var(--theme-title);
-  }
 }
 
 .generate-btn {
@@ -5878,10 +5791,6 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-mor
     padding: 15px;
   }
 
-  .generate-config-panel .action-config-section {
-    padding-bottom: 18px;
-  }
-
   .generate-config-panel .settings-footer {
     z-index: 1;
     margin-top: 8px;
@@ -5908,33 +5817,18 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-mor
 
   .settings-row-inline {
     flex-direction: row;
-    align-items: center;
+    align-items: stretch;
     gap: 10px;
   }
 
   .settings-row-inline .setting-item-inline {
     flex: 1 1 0;
     min-width: 0;
-    justify-content: flex-start;
     gap: 6px;
   }
 
   .settings-row-inline .setting-item-inline label {
-    min-width: auto;
-    white-space: nowrap;
-  }
-
-  .settings-row-inline .setting-item-inline .flat-select {
-    min-width: 0;
-  }
-
-  .settings-row-inline .setting-item-inline .flat-select :deep(.ant-select-selector) {
-    height: 42px !important;
-    padding: 0 10px !important;
-  }
-
-  .settings-row-inline .setting-item-inline .flat-select :deep(.ant-select-selection-item) {
-    line-height: 42px !important;
+    white-space: normal;
   }
 
   .generate-config-panel .upload-thumb,
@@ -6338,46 +6232,6 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .model-opti
 
 html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .model-option-desc {
   color: var(--text-secondary);
-}
-
-html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .num-slider {
-  :deep(.ant-slider-rail) {
-    background: var(--theme-control-border);
-  }
-
-  :deep(.ant-slider-track) {
-    background: var(--theme-accent);
-  }
-
-  :deep(.ant-slider-handle) {
-    &::after {
-      border: 3px solid var(--theme-accent);
-      background: var(--theme-surface-strong);
-      box-shadow: 0 4px 12px var(--theme-shadow-medium);
-    }
-
-    &:hover::after,
-    &:focus::after {
-      border-color: var(--theme-accent);
-      box-shadow: 0 4px 16px var(--theme-shadow-strong);
-    }
-  }
-
-  :deep(.ant-slider-dot) {
-    border-color: var(--theme-control-border-strong);
-  }
-
-  :deep(.ant-slider-dot-active) {
-    border-color: var(--theme-accent);
-  }
-
-  :deep(.ant-slider-mark-text) {
-    color: var(--text-muted);
-  }
-
-  :deep(.ant-slider-mark-text-active) {
-    color: var(--theme-title);
-  }
 }
 
 html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-retain-badge {
