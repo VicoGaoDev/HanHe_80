@@ -578,6 +578,17 @@ const resultItems = computed(() => (
   })))
 ));
 
+function getResultItemKey(item: {
+  taskLocalId: string;
+  index: number;
+  image: { id: number; status: string };
+}) {
+  if (item.image.status === "pending") {
+    return `${item.taskLocalId}-pending-${item.index}`;
+  }
+  return `${item.taskLocalId}-${item.image.id}-${item.index}`;
+}
+
 const resultColumnCount = computed(() => {
   if (viewportWidth.value <= 640) return 1;
   if (viewportWidth.value <= 960) return Math.min(2, preferredResultColumnCount.value);
@@ -3169,7 +3180,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
             >
               <div
                 v-for="(item, index) in resultItems"
-                :key="`${item.taskLocalId}-${item.image.id}-${item.index}`"
+                :key="getResultItemKey(item)"
                 class="result-card"
                 :style="{
                   '--generate-result-delay': `${Math.min(index, 9) * 45}ms`,
