@@ -407,7 +407,18 @@ onMounted(() => {
         :loading="loading"
         title="兑换码营业额"
         count-label="兑换"
-      />
+      >
+        <template #footer-extra>
+          <a-button
+            type="primary"
+            class="warm-primary-btn"
+            @click="router.push({ path: '/admin/redeem-keys', query: { preset: 'today', is_used: 'true' } })"
+          >
+            <template #icon><UnorderedListOutlined /></template>
+            兑换码详情
+          </a-button>
+        </template>
+      </RedeemRevenueTable>
       <RedeemRevenueTable
         :data="offlineOrderRevenue"
         :loading="loading"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from "vue";
+import { useRoute } from "vue-router";
 import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
@@ -14,6 +15,7 @@ const statusLoadingId = ref<number | null>(null);
 const latestBatch = ref<AdminRedeemKeyBatchResult | null>(null);
 const items = ref<AdminRedeemKey[]>([]);
 const selectedRowKeys = ref<number[]>([]);
+const route = useRoute();
 type DateShortcut = "today" | "last7Days" | "thisWeek";
 const dateShortcut = ref<DateShortcut | undefined>();
 
@@ -90,8 +92,6 @@ async function load() {
   }
 }
 
-onMounted(load);
-
 async function handleCreateBatch() {
   if (!batchForm.count || batchForm.count <= 0) {
     message.warning("请输入有效的生成数量");
@@ -132,7 +132,7 @@ function handleReset() {
   load();
 }
 
-function applyDateShortcut(type: DateShortcut) {
+function setDateShortcut(type: DateShortcut) {
   const now = dayjs();
   dateShortcut.value = type;
   if (type === "today") {
@@ -142,6 +142,10 @@ function applyDateShortcut(type: DateShortcut) {
   } else {
     filters.dateRange = [now.startOf("week"), now.endOf("week")];
   }
+}
+
+function applyDateShortcut(type: DateShortcut) {
+  setDateShortcut(type);
   handleFilter();
 }
 
@@ -217,6 +221,34 @@ function fmtTime(t?: string | null) {
 function formatQueryDate(value?: Dayjs) {
   return value ? value.format("YYYY-MM-DDTHH:mm:ss") : undefined;
 }
+
+function normalizeQueryValue(value: unknown) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function parseBooleanQuery(value: unknown) {
+  const normalized = normalizeQueryValue(value);
+  if (normalized === "true" || normalized === "1") return true;
+  if (normalized === "false" || normalized === "0") return false;
+  return undefined;
+}
+
+function applyRouteQueryFilters() {
+  const presetQuery = normalizeQueryValue(route.query.preset);
+  if (presetQuery === "today" || presetQuery === "last7Days" || presetQuery === "thisWeek") {
+    setDateShortcut(presetQuery);
+  }
+
+  const isUsedQuery = parseBooleanQuery(route.query.is_used ?? route.query.isUsed);
+  if (isUsedQuery !== undefined) {
+    filters.isUsed = isUsedQuery;
+  }
+}
+
+onMounted(() => {
+  applyRouteQueryFilters();
+  load();
+});
 </script>
 
 <template>
