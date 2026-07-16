@@ -1449,10 +1449,7 @@ def get_video_stats(db: Session) -> dict:
     base_query = (
         db.query(VideoTask)
         .join(User, User.id == VideoTask.user_id)
-        .filter(
-            *_analytics_user_filter(),
-            VideoTask.is_deleted.is_(False),
-        )
+        .filter(*_analytics_user_filter())
     )
     total_tasks = base_query.count()
     refunded_video_task_ids = _get_refunded_video_task_ids(db, [task_id for (task_id,) in base_query.with_entities(VideoTask.id).all()])
@@ -1463,10 +1460,7 @@ def get_video_stats(db: Session) -> dict:
     total_users = (
         db.query(func.count(func.distinct(VideoTask.user_id)))
         .join(User, User.id == VideoTask.user_id)
-        .filter(
-            *_analytics_user_filter(),
-            VideoTask.is_deleted.is_(False),
-        )
+        .filter(*_analytics_user_filter())
         .scalar()
     )
     active_users = (
@@ -1474,7 +1468,6 @@ def get_video_stats(db: Session) -> dict:
         .join(User, User.id == VideoTask.user_id)
         .filter(
             *_analytics_user_filter(),
-            VideoTask.is_deleted.is_(False),
             VideoTask.created_at >= now - timedelta(days=7),
         )
         .scalar()
@@ -1505,7 +1498,6 @@ def _video_task_query(
     query = db.query(VideoTask).join(User, User.id == VideoTask.user_id).filter(
         VideoTask.created_at >= _to_db_datetime(start_date),
         VideoTask.created_at <= _to_db_datetime(end_date),
-        VideoTask.is_deleted.is_(False),
         *_analytics_user_filter(),
     )
     if status_filter:
@@ -1599,10 +1591,7 @@ def get_video_analytics_summary(
     total_users = (
         db.query(func.count(func.distinct(VideoTask.user_id)))
         .join(User, User.id == VideoTask.user_id)
-        .filter(
-            *_analytics_user_filter(),
-            VideoTask.is_deleted.is_(False),
-        )
+        .filter(*_analytics_user_filter())
         .scalar()
     )
     zero_metric = _metric_payload(0, 0)
