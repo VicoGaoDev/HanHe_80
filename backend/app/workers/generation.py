@@ -56,6 +56,7 @@ ASYNC_PROVIDER_TIMEOUT_GRACE_SECONDS = 60
 ASYNC_POLL_TRANSIENT_ERROR_RETRY_LIMIT = 3
 ASYNC_POLL_RECOVERY_INTERVAL_SECONDS = 30
 ASYNC_POLL_RECOVERY_BATCH_SIZE = 100
+ASYNC_POLL_CLAIM_LEASE_SECONDS = max(int(settings.AI_TIMEOUT or 0) + 60, 120)
 TASK_PROCESSING_LOCK_TIMEOUT_SECONDS = max(int(settings.AI_TIMEOUT or 0) + 600, 900)
 SINGLE_IMAGE_LOCK_TIMEOUT_SECONDS = max(int(settings.AI_TIMEOUT or 0) + 600, 900)
 SYNC_GENERATION_MAX_WORKERS = max(int(settings.SYNC_GENERATION_MAX_WORKERS or 0), 1)
@@ -2177,6 +2178,34 @@ def _retry_async_poll_with_fallback(
     return fallback_result, attempts
 
 
+def _claim_due_async_poll_task(db, task: Task, now_value) -> bool:
+    lease_until = now_value + timedelta(seconds=ASYNC_POLL_CLAIM_LEASE_SECONDS)
+    updated_count = (
+        db.query(Task)
+        .filter(
+            Task.id == task.id,
+            Task.status == "processing",
+            Task.provider_task_id != "",
+            Task.next_poll_at.is_not(None),
+            Task.next_poll_at <= now_value,
+            Task.is_deleted.is_(False),
+        )
+        .update(
+            {Task.next_poll_at: lease_until},
+            synchronize_session=False,
+        )
+    )
+    db.commit()
+    if not updated_count:
+        logger.info(
+            "Skip async poll because another web worker claimed it: task_id=%s",
+            task.id,
+        )
+        return False
+    db.refresh(task)
+    return True
+
+
 def _process_async_poll_task(task_id: int, *, use_distributed_lock: bool = True):
     poll_lock = None
     if use_distributed_lock:
@@ -2216,6 +2245,8 @@ def _process_async_poll_task(task_id: int, *, use_distributed_lock: bool = True)
         now_value = now_local()
         if task.next_poll_at and task.next_poll_at > now_value:
             _schedule_async_poll_task(task.id, delay_seconds=max(int((task.next_poll_at - now_value).total_seconds()), 1))
+            return
+        if not task.next_poll_at or not _claim_due_async_poll_task(db, task, now_value):
             return
 
         image = _first_pending_image(task)
