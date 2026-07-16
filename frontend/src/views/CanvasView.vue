@@ -2271,8 +2271,55 @@ function addUserAssetReference(asset: UserAsset) {
   return true;
 }
 
+function addUserAssetsReference(assets: UserAsset[]) {
+  const limit = maxReferenceImages.value;
+  if (limit <= 0) {
+    message.warning("当前模型不支持参考图");
+    return false;
+  }
+  const existingUrls = new Set(
+    referenceItems.value
+      .map((item) => item.remoteUrl)
+      .filter((url): url is string => !!url),
+  );
+  const uniqueAssets = assets.filter((asset) => !existingUrls.has(asset.image_url));
+  if (!uniqueAssets.length) {
+    message.info("所选素材均已在参考图中");
+    return false;
+  }
+  const remainingSlots = referenceSlotsRemaining.value;
+  if (uniqueAssets.length > remainingSlots) {
+    message.warning(
+      remainingSlots > 0
+        ? `当前模型最多支持 ${limit} 张参考图，还可添加 ${remainingSlots} 张，已选 ${uniqueAssets.length} 张`
+        : `当前模型最多支持 ${limit} 张参考图`,
+    );
+    return false;
+  }
+  const now = Date.now();
+  referenceItems.value = [
+    ...referenceItems.value,
+    ...uniqueAssets.map((asset, index) => ({
+      id: `asset-${asset.id}-${now}-${index}`,
+      localUrl: asset.thumb_url || asset.image_url,
+      remoteUrl: asset.image_url,
+      status: "success" as const,
+    })),
+  ];
+  if (uniqueAssets.length < assets.length) {
+    message.success(`已添加 ${uniqueAssets.length} 张参考图，其余素材已在参考图中`);
+  }
+  return true;
+}
+
 function handlePickUserAsset(asset: UserAsset) {
   if (addUserAssetReference(asset)) {
+    assetPickerOpen.value = false;
+  }
+}
+
+function handlePickUserAssets(assets: UserAsset[]) {
+  if (addUserAssetsReference(assets)) {
     assetPickerOpen.value = false;
   }
 }
@@ -5005,6 +5052,7 @@ onBeforeUnmount(() => {
       :mask="false"
       :show-insert-to-canvas="true"
       @select-asset="handlePickUserAsset"
+      @select-assets="handlePickUserAssets"
       @insert-asset="handleInsertUserAssetToCanvas"
     />
     <a-modal

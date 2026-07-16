@@ -55,6 +55,7 @@ class VideoTaskOut(BaseModel):
     credit_refunded: bool = False
     failure_refund_remaining_count: int | None = None
     used_fallback_api: bool = False
+    task_is_deleted: bool = False
     status: str
     error_message: str = ""
     created_at: datetime | None = None

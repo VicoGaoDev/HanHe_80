@@ -632,6 +632,24 @@ function openTaskDetail(record: AdminVideoTaskResult) {
   detailOpen.value = true;
 }
 
+const detailItemIndex = computed(() => {
+  if (!detailOpen.value || !detailItem.value) return -1;
+  return tasks.value.findIndex((item) => item.id === detailItem.value?.id);
+});
+
+const hasDetailPrev = computed(() => detailItemIndex.value > 0);
+const hasDetailNext = computed(() => (
+  detailItemIndex.value >= 0
+  && detailItemIndex.value < tasks.value.length - 1
+));
+
+function navigateTaskDetail(delta: -1 | 1) {
+  const nextIndex = detailItemIndex.value + delta;
+  const nextItem = tasks.value[nextIndex];
+  if (!nextItem) return;
+  openTaskDetail(nextItem);
+}
+
 function handleBucketClick(params: { dataIndex?: number }) {
   const point = timeseries.value?.current[params.dataIndex || 0];
   if (!point?.bucket_start || !point?.bucket_end) return;
@@ -1088,9 +1106,12 @@ watch(filterSignature, async () => {
               </span>
             </template>
             <template v-else-if="column.dataIndex === 'status'">
-              <a-tag :color="statusColor(record.status)">
-                {{ statusLabel(record.status) }}
-              </a-tag>
+              <a-space size="small" wrap>
+                <a-tag :color="statusColor(record.status)">
+                  {{ statusLabel(record.status) }}
+                </a-tag>
+                <a-tag v-if="record.task_is_deleted" color="red">已软删</a-tag>
+              </a-space>
             </template>
             <template v-else-if="column.dataIndex === 'duration_seconds'">
               {{ record.duration_seconds ? `${record.duration_seconds}秒` : "-" }}
@@ -1123,7 +1144,11 @@ watch(filterSignature, async () => {
       :item="detailItem"
       :model-options="modelOptions"
       :show-reedit="false"
+      :has-prev="hasDetailPrev"
+      :has-next="hasDetailNext"
       @update:open="detailOpen = $event"
+      @navigate-prev="navigateTaskDetail(-1)"
+      @navigate-next="navigateTaskDetail(1)"
     />
   </div>
 </template>

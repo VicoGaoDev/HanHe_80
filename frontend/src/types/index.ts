@@ -1458,6 +1458,7 @@ export interface VideoTaskResult {
   credit_refunded?: boolean;
   failure_refund_remaining_count?: number | null;
   used_fallback_api?: boolean;
+  task_is_deleted?: boolean;
   status: "pending" | "queued" | "processing" | "success" | "failed";
   error_message?: string;
   created_at: string;

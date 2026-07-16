@@ -307,6 +307,24 @@ function openDetail(task: AdminVideoTaskResult) {
   detailOpen.value = true;
 }
 
+const detailItemIndex = computed(() => {
+  if (!detailOpen.value || !detailItem.value) return -1;
+  return items.value.findIndex((item) => item.id === detailItem.value?.id);
+});
+
+const hasDetailPrev = computed(() => detailItemIndex.value > 0);
+const hasDetailNext = computed(() => (
+  detailItemIndex.value >= 0
+  && detailItemIndex.value < items.value.length - 1
+));
+
+function navigateDetail(delta: -1 | 1) {
+  const nextIndex = detailItemIndex.value + delta;
+  const nextItem = items.value[nextIndex];
+  if (!nextItem) return;
+  openDetail(nextItem);
+}
+
 function findAdminUser(userId?: string) {
   if (!userId) return null;
   return users.value.find((user) => user.id === userId) || null;
@@ -580,9 +598,6 @@ onBeforeUnmount(() => {
             <div v-if="getModelLabel(item.model)" class="result-card-model-badge" :title="getModelLabel(item.model)">
               {{ getModelLabel(item.model) }}
             </div>
-            <div class="result-card-status-badge" :class="`is-${item.status}`">
-              {{ statusLabel(item.status) }}
-            </div>
             <div v-if="formatRunTime(item)" class="result-card-run-time" :title="getRunTimeTitle(item)">
               {{ formatRunTime(item) }}
             </div>
@@ -591,6 +606,13 @@ onBeforeUnmount(() => {
             </div>
             <div v-if="item.used_fallback_api" class="result-card-fallback-badge">
               备用接口
+            </div>
+            <div
+              v-if="item.task_is_deleted"
+              class="result-card-soft-deleted-badge"
+              :class="{ 'result-card-soft-deleted-badge-stacked': !!getModelLabel(item.model) }"
+            >
+              已软删
             </div>
 
             <div class="history-overlay-actions history-overlay-actions-top">
@@ -632,8 +654,12 @@ onBeforeUnmount(() => {
       :item="detailItem"
       :model-options="detailModelOptions"
       :show-reedit="false"
+      :has-prev="hasDetailPrev"
+      :has-next="hasDetailNext"
       @update:open="detailOpen = $event"
       @download="handleDownloadVideo"
+      @navigate-prev="navigateDetail(-1)"
+      @navigate-next="navigateDetail(1)"
     />
 
     <AdminUserInfoDialog
@@ -846,10 +872,10 @@ onBeforeUnmount(() => {
   }
 
   &:hover .result-card-model-badge,
-  &:hover .result-card-status-badge,
   &:hover .result-card-run-time,
   &:hover .result-card-spec-badge,
-  &:hover .result-card-fallback-badge {
+  &:hover .result-card-fallback-badge,
+  &:hover .result-card-soft-deleted-badge {
     opacity: 0;
     transform: translateY(6px);
   }
@@ -894,7 +920,8 @@ onBeforeUnmount(() => {
 .result-card-status-badge,
 .result-card-run-time,
 .result-card-spec-badge,
-.result-card-fallback-badge {
+.result-card-fallback-badge,
+.result-card-soft-deleted-badge {
   position: absolute;
   z-index: 2;
   display: inline-flex;
@@ -939,7 +966,7 @@ onBeforeUnmount(() => {
 }
 
 .result-card-run-time {
-  top: 44px;
+  top: 12px;
   right: 12px;
 }
 
@@ -953,6 +980,19 @@ onBeforeUnmount(() => {
   bottom: 42px;
   background: rgba(143, 94, 30, 0.82);
   color: #fff4d8;
+}
+
+.result-card-soft-deleted-badge {
+  left: 12px;
+  bottom: 12px;
+  color: #fff3ef;
+  background: rgba(166, 60, 47, 0.72);
+  border-color: rgba(255, 224, 220, 0.22);
+  box-shadow: 0 10px 20px rgba(96, 31, 22, 0.22);
+}
+
+.result-card-soft-deleted-badge-stacked {
+  bottom: 42px;
 }
 
 .result-card-media {
@@ -1185,6 +1225,7 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card
 html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-run-time,
 html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-spec-badge,
 html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-fallback-badge,
+html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .result-card-soft-deleted-badge,
 html:is([data-theme="dark"], [data-theme="midnight"]) .history-page .history-overlay-btn {
   border-color: var(--theme-panel-border) !important;
   background: rgba(var(--theme-surface-strong-rgb), 0.9) !important;

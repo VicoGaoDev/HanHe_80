@@ -224,8 +224,54 @@ function addLibraryAssetToReference(asset: UserAsset) {
   return true;
 }
 
+function addLibraryAssetsToReference(assets: UserAsset[]) {
+  const limit = maxReferenceImages.value;
+  if (limit <= 0) {
+    message.warning("当前场景不支持参考图");
+    return false;
+  }
+  const existingUrls = new Set(
+    referenceItems.value
+      .map((item) => item.remoteUrl)
+      .filter((url): url is string => !!url),
+  );
+  const uniqueAssets = assets.filter((asset) => !existingUrls.has(asset.image_url));
+  if (!uniqueAssets.length) {
+    message.info("所选素材均已在参考图中");
+    return false;
+  }
+  const remainingSlots = Math.max(0, limit - referenceItems.value.length);
+  if (uniqueAssets.length > remainingSlots) {
+    message.warning(
+      remainingSlots > 0
+        ? `当前最多上传 ${limit} 张参考图，还可添加 ${remainingSlots} 张，已选 ${uniqueAssets.length} 张`
+        : `当前最多上传 ${limit} 张参考图`,
+    );
+    return false;
+  }
+  const now = Date.now();
+  uniqueAssets.forEach((asset, index) => {
+    referenceItems.value.push({
+      id: `asset-${asset.id}-${now}-${index}`,
+      localUrl: asset.thumb_url || asset.image_url,
+      remoteUrl: asset.image_url,
+      status: "success",
+    });
+  });
+  if (uniqueAssets.length < assets.length) {
+    message.success(`已添加 ${uniqueAssets.length} 张参考图，其余素材已在参考图中`);
+  }
+  return true;
+}
+
 async function handlePickUserAsset(asset: UserAsset) {
   if (addLibraryAssetToReference(asset)) {
+    assetPickerOpen.value = false;
+  }
+}
+
+async function handlePickUserAssets(assets: UserAsset[]) {
+  if (addLibraryAssetsToReference(assets)) {
     assetPickerOpen.value = false;
   }
 }
@@ -658,6 +704,24 @@ function handleRecreateTask(task: VideoTaskResult) {
 function openVideoTaskDetail(task: VideoTaskResult) {
   detailTask.value = task;
   detailOpen.value = true;
+}
+
+const detailTaskIndex = computed(() => {
+  if (!detailOpen.value || !detailTask.value) return -1;
+  return videoTasks.value.findIndex((item) => item.id === detailTask.value?.id);
+});
+
+const hasDetailPrev = computed(() => detailTaskIndex.value > 0);
+const hasDetailNext = computed(() => (
+  detailTaskIndex.value >= 0
+  && detailTaskIndex.value < videoTasks.value.length - 1
+));
+
+function navigateVideoTaskDetail(delta: -1 | 1) {
+  const nextIndex = detailTaskIndex.value + delta;
+  const nextTask = videoTasks.value[nextIndex];
+  if (!nextTask) return;
+  openVideoTaskDetail(nextTask);
 }
 
 function handleDetailReedit(task: VideoTaskResult) {
@@ -1150,6 +1214,7 @@ onBeforeUnmount(() => {
       v-model:open="assetPickerOpen"
       title="选择个人素材"
       @select-asset="handlePickUserAsset"
+      @select-assets="handlePickUserAssets"
     />
     <UserPromptLibraryModal
       v-model:open="promptLibraryVisible"
@@ -1159,9 +1224,13 @@ onBeforeUnmount(() => {
       v-model:open="detailOpen"
       :item="detailTask"
       :model-options="detailModelOptions"
+      :has-prev="hasDetailPrev"
+      :has-next="hasDetailNext"
       compact
       @reedit="handleDetailReedit"
       @download="handleDownloadVideo"
+      @navigate-prev="navigateVideoTaskDetail(-1)"
+      @navigate-next="navigateVideoTaskDetail(1)"
     />
   </div>
 </template>

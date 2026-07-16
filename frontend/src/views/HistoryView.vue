@@ -527,6 +527,36 @@ function openDetail(item: UserHistoryCard) {
   detailOpen.value = true;
 }
 
+const detailItemIndex = computed(() => {
+  if (!detailOpen.value || !detailItem.value) return -1;
+  const current = detailItem.value;
+  return items.value.findIndex((item) => {
+    if (typeof current.image_id === "number" && typeof item.image_id === "number") {
+      return item.image_id === current.image_id;
+    }
+    if (current.display_id && item.display_id) {
+      return item.display_id === current.display_id;
+    }
+    if (current.task_id && item.task_id) {
+      return item.task_id === current.task_id && item.image_id === current.image_id;
+    }
+    return false;
+  });
+});
+
+const hasDetailPrev = computed(() => detailItemIndex.value > 0);
+const hasDetailNext = computed(() => (
+  detailItemIndex.value >= 0
+  && detailItemIndex.value < items.value.length - 1
+));
+
+function navigateDetail(delta: -1 | 1) {
+  const nextIndex = detailItemIndex.value + delta;
+  const nextItem = items.value[nextIndex];
+  if (!nextItem) return;
+  openDetail(nextItem);
+}
+
 function findAdminUser(userId?: string) {
   if (!userId) return null;
   return users.value.find((user) => user.id === userId) || null;
@@ -1346,10 +1376,14 @@ function handleEditImage(item: UserHistoryCard) {
       :item="detailItem"
       :model-options="modelOptions"
       :show-error-message="isAdminHistoryView"
+      :has-prev="hasDetailPrev"
+      :has-next="hasDetailNext"
       show-actions
       @update:open="detailOpen = $event"
       @reedit="handleReedit"
       @download="handleDetailDownload"
+      @navigate-prev="navigateDetail(-1)"
+      @navigate-next="navigateDetail(1)"
     />
 
     <div v-if="previewVisible" style="display: none">

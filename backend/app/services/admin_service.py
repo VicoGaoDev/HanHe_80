@@ -1943,11 +1943,42 @@ INVALID_REFERENCE_IMAGE_ERROR_MESSAGE = (
 )
 
 
-UPSTREAM_HTTP_STATUS_PATTERN = re.compile(r"生图接口返回 http\s+(\d{3})", re.IGNORECASE)
+UPSTREAM_HTTP_STATUS_PATTERN = re.compile(
+    r"(?:"
+    r"生图接口返回\s*HTTP\s+(\d{3})"
+    r"|异步生图(?:提交|轮询)返回\s*HTTP\s+(\d{3})"
+    r"|上游\s*API\s*错误\s*\(\s*HTTP\s*(\d{3})\s*\)"
+    r"|\(\s*HTTP\s*(\d{3})\s*\)"
+    r")",
+    re.IGNORECASE,
+)
+ASYNC_REQUEST_CONTEXT_PATTERN = re.compile(
+    r"[（(]\s*第三方taskId=[^）)]+[，,]\s*轮询地址=[^）)]+\s*[）)]",
+    re.IGNORECASE,
+)
+CONTENT_SAFETY_ERROR_PATTERN = re.compile(
+    r"unsafe|image_unsafe|content blocked|appear to be unsafe|safety|nsfw|敏感|违规|审核拒绝|内容安全",
+    re.IGNORECASE,
+)
+
+
+def _extract_upstream_http_status(message: str) -> int | None:
+    matched = UPSTREAM_HTTP_STATUS_PATTERN.search(message)
+    if not matched:
+        return None
+    for group in matched.groups():
+        if group:
+            return int(group)
+    return None
+
+
+def _is_content_safety_error(message: str) -> bool:
+    return bool(CONTENT_SAFETY_ERROR_PATTERN.search(message or ""))
 
 
 def _normalize_error_message_for_analytics(error_message: str | None) -> str:
     message = (error_message or "").strip() or "未知错误"
+    message = ASYNC_REQUEST_CONTEXT_PATTERN.sub("", message).strip(" ，,;；")
     if "生图接口返回内容缺少配置路径" in message and "对应的 base64 数据" in message:
         return MISSING_INLINE_BASE64_ERROR_MESSAGE
     lower = message.lower()
@@ -1959,11 +1990,12 @@ def _normalize_error_message_for_analytics(error_message: str | None) -> str:
 
 
 def _classify_upstream_http_error(message: str, lower: str) -> str | None:
-    matched = UPSTREAM_HTTP_STATUS_PATTERN.search(message)
-    if not matched:
+    status_code = _extract_upstream_http_status(message)
+    if status_code is None:
         return None
 
-    status_code = int(matched.group(1))
+    if _is_content_safety_error(message):
+        return "内容安全审查拒绝"
     if "provider_request_invalid" in lower or "bad request to openai" in lower:
         return "上游 HTTP 400-请求参数无效"
     if "invalid image file or mode" in lower:
@@ -2025,6 +2057,8 @@ def _classify_error_message_for_analytics(error_message: str | None) -> str:
     message = _normalize_error_message_for_analytics(error_message)
     lower = message.lower()
 
+    if _is_content_safety_error(message):
+        return "内容安全审查拒绝"
     if "生图接口连接被上游异常断开" in message:
         return "上游异常断开连接"
     if "生图接口连接超时" in message:
@@ -2053,6 +2087,28 @@ def _classify_error_message_for_analytics(error_message: str | None) -> str:
         return "参考图无效"
     if "生图接口返回内容缺少配置路径" in message and "对应的 base64 数据" in message:
         return "上游返回缺少图片数据"
+    if "异步生图轮询超时" in message:
+        return "异步轮询超时"
+    if "异步生图轮询响应不是合法 JSON" in message:
+        return "异步轮询响应解析失败"
+    if "异步生图提交成功，但响应不是合法 JSON" in message:
+        return "异步提交响应解析失败"
+    if "异步生图提交成功，但未从" in message and "解析到 taskId" in message:
+        return "异步提交未返回任务ID"
+    if "异步生图提交异常" in message:
+        return "异步提交异常"
+    if "异步生图轮询异常" in message:
+        return "异步轮询异常"
+    if "异步生图任务失败" in message:
+        return "异步第三方任务失败"
+    if "轮询成功，但未能从" in message and "解析结果图" in message:
+        return "异步结果图解析失败"
+    if "异步生图已完成，但结果图解析失败" in message:
+        return "异步结果图解析失败"
+    if "生图接口返回了结果图地址，但图片下载失败" in message:
+        return "结果图下载失败"
+    if "生图接口返回的 base64 数据解析失败" in message:
+        return "结果图Base64解析失败"
     upstream_http_category = _classify_upstream_http_error(message, lower)
     if upstream_http_category:
         return upstream_http_category

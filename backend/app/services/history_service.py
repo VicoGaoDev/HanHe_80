@@ -1327,15 +1327,11 @@ def get_admin_history_detail(
         normalized_task_id = normalize_business_id(task_id)
         if not normalized_task_id:
             raise ValueError("invalid_task_id")
+        # 按精确 task_id 查询时不排除白名单/超管用户，便于反馈等场景回看关联任务。
         task = (
             db.query(Task)
-            .join(User, User.id == Task.user_id)
-            .options(selectinload(Task.images), selectinload(Task.canvas))
-            .filter(
-                Task.business_id == normalized_task_id,
-                User.role != "superadmin",
-                User.is_whitelisted.is_(False),
-            )
+            .options(selectinload(Task.images), selectinload(Task.canvas), selectinload(Task.user))
+            .filter(Task.business_id == normalized_task_id)
             .first()
         )
         if not task:
@@ -1347,12 +1343,9 @@ def get_admin_history_detail(
             raise ValueError("invalid_history_id")
         row = (
             db.query(PromptHistory)
-            .join(User, User.id == PromptHistory.user_id)
             .filter(
                 PromptHistory.id == history_id,
                 PromptHistory.mode == PROMPT_REVERSE_MODE,
-                User.role != "superadmin",
-                User.is_whitelisted.is_(False),
             )
             .first()
         )

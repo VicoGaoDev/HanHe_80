@@ -5,9 +5,11 @@ import {
   CloseOutlined,
   CopyOutlined,
   DownloadOutlined,
+  LeftOutlined,
   LoadingOutlined,
   PictureOutlined,
   ReloadOutlined,
+  RightOutlined,
 } from "@ant-design/icons-vue";
 import dayjs from "dayjs";
 import type { VideoTaskApiAttempt, VideoTaskResult } from "@/types";
@@ -23,18 +25,24 @@ const props = withDefaults(defineProps<{
   title?: string;
   compact?: boolean;
   showReedit?: boolean;
+  hasPrev?: boolean;
+  hasNext?: boolean;
 }>(), {
   loading: false,
   modelOptions: () => [],
   title: "视频任务详情",
   compact: false,
   showReedit: true,
+  hasPrev: false,
+  hasNext: false,
 });
 
 const emit = defineEmits<{
   "update:open": [value: boolean];
   reedit: [item: VideoTaskResult];
   download: [item: VideoTaskResult];
+  "navigate-prev": [];
+  "navigate-next": [];
 }>();
 
 const previewVisible = ref(false);
@@ -64,10 +72,30 @@ function closeDialog() {
   emit("update:open", false);
 }
 
+function navigatePrev() {
+  if (!props.hasPrev) return;
+  emit("navigate-prev");
+}
+
+function navigateNext() {
+  if (!props.hasNext) return;
+  emit("navigate-next");
+}
+
 function handleKeydown(event: KeyboardEvent) {
   if (!props.open) return;
   if (event.key === "Escape") {
     closeDialog();
+    return;
+  }
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    navigatePrev();
+    return;
+  }
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    navigateNext();
   }
 }
 
@@ -147,6 +175,7 @@ function detailMetaList(item: VideoTaskResult) {
   const video = item.videos[0];
   return [
     `状态：${statusLabel(item.status)}`,
+    item.task_is_deleted ? "任务状态：已软删除" : "",
     `来源：${sourceLabel(item.source)}`,
     `类型：${modeLabel(item)}`,
     `模型：${getModelLabel(item.model)}`,
@@ -235,6 +264,24 @@ function handleDownload(item: VideoTaskResult) {
           <template v-else-if="item">
             <div :key="item.id" class="detail-layout">
               <div class="detail-left">
+                <button
+                  v-if="hasPrev"
+                  type="button"
+                  class="detail-nav-btn detail-nav-prev"
+                  aria-label="上一个任务"
+                  @click="navigatePrev"
+                >
+                  <LeftOutlined />
+                </button>
+                <button
+                  v-if="hasNext"
+                  type="button"
+                  class="detail-nav-btn detail-nav-next"
+                  aria-label="下一个任务"
+                  @click="navigateNext"
+                >
+                  <RightOutlined />
+                </button>
                 <div class="detail-section">
                   <div class="detail-result-card">
                     <template v-if="['pending', 'queued', 'processing'].includes(item.status)">
@@ -447,7 +494,7 @@ function handleDownload(item: VideoTaskResult) {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 20px 24px 24px;
+  padding: 20px 24px 24px 0;
   overflow: hidden;
 }
 
@@ -459,6 +506,7 @@ function handleDownload(item: VideoTaskResult) {
   align-items: center;
   justify-content: center;
   gap: 12px;
+  padding-left: 24px;
   color: var(--text-secondary);
 }
 
@@ -558,9 +606,53 @@ function handleDownload(item: VideoTaskResult) {
 }
 
 .detail-left {
+  position: relative;
   display: flex;
   flex-direction: column;
-  padding-right: 20px;
+  padding-left: 56px;
+  padding-right: 56px;
+}
+
+.detail-nav-btn {
+  position: absolute;
+  top: 50%;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--theme-panel-border);
+  border-radius: 999px;
+  background: rgba(var(--theme-surface-strong-rgb), 0.92);
+  color: var(--theme-title);
+  box-shadow: 0 10px 24px var(--theme-shadow-soft);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    color var(--motion-duration-fast) var(--motion-ease-soft),
+    background var(--motion-duration-fast) var(--motion-ease-soft),
+    border-color var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft),
+    transform var(--motion-duration-fast) var(--motion-ease-soft);
+
+  &:hover {
+    color: var(--theme-accent-text);
+    border-color: var(--theme-border-strong);
+    background: var(--theme-panel-bg);
+    box-shadow: 0 14px 28px var(--theme-shadow-soft);
+    transform: translateY(calc(-50% - 1px));
+  }
+}
+
+.detail-nav-prev {
+  left: 8px;
+}
+
+.detail-nav-next {
+  right: 8px;
 }
 
 .detail-left > .detail-section {
@@ -806,8 +898,17 @@ function handleDownload(item: VideoTaskResult) {
   }
 
   .detail-left {
-    padding-right: 0;
+    padding-left: 48px;
+    padding-right: 48px;
     padding-bottom: 16px;
+  }
+
+  .detail-nav-prev {
+    left: 4px;
+  }
+
+  .detail-nav-next {
+    right: 4px;
   }
 
   .detail-right {

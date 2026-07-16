@@ -5,11 +5,17 @@ import { ArrowLeftOutlined, CopyOutlined, MessageOutlined } from "@ant-design/ic
 import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import FeedbackTaskResultGrid from "@/components/feedback/FeedbackTaskResultGrid.vue";
+import HistoryDetailDialog from "@/components/history/HistoryDetailDialog.vue";
 import { getGenerationModels } from "@/api/config";
-import { getAdminFeedbackDetail, getAdminUnresolvedFeedbackCount, updateAdminFeedback } from "@/api/admin";
+import {
+  getAdminFeedbackDetail,
+  getAdminHistoryDetail,
+  getAdminUnresolvedFeedbackCount,
+  updateAdminFeedback,
+} from "@/api/admin";
 import { getPreviewImageSrc } from "@/api/images";
 import { setStoredAdminUnresolvedFeedbackCount } from "@/lib/adminFeedbackNotice";
-import type { FeedbackDetail, FeedbackStatus, GenerationModelOption } from "@/types";
+import type { FeedbackDetail, FeedbackStatus, GenerationModelOption, UserHistoryCard } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -19,6 +25,10 @@ const detail = ref<FeedbackDetail | null>(null);
 const previewVisible = ref(false);
 const previewSrc = ref("");
 const generationModels = ref<GenerationModelOption[]>([]);
+const taskDetailOpen = ref(false);
+const taskDetailLoading = ref(false);
+const taskDetailItem = ref<UserHistoryCard | null>(null);
+let activeTaskDetailRequestKey = "";
 
 const form = reactive<{
   status: FeedbackStatus;
@@ -33,6 +43,12 @@ const form = reactive<{
 const feedbackId = computed(() => String(route.params.feedbackId || ""));
 const taskReferenceImages = computed(() => detail.value?.task.reference_images || []);
 const taskReferenceThumbs = computed(() => detail.value?.task.reference_image_thumbs || []);
+const detailModelOptions = computed(() => (
+  generationModels.value.map((item) => ({
+    label: item.model_label || item.display_name || item.model_key,
+    value: item.model_key,
+  }))
+));
 
 function statusLabel(status: FeedbackStatus) {
   return {
@@ -93,6 +109,34 @@ function openPreview(url: string) {
   if (!url) return;
   previewSrc.value = url;
   previewVisible.value = true;
+}
+
+async function openTaskDetail() {
+  const taskId = detail.value?.task_id;
+  if (!taskId) {
+    message.warning("当前反馈没有关联任务");
+    return;
+  }
+  taskDetailOpen.value = true;
+  taskDetailLoading.value = true;
+  taskDetailItem.value = null;
+  activeTaskDetailRequestKey = taskId;
+  try {
+    const taskDetail = await getAdminHistoryDetail({
+      item_type: "task",
+      task_id: taskId,
+    });
+    if (activeTaskDetailRequestKey !== taskId) return;
+    taskDetailItem.value = taskDetail;
+  } catch {
+    if (activeTaskDetailRequestKey !== taskId) return;
+    taskDetailOpen.value = false;
+    message.error("获取任务详情失败");
+  } finally {
+    if (activeTaskDetailRequestKey === taskId) {
+      taskDetailLoading.value = false;
+    }
+  }
 }
 
 function syncForm() {
@@ -245,6 +289,16 @@ onMounted(() => {
           <div class="warm-card detail-side motion-fade-up motion-card-lift" style="--motion-delay: 180ms">
             <div class="section-title-row">
               <h3>关联任务</h3>
+              <a-button
+                v-if="detail.task_id"
+                type="primary"
+                size="small"
+                class="warm-primary-btn"
+                :loading="taskDetailLoading"
+                @click="openTaskDetail"
+              >
+                查看任务详情
+              </a-button>
             </div>
             <div class="task-meta-list">
               <div><span>模型</span><strong>{{ getModelLabel(detail.task.model) }}</strong></div>
@@ -288,6 +342,14 @@ onMounted(() => {
         :preview="{ visible: previewVisible, onVisibleChange: (v: boolean) => (previewVisible = v) }"
       />
     </div>
+
+    <HistoryDetailDialog
+      v-model:open="taskDetailOpen"
+      :item="taskDetailItem"
+      :loading="taskDetailLoading"
+      :model-options="detailModelOptions"
+      show-error-message
+    />
   </div>
 </template>
 

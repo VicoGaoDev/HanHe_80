@@ -5,10 +5,12 @@ import { ArrowLeftOutlined, CopyOutlined, MessageOutlined } from "@ant-design/ic
 import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import FeedbackTaskResultGrid from "@/components/feedback/FeedbackTaskResultGrid.vue";
+import HistoryDetailDialog from "@/components/history/HistoryDetailDialog.vue";
 import { getGenerationModels } from "@/api/config";
 import { getMyFeedbackDetail } from "@/api/feedback";
 import { getPreviewImageSrc } from "@/api/images";
-import type { FeedbackDetail, FeedbackStatus, GenerationModelOption } from "@/types";
+import { getTask } from "@/api/tasks";
+import type { FeedbackDetail, FeedbackStatus, GenerationModelOption, TaskResult, UserHistoryCard } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -17,10 +19,20 @@ const detail = ref<FeedbackDetail | null>(null);
 const previewVisible = ref(false);
 const previewSrc = ref("");
 const generationModels = ref<GenerationModelOption[]>([]);
+const taskDetailOpen = ref(false);
+const taskDetailLoading = ref(false);
+const taskDetailItem = ref<UserHistoryCard | null>(null);
+let activeTaskDetailRequestKey = "";
 
 const feedbackId = computed(() => String(route.params.feedbackId || ""));
 const taskReferenceImages = computed(() => detail.value?.task.reference_images || []);
 const taskReferenceThumbs = computed(() => detail.value?.task.reference_image_thumbs || []);
+const detailModelOptions = computed(() => (
+  generationModels.value.map((item) => ({
+    label: item.model_label || item.display_name || item.model_key,
+    value: item.model_key,
+  }))
+));
 
 function statusLabel(status: FeedbackStatus) {
   return {
@@ -81,6 +93,70 @@ function openPreview(url: string) {
   if (!url) return;
   previewSrc.value = url;
   previewVisible.value = true;
+}
+
+function convertTaskToHistoryCard(task: TaskResult): UserHistoryCard {
+  const primaryImage = task.images.find((image) => image.status === "success") || task.images[0];
+  return {
+    item_type: "task",
+    task_id: task.id,
+    display_id: task.id,
+    image_id: typeof primaryImage?.id === "number" && primaryImage.id > 0 ? primaryImage.id : null,
+    is_pinned: false,
+    image_url: primaryImage?.image_url || "",
+    preview_url: primaryImage?.preview_url,
+    thumb_url: primaryImage?.thumb_url,
+    status: task.status,
+    image_format: primaryImage?.image_format,
+    image_size_bytes: primaryImage?.image_size_bytes,
+    task_type: detail.value?.task.task_type || (task.reference_images?.length ? "image_edit" : "text_generate"),
+    model: task.model,
+    source: task.source,
+    mode: task.mode,
+    prompt: task.prompt,
+    reference_images: task.reference_images || [],
+    reference_image_thumbs: task.reference_image_thumbs || [],
+    source_image: task.source_image || "",
+    source_image_thumb: task.source_image_thumb || "",
+    mask_image: task.mask_image || "",
+    mask_image_thumb: task.mask_image_thumb || "",
+    num_images: task.num_images,
+    size: task.size || "",
+    resolution: task.resolution || "",
+    custom_size: task.custom_size || "",
+    credit_cost: task.credit_cost || 0,
+    credit_refunded: Boolean(task.credit_refunded),
+    created_at: task.created_at,
+    request_started_at: task.request_started_at,
+    request_finished_at: task.request_finished_at,
+    error_message: task.error_message || "",
+    images: task.images || [],
+  };
+}
+
+async function openTaskDetail() {
+  const taskId = detail.value?.task_id;
+  if (!taskId) {
+    message.warning("当前反馈没有关联任务");
+    return;
+  }
+  taskDetailOpen.value = true;
+  taskDetailLoading.value = true;
+  taskDetailItem.value = null;
+  activeTaskDetailRequestKey = taskId;
+  try {
+    const task = await getTask(taskId);
+    if (activeTaskDetailRequestKey !== taskId) return;
+    taskDetailItem.value = convertTaskToHistoryCard(task);
+  } catch {
+    if (activeTaskDetailRequestKey !== taskId) return;
+    taskDetailOpen.value = false;
+    message.error("获取任务详情失败");
+  } finally {
+    if (activeTaskDetailRequestKey === taskId) {
+      taskDetailLoading.value = false;
+    }
+  }
 }
 
 async function load() {
@@ -185,6 +261,16 @@ onMounted(() => {
           <div class="warm-card detail-side motion-fade-up motion-card-lift" style="--motion-delay: 180ms">
             <div class="section-title-row">
               <h3>关联任务</h3>
+              <a-button
+                v-if="detail.task_id"
+                type="primary"
+                size="small"
+                class="warm-primary-btn"
+                :loading="taskDetailLoading"
+                @click="openTaskDetail"
+              >
+                查看任务详情
+              </a-button>
             </div>
             <div class="task-meta-list">
               <div><span>模型</span><strong>{{ getModelLabel(detail.task.model) }}</strong></div>
@@ -228,6 +314,13 @@ onMounted(() => {
         :preview="{ visible: previewVisible, onVisibleChange: (v: boolean) => (previewVisible = v) }"
       />
     </div>
+
+    <HistoryDetailDialog
+      v-model:open="taskDetailOpen"
+      :item="taskDetailItem"
+      :loading="taskDetailLoading"
+      :model-options="detailModelOptions"
+    />
   </div>
 </template>
 

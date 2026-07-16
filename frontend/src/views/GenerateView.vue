@@ -1133,8 +1133,54 @@ function addLibraryAssetToReference(asset: UserAsset) {
   return true;
 }
 
+function addLibraryAssetsToReference(assets: UserAsset[]) {
+  const limit = maxReferenceImages.value;
+  if (limit <= 0) {
+    message.warning("当前模型不支持参考图");
+    return false;
+  }
+  const existingUrls = new Set(
+    referenceItems.value
+      .map((item) => item.remoteUrl)
+      .filter((url): url is string => !!url),
+  );
+  const uniqueAssets = assets.filter((asset) => !existingUrls.has(asset.image_url));
+  if (!uniqueAssets.length) {
+    message.info("所选素材均已在参考图中");
+    return false;
+  }
+  const remainingSlots = Math.max(0, limit - referenceItems.value.length);
+  if (uniqueAssets.length > remainingSlots) {
+    message.warning(
+      remainingSlots > 0
+        ? `当前模型最多支持 ${limit} 张参考图，还可添加 ${remainingSlots} 张，已选 ${uniqueAssets.length} 张`
+        : `当前模型最多支持 ${limit} 张参考图`,
+    );
+    return false;
+  }
+  const now = Date.now();
+  uniqueAssets.forEach((asset, index) => {
+    referenceItems.value.push({
+      id: `asset-${asset.id}-${now}-${index}`,
+      localUrl: asset.thumb_url || asset.image_url,
+      remoteUrl: asset.image_url,
+      status: "success",
+    });
+  });
+  if (uniqueAssets.length < assets.length) {
+    message.success(`已添加 ${uniqueAssets.length} 张参考图，其余素材已在参考图中`);
+  }
+  return true;
+}
+
 async function handlePickUserAsset(asset: UserAsset) {
   if (addLibraryAssetToReference(asset)) {
+    assetPickerOpen.value = false;
+  }
+}
+
+async function handlePickUserAssets(assets: UserAsset[]) {
+  if (addLibraryAssetsToReference(assets)) {
     assetPickerOpen.value = false;
   }
 }
@@ -1838,10 +1884,40 @@ function convertGeneratedTaskToHistoryCard(task: GeneratedTaskItem, focusedImage
   };
 }
 
+const detailImageIndex = ref(0);
+
 function openGeneratedTaskDetail(task: GeneratedTaskItem, focusedImage?: ImageResult) {
   detailTaskLocalId.value = task.localId;
+  const focusedIndex = focusedImage
+    ? task.images.findIndex((image) => (
+      image === focusedImage
+      || (typeof image.id === "number" && image.id > 0 && image.id === focusedImage.id)
+    ))
+    : 0;
+  detailImageIndex.value = focusedIndex >= 0 ? focusedIndex : 0;
   detailItem.value = convertGeneratedTaskToHistoryCard(task, focusedImage);
   detailOpen.value = true;
+}
+
+const detailResultIndex = computed(() => {
+  if (!detailOpen.value || !detailTaskLocalId.value) return -1;
+  return resultItems.value.findIndex((item) => (
+    item.taskLocalId === detailTaskLocalId.value
+    && item.index === detailImageIndex.value
+  ));
+});
+
+const hasDetailPrev = computed(() => detailResultIndex.value > 0);
+const hasDetailNext = computed(() => (
+  detailResultIndex.value >= 0
+  && detailResultIndex.value < resultItems.value.length - 1
+));
+
+function navigateGeneratedTaskDetail(delta: -1 | 1) {
+  const nextIndex = detailResultIndex.value + delta;
+  const nextItem = resultItems.value[nextIndex];
+  if (!nextItem) return;
+  openGeneratedTaskDetail(nextItem.task, nextItem.image);
 }
 
 function handleDetailReedit(item: UserHistoryCard) {
@@ -3407,9 +3483,13 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
       v-model:open="detailOpen"
       :item="detailItem"
       :model-options="detailModelOptions"
+      :has-prev="hasDetailPrev"
+      :has-next="hasDetailNext"
       show-actions
       @reedit="handleDetailReedit"
       @download="handleDetailDownload"
+      @navigate-prev="navigateGeneratedTaskDetail(-1)"
+      @navigate-next="navigateGeneratedTaskDetail(1)"
     />
     <a-modal
       v-model:open="boardRenameDialogOpen"
@@ -3443,6 +3523,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
       v-model:open="assetPickerOpen"
       title="选择个人素材"
       @select-asset="handlePickUserAsset"
+      @select-assets="handlePickUserAssets"
     />
     <TemplateFormDialog
       v-model:open="templateDialogOpen"

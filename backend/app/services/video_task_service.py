@@ -98,6 +98,7 @@ def serialize_video_task(
         "credit_refunded": resolved_credit_refunded,
         "failure_refund_remaining_count": failure_refund_remaining_count,
         "used_fallback_api": bool(task.used_fallback_api),
+        "task_is_deleted": bool(task.is_deleted),
         "status": task.status or "pending",
         "error_message": task.error_message or "",
         "created_at": task.created_at,
@@ -518,7 +519,6 @@ def list_admin_video_tasks(
         db.query(VideoTask)
         .options(selectinload(VideoTask.user))
         .join(User, User.id == VideoTask.user_id)
-        .filter(VideoTask.is_deleted.is_(False))
         .filter(User.role == "user", User.is_whitelisted.is_(False))
     )
     if user_id is not None:

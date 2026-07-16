@@ -28,6 +28,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   "update:open": [value: boolean];
   "select-asset": [asset: UserAsset];
+  "select-assets": [assets: UserAsset[]];
   "insert-asset": [asset: UserAsset];
 }>();
 
@@ -460,6 +461,20 @@ function handleSelectAsset(asset: UserAsset) {
   emit("select-asset", asset);
 }
 
+function handleBatchSelectAssets() {
+  if (!selectedAssetIds.value.length) {
+    message.warning("请先选择素材");
+    return;
+  }
+  const selectedIdSet = new Set(selectedAssetIds.value);
+  const selectedAssets = assets.value.filter((asset) => selectedIdSet.has(asset.id));
+  if (!selectedAssets.length) {
+    message.warning("请先选择素材");
+    return;
+  }
+  emit("select-assets", selectedAssets);
+}
+
 function handleInsertAsset(asset: UserAsset) {
   emit("insert-asset", asset);
 }
@@ -699,6 +714,9 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
               </a-button>
               <a-button size="small" :disabled="!selectedCount" @click="clearAssetSelection">
                 清空
+              </a-button>
+              <a-button size="small" type="primary" :disabled="!selectedCount" @click="handleBatchSelectAssets">
+                添加到参考图
               </a-button>
               <a-button size="small" :disabled="!selectedCount" @click="openBatchCategoryDialog">
                 批量修改分类
