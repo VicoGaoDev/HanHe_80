@@ -28,7 +28,14 @@ def create_feedback_item(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return create_feedback(db, user, body.task_id, body.content)
+    return create_feedback(
+        db,
+        user,
+        body.task_id,
+        body.content,
+        body.feedback_type,
+        body.attachments,
+    )
 
 
 @router.get("", response_model=FeedbackListResponse)
@@ -37,6 +44,10 @@ def list_my_feedback(
     page_size: int = Query(20, ge=1, le=100),
     task_id: str | None = Query(None),
     status: str | None = Query(None, pattern="^(pending|processing|completed)$"),
+    feedback_type: str | None = Query(
+        None,
+        pattern="^(general|image_task|video_task|canvas|purchase|feature_request|bug_report|optimization)$",
+    ),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -45,6 +56,7 @@ def list_my_feedback(
         user_id=user.id,
         task_id=task_id,
         status_filter=status,
+        feedback_type_filter=feedback_type,
         page=page,
         page_size=page_size,
     )

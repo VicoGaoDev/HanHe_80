@@ -2219,6 +2219,7 @@ def get_error_analytics(
     *,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
+    source: str | None = None,
     model: str | None = None,
     error_category: str | None = None,
     used_fallback_api: bool | None = None,
@@ -2256,6 +2257,8 @@ def get_error_analytics(
         )
         if used_fallback_api is False:
             query = query.filter(Task.used_fallback_api.is_(False))
+    if source:
+        query = query.filter(Task.source == source)
     if model:
         query = query.filter(Task.model == model)
     rows = query.all()
@@ -2315,6 +2318,7 @@ def get_error_category_timeseries(
     granularity: str = "day",
     start_date: datetime | None = None,
     end_date: datetime | None = None,
+    source: str | None = None,
     model: str | None = None,
     used_fallback_api: bool | None = None,
     limit: int = 6,
@@ -2350,6 +2354,8 @@ def get_error_category_timeseries(
         )
         if used_fallback_api is False:
             query = query.filter(Task.used_fallback_api.is_(False))
+    if source:
+        query = query.filter(Task.source == source)
     if model:
         query = query.filter(Task.model == model)
     rows = query.all()
@@ -2406,6 +2412,7 @@ def get_error_tasks(
     page_size: int = 20,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
+    source: str | None = None,
     model: str | None = None,
     error_category: str | None = None,
     used_fallback_api: bool | None = None,
@@ -2436,6 +2443,8 @@ def get_error_tasks(
         query = query.filter(Task.created_at >= _to_db_datetime(start_date))
     if end_date:
         query = query.filter(Task.created_at <= _to_db_datetime(end_date))
+    if source:
+        query = query.filter(Task.source == source)
     if model:
         query = query.filter(Task.model == model)
 

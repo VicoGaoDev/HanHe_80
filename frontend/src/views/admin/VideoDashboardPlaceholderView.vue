@@ -9,7 +9,6 @@ import {
   getAdminVideoAnalyticsSummary,
   getAdminVideoAnalyticsTimeseries,
   getAdminVideoTasks,
-  getVideoStats,
   listUsers,
 } from "@/api/admin";
 import { getVideoTaskScenes } from "@/api/videoConfig";
@@ -26,15 +25,12 @@ import type {
   AdminVideoTaskResult,
   TaskSource,
   VideoAnalyticsQuery,
-  VideoStats,
   VideoTaskModeFilter,
   VideoTaskSceneConfig,
 } from "@/types";
 
 const analyticsLoading = ref(false);
-const statsLoading = ref(false);
 const tasksLoading = ref(false);
-const stats = ref<VideoStats | null>(null);
 const summary = ref<AdminAnalyticsSummary | null>(null);
 const timeseries = ref<AdminAnalyticsTimeseries | null>(null);
 const breakdown = ref<AdminAnalyticsBreakdown | null>(null);
@@ -86,54 +82,6 @@ const modelOptions = computed(() => (
     label: scene.display_name || scene.scene_label || scene.scene_key,
   }))
 ));
-
-const overviewStats = computed(() => {
-  if (!stats.value) return [];
-  return [
-    {
-      key: "total_tasks",
-      label: "累计视频任务数",
-      value: stats.value.total_tasks,
-      desc: "全量用户已提交的视频任务总数",
-      color: "#1890ff",
-    },
-    {
-      key: "total_credit_cost",
-      label: "累计视频积分消耗",
-      value: stats.value.total_credit_cost,
-      desc: "视频任务实际消耗的积分总量",
-      color: "#722ed1",
-    },
-    {
-      key: "total_users",
-      label: "累计视频用户数",
-      value: stats.value.total_users,
-      desc: "至少提交过一次视频任务的用户数",
-      color: "#fa8c16",
-    },
-    {
-      key: "active_users",
-      label: "近 7 天视频活跃用户",
-      value: stats.value.active_users,
-      desc: "最近 7 天内提交过视频任务的用户数",
-      color: "#13c2c2",
-    },
-    {
-      key: "success_tasks",
-      label: "累计成功视频任务",
-      value: stats.value.success_tasks,
-      desc: "状态为成功的视频任务总数",
-      color: "#52c41a",
-    },
-    {
-      key: "failed_tasks",
-      label: "累计失败视频任务",
-      value: stats.value.failed_tasks,
-      desc: "状态为失败的视频任务总数",
-      color: "#ff4d4f",
-    },
-  ];
-});
 
 const periodCards = computed(() => {
   if (!summary.value) return [];
@@ -567,18 +515,6 @@ async function loadAnalytics() {
   }
 }
 
-async function loadStatsData() {
-  statsLoading.value = true;
-  try {
-    stats.value = await getVideoStats();
-  } catch (err: any) {
-    if (isSessionExpiredError(err)) return;
-    message.error("获取视频概览统计失败");
-  } finally {
-    statsLoading.value = false;
-  }
-}
-
 async function loadTasks() {
   tasksLoading.value = true;
   try {
@@ -598,7 +534,7 @@ async function loadPageData() {
 }
 
 async function handleRefresh() {
-  await Promise.all([loadPageData(), loadStatsData()]);
+  await loadPageData();
 }
 
 function handleReset() {
@@ -745,7 +681,7 @@ onMounted(async () => {
   preset.value = defaultPresetByGranularity(granularity.value);
   applyPresetRange(preset.value);
   await Promise.all([loadUsers(), loadModels()]);
-  await Promise.all([loadPageData(), loadStatsData()]);
+  await loadPageData();
   ready.value = true;
 });
 
@@ -852,38 +788,14 @@ watch(filterSignature, async () => {
         </a-select>
 
         <a-range-picker v-model:value="filters.dateRange" class="analytics-filter-date" />
-        <a-button class="analytics-action-btn analytics-action-btn-secondary" :loading="analyticsLoading || tasksLoading || statsLoading" @click="handleReset">
+        <a-button class="analytics-action-btn analytics-action-btn-secondary" :loading="analyticsLoading || tasksLoading" @click="handleReset">
           重置
         </a-button>
-        <a-button class="analytics-action-btn analytics-action-btn-secondary" :loading="analyticsLoading || tasksLoading || statsLoading" @click="handleRefresh">
+        <a-button class="analytics-action-btn analytics-action-btn-secondary" :loading="analyticsLoading || tasksLoading" @click="handleRefresh">
           刷新
         </a-button>
       </div>
     </div>
-
-    <section class="dashboard-section">
-      <div class="section-title-row">
-        <h3 class="section-title">固定概览</h3>
-        <span class="section-tip">这一组为累计视频口径统计，不随当前筛选条件变化。</span>
-      </div>
-      <a-spin :spinning="statsLoading">
-        <div class="overview-grid">
-          <div
-            v-for="(item, index) in overviewStats"
-            :key="item.key"
-            class="overview-card warm-card motion-card-lift motion-fade-up"
-            :style="{ '--motion-delay': `${160 + Math.min(index, 5) * 40}ms` }"
-          >
-            <div class="overview-card-head">
-              <span class="overview-card-label">{{ item.label }}</span>
-              <span class="overview-card-dot" :style="{ background: item.color }" />
-            </div>
-            <div class="overview-card-value" :style="{ color: item.color }">{{ item.value }}</div>
-            <div class="overview-card-desc">{{ item.desc }}</div>
-          </div>
-        </div>
-      </a-spin>
-    </section>
 
     <section class="dashboard-section">
       <div class="section-title-row">

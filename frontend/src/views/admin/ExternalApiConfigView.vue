@@ -327,6 +327,16 @@ function getBindingOptions() {
     }));
 }
 
+const EMPTY_BACKUP_API_OPTION = "__none__";
+
+function toBackupApiSelectValue(value: number | null | undefined) {
+  return value ?? EMPTY_BACKUP_API_OPTION;
+}
+
+function fromBackupApiSelectValue(value: number | string | null | undefined) {
+  return value == null || value === EMPTY_BACKUP_API_OPTION ? null : Number(value);
+}
+
 function resetSceneForm() {
   isSceneCopyMode.value = false;
   sceneForm.scene_key = "";
@@ -880,8 +890,8 @@ function buildBindingPayload(record: ExternalApiSceneBinding, overrides: Partial
   subtitle: string;
 }> = {}) {
   return {
-    api_config_id: overrides.api_config_id ?? record.api_config_id ?? null,
-    backup_api_config_id: overrides.backup_api_config_id ?? record.backup_api_config_id ?? null,
+    api_config_id: overrides.api_config_id !== undefined ? overrides.api_config_id : (record.api_config_id ?? null),
+    backup_api_config_id: overrides.backup_api_config_id !== undefined ? overrides.backup_api_config_id : (record.backup_api_config_id ?? null),
     credit_cost: overrides.credit_cost ?? record.credit_cost,
     resolution_credit_costs_json: overrides.resolution_credit_costs_json ?? record.resolution_credit_costs_json ?? DEFAULT_RESOLUTION_CREDIT_COSTS_JSON,
     display_name: overrides.display_name ?? record.display_name ?? "",
@@ -1333,14 +1343,17 @@ function copySecret(value: string, label: string) {
             </template>
             <template v-else-if="column.key === 'backup'">
               <a-select
-                :value="record.backup_api_config_id ?? undefined"
+                :value="toBackupApiSelectValue(record.backup_api_config_id)"
                 class="warm-select"
                 allow-clear
                 placeholder="请选择备用接口"
                 style="width: 280px"
                 :loading="bindingSavingKey === record.scene_key"
-                @change="(value: number | undefined) => handleBindingChange(record.scene_key, buildBindingPayload(record, { backup_api_config_id: value ?? null }))"
+                @change="(value: number | string | undefined) => handleBindingChange(record.scene_key, buildBindingPayload(record, { backup_api_config_id: fromBackupApiSelectValue(value) }))"
               >
+                <a-select-option :value="EMPTY_BACKUP_API_OPTION">
+                  无
+                </a-select-option>
                 <a-select-option
                   v-for="option in getBindingOptions()"
                   :key="option.value"
@@ -1593,11 +1606,15 @@ function copySecret(value: string, label: string) {
 
         <a-form-item label="备用接口">
           <a-select
-            v-model:value="sceneForm.backup_api_config_id"
+            :value="toBackupApiSelectValue(sceneForm.backup_api_config_id)"
             class="warm-select"
             allow-clear
             placeholder="可选，主接口 502/503/504 或缺少配置路径结果时自动切换"
+            @update:value="(value: number | string | undefined) => { sceneForm.backup_api_config_id = fromBackupApiSelectValue(value); }"
           >
+            <a-select-option :value="EMPTY_BACKUP_API_OPTION">
+              无
+            </a-select-option>
             <a-select-option
               v-for="option in getBindingOptions()"
               :key="option.value"

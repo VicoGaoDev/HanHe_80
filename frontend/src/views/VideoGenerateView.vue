@@ -19,6 +19,7 @@ import {
 import AspectRatioPicker from "@/components/generate/AspectRatioPicker.vue";
 import OptionGridPicker from "@/components/generate/OptionGridPicker.vue";
 import UserAssetPicker from "@/components/assets/UserAssetPicker.vue";
+import FeedbackDialog from "@/components/feedback/FeedbackDialog.vue";
 import UserPromptLibraryModal from "@/components/prompts/UserPromptLibraryModal.vue";
 import VideoTaskDetailDialog from "@/components/video/VideoTaskDetailDialog.vue";
 import { getMe } from "@/api/auth";
@@ -75,6 +76,8 @@ const assetPickerOpen = ref(false);
 const promptLibraryVisible = ref(false);
 const detailOpen = ref(false);
 const detailTask = ref<VideoTaskResult | null>(null);
+const feedbackDialogOpen = ref(false);
+const feedbackTarget = ref<VideoTaskResult | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const referenceDragActive = ref(false);
 const viewportWidth = ref(typeof window === "undefined" ? 1200 : window.innerWidth);
@@ -706,6 +709,11 @@ function openVideoTaskDetail(task: VideoTaskResult) {
   detailOpen.value = true;
 }
 
+function openFeedbackDialog(task: VideoTaskResult) {
+  feedbackTarget.value = task;
+  feedbackDialogOpen.value = true;
+}
+
 const detailTaskIndex = computed(() => {
   if (!detailOpen.value || !detailTask.value) return -1;
   return videoTasks.value.findIndex((item) => item.id === detailTask.value?.id);
@@ -1103,7 +1111,13 @@ onBeforeUnmount(() => {
                     >
                       {{ getVideoTaskSpecLabel(task) }}
                     </span>
-                    <span class="video-task-status" :class="`is-${task.status}`">{{ getVideoStatusLabel(task.status) }}</span>
+                    <span
+                      v-if="['pending', 'queued', 'processing'].includes(task.status)"
+                      class="video-task-status"
+                      :class="`is-${task.status}`"
+                    >
+                      {{ getVideoStatusLabel(task.status) }}
+                    </span>
                   </div>
                 </div>
                 <div class="video-task-head-side">
@@ -1139,6 +1153,12 @@ onBeforeUnmount(() => {
                             <span class="video-task-menu-item">
                               <DownloadOutlined />
                               <span>下载原视频</span>
+                            </span>
+                          </a-menu-item>
+                          <a-menu-item @click="openFeedbackDialog(task)">
+                            <span class="video-task-menu-item">
+                              <VideoCameraOutlined />
+                              <span>反馈</span>
                             </span>
                           </a-menu-item>
                           <a-menu-item danger @click="handleDeleteTask(task)">
@@ -1219,6 +1239,15 @@ onBeforeUnmount(() => {
     <UserPromptLibraryModal
       v-model:open="promptLibraryVisible"
       @select-prompt="useLibraryPrompt"
+    />
+    <FeedbackDialog
+      v-model:open="feedbackDialogOpen"
+      title="视频任务反馈"
+      :task-id="feedbackTarget?.id"
+      :model="feedbackTarget?.model"
+      :prompt="feedbackTarget?.prompt"
+      :created-at="feedbackTarget?.created_at"
+      feedback-type="video_task"
     />
     <VideoTaskDetailDialog
       v-model:open="detailOpen"

@@ -13,6 +13,8 @@ class Feedback(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True, index=True)
     content = Column(Text, nullable=False)
+    feedback_type = Column(String(32), nullable=False, default="general", server_default="general", index=True)
+    attachments_json = Column(Text, nullable=False, default="[]", server_default="[]")
     status = Column(String(20), nullable=False, default="pending", server_default="pending", index=True)
     is_read = Column(Boolean, nullable=False, default=False, server_default=text("0"), index=True)
     process_note = Column(String(5000), nullable=False, default="", server_default="")

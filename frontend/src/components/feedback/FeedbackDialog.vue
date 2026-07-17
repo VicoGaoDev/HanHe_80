@@ -2,7 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { message } from "ant-design-vue";
 import { createFeedback } from "@/api/feedback";
-import type { FeedbackDetail } from "@/types";
+import type { FeedbackDetail, FeedbackType } from "@/types";
 
 const props = withDefaults(defineProps<{
   open: boolean;
@@ -14,6 +14,7 @@ const props = withDefaults(defineProps<{
   contextTitle?: string;
   requireTask?: boolean;
   appendContent?: string;
+  feedbackType?: FeedbackType;
 }>(), {
   taskId: "",
   model: "",
@@ -23,6 +24,7 @@ const props = withDefaults(defineProps<{
   contextTitle: "任务提示词",
   requireTask: true,
   appendContent: "",
+  feedbackType: "image_task",
 });
 
 const emit = defineEmits<{
@@ -73,7 +75,9 @@ async function handleSubmit() {
   try {
     const extra = (props.appendContent || "").trim();
     const contentToSubmit = extra ? `${normalized}\n\n${extra}` : normalized;
-    const detail = await createFeedback(taskId || null, contentToSubmit);
+    const detail = await createFeedback(taskId || null, contentToSubmit, {
+      feedback_type: props.feedbackType,
+    });
     message.success("反馈已提交");
     emit("submitted", detail);
     closeDialog();

@@ -3585,7 +3585,7 @@ async function handleFreeImageUpload(event: Event) {
     for (const [index, item] of items.entries()) {
       const pendingNode = pendingNodes[index];
       try {
-        const uploaded = await uploadReferenceImage(item.file, "misc");
+        const uploaded = await uploadReferenceImage(item.file, "canvas_upload");
         const node = await createCanvasNode(projectId, {
           node_type: "image",
           image_url: uploaded.url,
@@ -5043,6 +5043,7 @@ onBeforeUnmount(() => {
       context-title="反馈场景"
       prompt="无限画布"
       :require-task="false"
+      feedback-type="canvas"
       :append-content="canvasFeedbackAppendContent"
     />
     <UserAssetPicker

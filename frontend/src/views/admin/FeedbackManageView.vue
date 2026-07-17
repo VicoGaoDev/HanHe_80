@@ -5,7 +5,7 @@ import { CopyOutlined, MessageOutlined, SearchOutlined, UndoOutlined } from "@an
 import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import { listAdminFeedbacks } from "@/api/admin";
-import type { FeedbackItem, FeedbackStatus } from "@/types";
+import type { FeedbackItem, FeedbackStatus, FeedbackType } from "@/types";
 
 const router = useRouter();
 const loading = ref(false);
@@ -19,16 +19,19 @@ const filters = reactive<{
   user_id: string;
   task_id: string;
   status: FeedbackStatus | undefined;
+  feedback_type: FeedbackType | undefined;
 }>({
   feedback_id: "",
   user_id: "",
   task_id: "",
   status: undefined,
+  feedback_type: undefined,
 });
 
 const columns = [
   { title: "反馈编号", dataIndex: "feedback_id", width: 220 },
   { title: "用户", dataIndex: "username", width: 140 },
+  { title: "类型", dataIndex: "feedback_type", width: 140 },
   { title: "反馈内容", dataIndex: "content", width: 240, ellipsis: true },
   { title: "处理进度", dataIndex: "process_note", width: 240, ellipsis: true },
   { title: "处理结果", dataIndex: "result_note", width: 240, ellipsis: true },
@@ -53,6 +56,19 @@ function statusColor(status: FeedbackStatus) {
   }[status];
 }
 
+function feedbackTypeLabel(feedbackType: FeedbackType) {
+  return {
+    general: "通用反馈",
+    image_task: "图片任务反馈",
+    video_task: "视频任务反馈",
+    canvas: "Canvas反馈",
+    purchase: "购买积分反馈",
+    feature_request: "加新功能",
+    bug_report: "我要提BUG",
+    optimization: "优化建议",
+  }[feedbackType];
+}
+
 function formatTime(value?: string | null) {
   return value ? dayjs(value).format("YYYY-MM-DD HH:mm:ss") : "-";
 }
@@ -74,6 +90,7 @@ async function load() {
       user_id: filters.user_id.trim() || undefined,
       task_id: filters.task_id.trim() || undefined,
       status: filters.status,
+      feedback_type: filters.feedback_type,
     });
     items.value = res.items;
     total.value = res.total;
@@ -94,6 +111,7 @@ function handleReset() {
   filters.user_id = "";
   filters.task_id = "";
   filters.status = undefined;
+  filters.feedback_type = undefined;
   page.value = 1;
   void load();
 }
@@ -159,6 +177,16 @@ onMounted(load);
         <a-select-option value="processing">处理中</a-select-option>
         <a-select-option value="completed">已完成</a-select-option>
       </a-select>
+      <a-select v-model:value="filters.feedback_type" allow-clear placeholder="反馈类型" class="filter-select warm-select">
+        <a-select-option value="general">通用反馈</a-select-option>
+        <a-select-option value="image_task">图片任务反馈</a-select-option>
+        <a-select-option value="video_task">视频任务反馈</a-select-option>
+        <a-select-option value="canvas">Canvas反馈</a-select-option>
+        <a-select-option value="purchase">购买积分反馈</a-select-option>
+        <a-select-option value="feature_request">加新功能</a-select-option>
+        <a-select-option value="bug_report">我要提BUG</a-select-option>
+        <a-select-option value="optimization">优化建议</a-select-option>
+      </a-select>
       <a-button type="primary" class="warm-primary-btn" @click="handleSearch">查询</a-button>
       <a-button class="filter-reset-btn" @click="handleReset">
         <template #icon><UndoOutlined /></template>
@@ -180,7 +208,7 @@ onMounted(load);
           onChange: handlePageChange,
           onShowSizeChange: handlePageChange,
         }"
-        :scroll="{ x: 1380 }"
+        :scroll="{ x: 1520 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'feedback_id'">
@@ -195,6 +223,9 @@ onMounted(load);
           </template>
           <template v-else-if="column.dataIndex === 'content'">
             <div class="content-cell">{{ record.content }}</div>
+          </template>
+          <template v-else-if="column.dataIndex === 'feedback_type'">
+            <a-tag class="warm-tag" color="geekblue">{{ feedbackTypeLabel(record.feedback_type) }}</a-tag>
           </template>
           <template v-else-if="column.dataIndex === 'process_note'">
             <div class="content-cell muted-cell">{{ record.process_note || "暂未更新处理进度" }}</div>

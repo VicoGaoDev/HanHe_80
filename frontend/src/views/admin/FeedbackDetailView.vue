@@ -15,7 +15,7 @@ import {
 } from "@/api/admin";
 import { getPreviewImageSrc } from "@/api/images";
 import { setStoredAdminUnresolvedFeedbackCount } from "@/lib/adminFeedbackNotice";
-import type { FeedbackDetail, FeedbackStatus, GenerationModelOption, UserHistoryCard } from "@/types";
+import type { FeedbackDetail, FeedbackStatus, FeedbackType, GenerationModelOption, UserHistoryCard } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -43,6 +43,7 @@ const form = reactive<{
 const feedbackId = computed(() => String(route.params.feedbackId || ""));
 const taskReferenceImages = computed(() => detail.value?.task.reference_images || []);
 const taskReferenceThumbs = computed(() => detail.value?.task.reference_image_thumbs || []);
+const feedbackAttachments = computed(() => detail.value?.attachments || []);
 const detailModelOptions = computed(() => (
   generationModels.value.map((item) => ({
     label: item.model_label || item.display_name || item.model_key,
@@ -64,6 +65,19 @@ function statusColor(status: FeedbackStatus) {
     processing: "blue",
     completed: "green",
   }[status];
+}
+
+function feedbackTypeLabel(feedbackType: FeedbackType) {
+  return {
+    general: "通用反馈",
+    image_task: "图片任务反馈",
+    video_task: "视频任务反馈",
+    canvas: "Canvas反馈",
+    purchase: "购买积分反馈",
+    feature_request: "加新功能",
+    bug_report: "我要提BUG",
+    optimization: "优化建议",
+  }[feedbackType];
 }
 
 function formatTime(value?: string | null) {
@@ -253,6 +267,7 @@ onMounted(() => {
                   </a-button>
                 </strong>
               </div>
+              <div><span>反馈类型</span><strong>{{ feedbackTypeLabel(detail.feedback_type) }}</strong></div>
               <div><span>提交时间</span><strong>{{ formatTime(detail.created_at) }}</strong></div>
               <div><span>更新时间</span><strong>{{ formatTime(detail.updated_at) }}</strong></div>
               <div><span>处理时间</span><strong>{{ formatTime(detail.handled_at) }}</strong></div>
@@ -261,6 +276,24 @@ onMounted(() => {
             <div class="detail-block">
               <div class="detail-label">用户反馈内容</div>
               <div class="detail-text detail-text-emphasis">{{ detail.content || "-" }}</div>
+            </div>
+
+            <div v-if="feedbackAttachments.length" class="detail-block">
+              <div class="detail-label detail-label-inline">
+                <span>反馈附件</span>
+                <small>点击图片可放大</small>
+              </div>
+              <div class="task-result-grid feedback-attachment-grid">
+                <button
+                  v-for="(url, index) in feedbackAttachments"
+                  :key="url + index"
+                  type="button"
+                  class="task-result-thumb feedback-attachment-thumb clickable"
+                  @click="openPreview(getPreviewImageSrc(url))"
+                >
+                  <img :src="url" :alt="`反馈附件 ${index + 1}`" loading="lazy" />
+                </button>
+              </div>
             </div>
 
             <div class="detail-block">
@@ -501,6 +534,11 @@ onMounted(() => {
   gap: 8px;
 }
 
+.feedback-attachment-grid {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 96px));
+  gap: 10px;
+}
+
 .task-result-thumb {
   display: flex;
   align-items: center;
@@ -536,6 +574,14 @@ onMounted(() => {
 
 .task-reference-thumb {
   min-height: 72px;
+
+  img {
+    aspect-ratio: 1 / 1;
+  }
+}
+
+.feedback-attachment-thumb {
+  min-height: 96px;
 
   img {
     aspect-ratio: 1 / 1;

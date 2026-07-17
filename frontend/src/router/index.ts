@@ -199,7 +199,13 @@ const router = createRouter({
         },
         {
           path: "admin/dashboard",
-          name: "Dashboard",
+          name: "AdminDashboard",
+          meta: { requiresAdmin: true },
+          component: () => import("@/views/admin/AdminOverviewDashboardView.vue"),
+        },
+        {
+          path: "admin/image-dashboard",
+          name: "AdminImageDashboard",
           meta: { requiresAdmin: true },
           component: () => import("@/views/admin/DashboardView.vue"),
         },

@@ -291,6 +291,7 @@ export function listAdminFeedbacks(
   if (query?.user_id) params.user_id = query.user_id;
   if (query?.task_id) params.task_id = query.task_id;
   if (query?.status) params.status = query.status;
+  if (query?.feedback_type) params.feedback_type = query.feedback_type;
   return client.get("/admin/feedback", { params });
 }
 
@@ -363,6 +364,7 @@ export function getAdminAnalyticsOfflineOrderRevenue(query: AdminAnalyticsQuery)
 export function getAdminErrorAnalytics(params: {
   start_date?: string;
   end_date?: string;
+  source?: "web" | "app" | "api";
   model?: string;
   error_category?: string;
   used_fallback_api?: boolean;
@@ -374,6 +376,7 @@ export function getAdminErrorCategoryTimeseries(query: {
   granularity: ErrorTrendGranularity;
   start_date?: string;
   end_date?: string;
+  source?: "web" | "app" | "api";
   model?: string;
   used_fallback_api?: boolean;
   limit?: number;
@@ -386,6 +389,7 @@ export function getAdminErrorTasks(params: {
   page_size?: number;
   start_date?: string;
   end_date?: string;
+  source?: "web" | "app" | "api";
   model?: string;
   error_category?: string;
   used_fallback_api?: boolean;

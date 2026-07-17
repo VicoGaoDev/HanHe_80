@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.schemas.task import ImageOut
 
@@ -25,6 +25,8 @@ class FeedbackListItem(BaseModel):
     user_id: str
     username: str = ""
     task_id: str = ""
+    feedback_type: str = "general"
+    attachments: list[str] = []
     status: str
     is_read: bool = False
     content: str
@@ -57,6 +59,8 @@ class FeedbackReadCountResponse(BaseModel):
 
 class FeedbackCreateRequest(BaseModel):
     task_id: str | None = None
+    feedback_type: str | None = None
+    attachments: list[str] = Field(default_factory=list)
     content: str
 
 

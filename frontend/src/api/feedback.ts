@@ -1,14 +1,21 @@
 import client from "./client";
 import type {
+  FeedbackCreatePayload,
   FeedbackDetail,
   FeedbackListQuery,
   FeedbackListResponse,
   FeedbackReadCountResponse,
 } from "@/types";
 
-export function createFeedback(taskId: string | null | undefined, content: string): Promise<FeedbackDetail> {
+export function createFeedback(
+  taskId: string | null | undefined,
+  content: string,
+  options?: Pick<FeedbackCreatePayload, "feedback_type" | "attachments">,
+): Promise<FeedbackDetail> {
   return client.post("/feedback", {
     task_id: taskId || undefined,
+    feedback_type: options?.feedback_type,
+    attachments: options?.attachments || [],
     content,
   });
 }
@@ -24,6 +31,7 @@ export function listMyFeedbacks(
   };
   if (query?.task_id) params.task_id = query.task_id;
   if (query?.status) params.status = query.status;
+  if (query?.feedback_type) params.feedback_type = query.feedback_type;
   return client.get("/feedback", { params });
 }
 

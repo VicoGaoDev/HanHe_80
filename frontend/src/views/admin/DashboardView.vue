@@ -8,7 +8,6 @@ import { useRouter } from "vue-router";
 import { getGenerationModels, getTaskScenes } from "@/api/config";
 import {
   getAdminUnresolvedFeedbackCount,
-  getStats,
   getAdminAnalyticsBreakdown,
   getAdminAnalyticsSummary,
   getAdminAnalyticsTimeseries,
@@ -30,7 +29,6 @@ import type {
   AdminAnalyticsQuery,
   AdminAnalyticsSummary,
   AdminAnalyticsTimeseries,
-  AdminStats,
   AdminUser,
   GenerationModelOption,
   HistoryFilter,
@@ -43,9 +41,7 @@ import type {
 
 const router = useRouter();
 const analyticsLoading = ref(false);
-const statsLoading = ref(false);
 const historyLoading = ref(false);
-const stats = ref<AdminStats | null>(null);
 const summary = ref<AdminAnalyticsSummary | null>(null);
 const timeseries = ref<AdminAnalyticsTimeseries | null>(null);
 const breakdown = ref<AdminAnalyticsBreakdown | null>(null);
@@ -129,47 +125,6 @@ const activeFilterSummary = computed(() => {
   }
   if (!chips.length && summary.value) chips.push(`统计范围：${summary.value.current_range_label}`);
   return chips;
-});
-
-const overviewStats = computed(() => {
-  if (!stats.value) return [];
-  return [
-    {
-      key: "total_tasks",
-      label: "所有时间总任务数",
-      value: stats.value.total_tasks,
-      desc: "累计发起的全部任务数量（含提示词反推）",
-      color: "#1890ff",
-    },
-    {
-      key: "total_credit_cost",
-      label: "所有时间总积分消耗",
-      value: stats.value.total_credit_cost,
-      desc: "累计任务实际扣减的积分总量（含提示词反推）",
-      color: "#722ed1",
-    },
-    {
-      key: "total_remain_credits",
-      label: "所有用户剩余积分总和",
-      value: stats.value.total_remain_credits,
-      desc: "当前系统内非超级管理员用户的可用积分合计",
-      color: "#eb2f96",
-    },
-    {
-      key: "active_users",
-      label: "近 7 天活跃用户",
-      value: stats.value.active_users,
-      desc: "按最近 7 天内发起任务或提示词反推计算",
-      color: "#13c2c2",
-    },
-    {
-      key: "total_users",
-      label: "总用户数",
-      value: stats.value.total_users,
-      desc: "当前系统内非超级管理员用户",
-      color: "#fa8c16",
-    },
-  ];
 });
 
 const filterSignature = computed(() => JSON.stringify({
@@ -298,18 +253,6 @@ async function loadAnalytics() {
   }
 }
 
-async function loadStatsData() {
-  statsLoading.value = true;
-  try {
-    stats.value = await getStats();
-  } catch (err: any) {
-    if (isSessionExpiredError(err)) return;
-    message.error("获取概览统计失败");
-  } finally {
-    statsLoading.value = false;
-  }
-}
-
 async function checkUnresolvedFeedbacks() {
   try {
     const { count } = await getAdminUnresolvedFeedbackCount();
@@ -355,7 +298,17 @@ async function loadPageData() {
 }
 
 async function handleRefresh() {
-  await Promise.all([loadPageData(), loadStatsData()]);
+  await Promise.all([loadPageData(), checkUnresolvedFeedbacks()]);
+}
+
+function handleKpiCardClick(key: string) {
+  if (key === "failed_tasks") {
+    router.push("/admin/error-analytics");
+    return;
+  }
+  if (key === "new_users") {
+    router.push("/admin/users");
+  }
 }
 
 function handleReset() {
@@ -511,7 +464,7 @@ onMounted(async () => {
   preset.value = defaultPresetByGranularity(granularity.value);
   applyPresetRange(preset.value);
   await Promise.all([loadUsers(), loadModels()]);
-  await Promise.all([loadPageData(), loadStatsData(), checkUnresolvedFeedbacks()]);
+  await Promise.all([loadPageData(), checkUnresolvedFeedbacks()]);
   ready.value = true;
 });
 
@@ -530,8 +483,8 @@ watch(filterSignature, async () => {
           <BarChartOutlined />
         </div>
         <div>
-          <div class="warm-page-title">数据统计</div>
-          <div class="warm-page-desc">查看日、周、月趋势对比，了解任务、用户和积分消耗的整体情况。</div>
+          <div class="warm-page-title">图片数据</div>
+          <div class="warm-page-desc">单独查看图片任务的趋势、用户、来源和积分消耗，不混入视频数据。</div>
         </div>
       </div>
       <div v-if="summary" class="page-period-meta">
@@ -546,7 +499,7 @@ watch(filterSignature, async () => {
       :filters="filters"
       :granularity="granularity"
       :preset="preset"
-      :loading="analyticsLoading || historyLoading || statsLoading"
+      :loading="analyticsLoading || historyLoading"
       @update:granularity="handleGranularityChange"
       @preset-change="handlePresetChange"
       @reset="handleReset"
@@ -555,34 +508,10 @@ watch(filterSignature, async () => {
 
     <section class="dashboard-section">
       <div class="section-title-row">
-        <h3 class="section-title">固定概览</h3>
-        <span class="section-tip">这一组为固定口径统计，不随当前筛选条件变化。</span>
-      </div>
-      <a-spin :spinning="statsLoading">
-        <div class="overview-grid">
-          <div
-            v-for="(item, index) in overviewStats"
-            :key="item.key"
-            class="overview-card warm-card motion-card-lift motion-fade-up"
-            :style="{ '--motion-delay': `${160 + Math.min(index, 5) * 40}ms` }"
-          >
-            <div class="overview-card-head">
-              <span class="overview-card-label">{{ item.label }}</span>
-              <span class="overview-card-dot" :style="{ background: item.color }" />
-            </div>
-            <div class="overview-card-value" :style="{ color: item.color }">{{ item.value }}</div>
-            <div class="overview-card-desc">{{ item.desc }}</div>
-          </div>
-        </div>
-      </a-spin>
-    </section>
-
-    <section class="dashboard-section">
-      <div class="section-title-row">
         <h3 class="section-title">核心指标</h3>
         <span class="section-kicker">Overview</span>
       </div>
-      <KpiCards :summary="summary" :loading="analyticsLoading" />
+      <KpiCards :summary="summary" :loading="analyticsLoading" @card-click="handleKpiCardClick" />
     </section>
 
     <section class="dashboard-section">

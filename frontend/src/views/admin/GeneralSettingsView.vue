@@ -84,7 +84,7 @@ async function handleQrUpload(event: Event) {
   if (!file) return;
   qrUploading.value = true;
   try {
-    const res = await uploadReferenceImage(file, "misc");
+    const res = await uploadReferenceImage(file, "contact_qr");
     contactQrImage.value = res.url;
     message.success("二维码上传成功");
   } catch (err: any) {

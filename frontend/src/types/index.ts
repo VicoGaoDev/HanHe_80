@@ -460,6 +460,15 @@ export interface CanvasTaskCreateResponse {
 }
 
 export type FeedbackStatus = "pending" | "processing" | "completed";
+export type FeedbackType =
+  | "general"
+  | "image_task"
+  | "video_task"
+  | "canvas"
+  | "purchase"
+  | "feature_request"
+  | "bug_report"
+  | "optimization";
 
 export interface FeedbackTaskSummary {
   task_id: string;
@@ -482,6 +491,8 @@ export interface FeedbackItem {
   user_id: string;
   username: string;
   task_id: string;
+  feedback_type: FeedbackType;
+  attachments: string[];
   status: FeedbackStatus;
   is_read: boolean;
   content: string;
@@ -515,6 +526,7 @@ export interface FeedbackReadCountResponse {
 export interface FeedbackListQuery {
   task_id?: string;
   status?: FeedbackStatus;
+  feedback_type?: FeedbackType;
 }
 
 export interface FeedbackUpdatePayload {
@@ -526,6 +538,13 @@ export interface FeedbackUpdatePayload {
 export interface AdminFeedbackQuery extends FeedbackListQuery {
   user_id?: string;
   feedback_id?: string;
+}
+
+export interface FeedbackCreatePayload {
+  task_id?: string | null;
+  feedback_type?: FeedbackType;
+  attachments?: string[];
+  content: string;
 }
 
 export interface SystemMessageSender {
@@ -1480,7 +1499,16 @@ export interface AdminVideoTaskListResponse {
   items: AdminVideoTaskResult[];
 }
 
-export type UploadPurpose = "ref" | "source" | "mask" | "reverse" | "misc" | "template";
+export type UploadPurpose =
+  | "ref"
+  | "source"
+  | "mask"
+  | "reverse"
+  | "misc"
+  | "contact_qr"
+  | "canvas_upload"
+  | "user_suggestion"
+  | "template";
 
 export interface UploadCredential {
   bucket: string;

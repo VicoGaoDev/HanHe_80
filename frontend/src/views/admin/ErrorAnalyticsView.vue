@@ -16,19 +16,23 @@ import type {
   AdminErrorTaskItem,
   ErrorTrendGranularity,
   GenerationModelOption,
+  TaskSource,
   TaskSceneConfig,
   UserHistoryCard,
 } from "@/types";
 
 type DatePreset = "today" | "3d" | "7d" | "30d";
+type FallbackFilterValue = "all" | "used" | "unused";
 
 const loading = ref(false);
 const preset = ref<DatePreset | undefined>("today");
 const dateRange = ref<[Dayjs, Dayjs] | null>(null);
 const analytics = ref<AdminErrorAnalytics | null>(null);
 const errorTrend = ref<AdminErrorCategoryTimeseries | null>(null);
+const sourceFilter = ref<TaskSource | undefined>(undefined);
 const modelFilter = ref<string | undefined>(undefined);
-const fallbackOnly = ref(false);
+const fallbackFilter = ref<FallbackFilterValue>("all");
+const fallbackOnly = computed(() => fallbackFilter.value === "used");
 const trendGranularity = ref<ErrorTrendGranularity>("3hour");
 const selectedErrorCategory = ref<string | undefined>(undefined);
 const selectedTaskErrorCategory = ref<string | undefined>(undefined);
@@ -278,8 +282,9 @@ function handleDateRangeChange() {
 
 function handleReset() {
   applyPreset("today");
+  sourceFilter.value = undefined;
   modelFilter.value = undefined;
-  fallbackOnly.value = false;
+  fallbackFilter.value = "all";
   trendGranularity.value = "3hour";
   selectedErrorCategory.value = undefined;
   selectedTaskErrorCategory.value = undefined;
@@ -325,16 +330,18 @@ async function load() {
       getAdminErrorAnalytics({
         start_date: queryRange?.start_date,
         end_date: queryRange?.end_date,
+        source: sourceFilter.value,
         model: modelFilter.value,
         error_category: selectedErrorCategory.value,
-        used_fallback_api: fallbackOnly.value ? true : undefined,
+        used_fallback_api: fallbackFilter.value === "all" ? undefined : fallbackFilter.value === "used",
       }),
       getAdminErrorCategoryTimeseries({
         granularity: trendGranularity.value,
         start_date: formatQueryDate(dateRange.value[0].startOf("day")),
         end_date: formatQueryDate(dateRange.value[1].endOf("day")),
+        source: sourceFilter.value,
         model: modelFilter.value,
-        used_fallback_api: fallbackOnly.value ? true : undefined,
+        used_fallback_api: fallbackFilter.value === "all" ? undefined : fallbackFilter.value === "used",
         limit: 6,
       }),
     ]);
@@ -365,9 +372,10 @@ async function loadTaskTable(page = taskTablePage.value) {
       page_size: TASK_TABLE_PAGE_SIZE,
       start_date: queryRange?.start_date,
       end_date: queryRange?.end_date,
+      source: sourceFilter.value,
       model: modelFilter.value,
       error_category: activeTaskErrorCategory.value,
-      used_fallback_api: fallbackOnly.value ? true : undefined,
+      used_fallback_api: fallbackFilter.value === "all" ? undefined : fallbackFilter.value === "used",
     });
     taskTableItems.value = res.items;
     taskTableTotal.value = res.total;
@@ -538,6 +546,16 @@ onMounted(async () => {
           @change="handleDateRangeChange"
         />
         <a-select
+          v-model:value="sourceFilter"
+          allow-clear
+          class="analytics-filter-select analytics-filter-source"
+          placeholder="全部来源"
+          @change="load"
+        >
+          <a-select-option value="web">Web</a-select-option>
+          <a-select-option value="api">API</a-select-option>
+        </a-select>
+        <a-select
           v-model:value="modelFilter"
           allow-clear
           show-search
@@ -547,9 +565,15 @@ onMounted(async () => {
           option-filter-prop="label"
           @change="load"
         />
-        <a-checkbox v-model:checked="fallbackOnly" class="analytics-fallback-checkbox" @change="handleFallbackFilterChange">
-          仅看使用备用接口
-        </a-checkbox>
+        <a-select
+          v-model:value="fallbackFilter"
+          class="analytics-filter-select analytics-fallback-select"
+          @change="handleFallbackFilterChange"
+        >
+          <a-select-option value="all">备用接口：全部</a-select-option>
+          <a-select-option value="used">备用接口：有</a-select-option>
+          <a-select-option value="unused">备用接口：无</a-select-option>
+        </a-select>
         <div class="analytics-filter-panel-compact">
           <a-radio-group
             :value="preset"
@@ -787,15 +811,6 @@ onMounted(async () => {
   margin-bottom: 16px;
 }
 
-.analytics-fallback-checkbox {
-  height: 42px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 10px;
-  color: #7d6446;
-  font-weight: 600;
-}
-
 .page-period-chip {
   padding: 8px 12px;
   border-radius: 999px;
@@ -1027,6 +1042,14 @@ onMounted(async () => {
 
 .analytics-filter-select {
   width: 336px;
+}
+
+.analytics-filter-source {
+  width: 140px;
+}
+
+.analytics-fallback-select {
+  width: 170px;
 }
 
 @media (max-width: 768px) {

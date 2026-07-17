@@ -16,6 +16,7 @@ import {
 import { createPaymentOrder, listPaymentPlans } from "@/api/payments";
 import { createFeedback, getMyCompletedUnreadFeedbackCount } from "@/api/feedback";
 import { getAdminUnresolvedFeedbackCount } from "@/api/admin";
+import UserSuggestionDialog from "@/components/feedback/UserSuggestionDialog.vue";
 import { registerCloudbaseAccount, sendPasswordResetEmailCode, sendRegisterEmailCode } from "@/lib/cloudbase";
 import { withApiBaseUrl, withBaseUrl } from "@/lib/assets";
 import {
@@ -76,7 +77,13 @@ const isSuperAdmin = computed(() => auth.isSuperAdmin);
 const hideTopMenu = computed(() => route.meta.hideTopMenu === true);
 const isWorkbenchLayout = computed(() => route.meta.workbenchLayout === true);
 const isCanvasRoute = computed(() => route.path.startsWith("/canvas") || route.path.startsWith("/admin/user-canvases/"));
+const isAdminRoute = computed(() => route.path.startsWith("/admin"));
 const showDesktopSideNav = computed(() => !hideTopMenu.value || (isWorkbenchLayout.value && isCanvasRoute.value));
+const showSuggestionFab = computed(() =>
+  !hideTopMenu.value
+  && !isWorkbenchLayout.value
+  && !isAdminRoute.value,
+);
 const mobileDrawerOpen = ref(false);
 const routeTransitionName = ref("route-page-forward");
 const canManagePromoCodes = computed(() => auth.user?.is_whitelisted === true);
@@ -105,18 +112,19 @@ const routeOrder = new Map<string, number>([
   ["/admin/user-videos", 19],
   ["/admin/user-canvases", 20],
   ["/admin/dashboard", 21],
-  ["/admin/video-dashboard", 22],
-  ["/admin/error-analytics", 23],
-  ["/admin/general-settings", 24],
-  ["/admin/redeem-keys", 25],
-  ["/admin/revenue", 26],
-  ["/admin/payment-orders", 27],
-  ["/admin/feedbacks", 28],
-  ["/admin/feedbacks/:feedbackId", 29],
-  ["/admin/system-messages", 30],
-  ["/admin/cos-config", 31],
-  ["/admin/external-api-configs", 32],
-  ["/admin/video-api-configs", 33],
+  ["/admin/image-dashboard", 22],
+  ["/admin/video-dashboard", 23],
+  ["/admin/error-analytics", 24],
+  ["/admin/general-settings", 25],
+  ["/admin/redeem-keys", 26],
+  ["/admin/revenue", 27],
+  ["/admin/payment-orders", 28],
+  ["/admin/feedbacks", 29],
+  ["/admin/feedbacks/:feedbackId", 30],
+  ["/admin/system-messages", 31],
+  ["/admin/cos-config", 32],
+  ["/admin/external-api-configs", 33],
+  ["/admin/video-api-configs", 34],
 ]);
 
 const currentTheme = ref<AppThemeName>(getCurrentTheme());
@@ -170,7 +178,8 @@ const adminMenuItems = computed(() =>
     { key: "/admin/user-tasks", label: "用户图片", icon: PictureOutlined, superAdminOnly: false },
     { key: "/admin/user-videos", label: "用户视频", icon: VideoCameraOutlined, superAdminOnly: false },
     { key: "/admin/user-canvases", label: "用户画布", icon: NumberOutlined, superAdminOnly: false },
-    { key: "/admin/dashboard", label: "生图数据", icon: BarChartOutlined, superAdminOnly: false },
+    { key: "/admin/dashboard", label: "数据总览", icon: BarChartOutlined, superAdminOnly: false },
+    { key: "/admin/image-dashboard", label: "图片数据", icon: PictureOutlined, superAdminOnly: false },
     { key: "/admin/video-dashboard", label: "视频数据", icon: VideoCameraOutlined, superAdminOnly: false },
     { key: "/admin/error-analytics", label: "错误统计", icon: BugOutlined, superAdminOnly: false },
     { key: "/admin/general-settings", label: "通用设置", icon: SettingOutlined, superAdminOnly: false },
@@ -197,6 +206,7 @@ const adminMenuUserDataItems = computed(() =>
 const adminMenuAnalyticsItems = computed(() =>
   adminMenuItems.value.filter((item) => [
     "/admin/dashboard",
+    "/admin/image-dashboard",
     "/admin/video-dashboard",
     "/admin/error-analytics",
   ].includes(item.key))
@@ -218,6 +228,7 @@ const isAdminUserDataRoute = computed(() =>
 );
 const isAdminAnalyticsRoute = computed(() =>
   route.path.startsWith("/admin/dashboard")
+  || route.path.startsWith("/admin/image-dashboard")
   || route.path.startsWith("/admin/video-dashboard")
   || route.path.startsWith("/admin/error-analytics")
 );
@@ -530,6 +541,7 @@ const purchaseLoading = ref(false);
 const purchaseFeedbackDialogOpen = ref(false);
 const purchaseFeedbackSubmitting = ref(false);
 const purchaseFeedbackForm = reactive({ content: "" });
+const suggestionDialogOpen = ref(false);
 const authExpiredPromptVisible = ref(false);
 const expiredSessionRedirectPath = ref("");
 const bannedEmailDomainSuffixes = [
@@ -1088,6 +1100,15 @@ async function handlePurchaseCredits() {
   }
 }
 
+function openSuggestionEntry() {
+  mobileDrawerOpen.value = false;
+  if (!auth.isLoggedIn) {
+    openAuthModal("login");
+    return;
+  }
+  suggestionDialogOpen.value = true;
+}
+
 function openPurchaseFeedbackDialog() {
   purchaseFeedbackForm.content = "";
   purchaseFeedbackDialogOpen.value = true;
@@ -1108,7 +1129,9 @@ async function handleSubmitPurchaseFeedback() {
   const planText = selectedPlan ? `当前套餐：¥${selectedPlan.display_amount} / ${selectedPlan.credits}积分` : "当前套餐：未选择";
   purchaseFeedbackSubmitting.value = true;
   try {
-    await createFeedback(null, `【积分购买反馈】\n${planText}\n\n${normalized}`);
+    await createFeedback(null, `【积分购买反馈】\n${planText}\n\n${normalized}`, {
+      feedback_type: "purchase",
+    });
     message.success("反馈已提交");
     closePurchaseFeedbackDialog();
   } catch (err: any) {
@@ -1837,6 +1860,16 @@ watch(purchaseDialogOpen, (open) => {
         </div>
       </div>
     </a-drawer>
+
+    <div v-if="showSuggestionFab" class="suggestion-fab-wrap">
+      <a-tooltip title="提交建议" placement="left">
+        <button type="button" class="suggestion-fab" aria-label="提交建议" @click="openSuggestionEntry">
+          <MessageOutlined />
+        </button>
+      </a-tooltip>
+    </div>
+
+    <UserSuggestionDialog v-model:open="suggestionDialogOpen" />
 
     <a-modal
       v-model:open="creditsContactVisible"
@@ -2708,6 +2741,37 @@ watch(purchaseDialogOpen, (open) => {
   align-items: center;
   gap: 10px;
   margin-left: auto;
+}
+
+.suggestion-fab-wrap {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1080;
+}
+
+.suggestion-fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffb347, #ff8f1f);
+  color: #2d1f08;
+  font-size: 18px;
+  box-shadow: 0 12px 24px var(--theme-fab-shadow);
+  cursor: pointer;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-soft),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-soft);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 28px var(--theme-fab-shadow);
+  }
 }
 
 .mobile-nav-credits {
@@ -3954,6 +4018,17 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .announcement-modal :deep(
 
   .mobile-nav-fab {
     display: inline-flex;
+  }
+
+  .suggestion-fab-wrap {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .suggestion-fab {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
   }
 }
 
