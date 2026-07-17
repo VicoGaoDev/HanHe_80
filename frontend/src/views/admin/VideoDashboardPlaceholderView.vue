@@ -15,6 +15,7 @@ import { getVideoTaskScenes } from "@/api/videoConfig";
 import { VChart } from "@/components/admin/charting";
 import VideoTaskDetailDialog from "@/components/video/VideoTaskDetailDialog.vue";
 import { withApiBaseUrl } from "@/lib/assets";
+import { getSuccessRateColor } from "@/lib/analyticsMetric";
 import { isSessionExpiredError } from "@/lib/authError";
 import type {
   AdminAnalyticsBreakdown,
@@ -98,7 +99,7 @@ const periodCards = computed(() => {
     { key: "failed_tasks", label: "周期失败数", color: "#ff4d4f", current: summary.value.failed_tasks.current, previous: summary.value.failed_tasks.previous, delta: summary.value.failed_tasks.delta, delta_pct: summary.value.failed_tasks.delta_pct },
     { key: "credits_consumed", label: "周期积分消耗", color: "#fa8c16", current: summary.value.credits_consumed.current, previous: summary.value.credits_consumed.previous, delta: summary.value.credits_consumed.delta, delta_pct: summary.value.credits_consumed.delta_pct },
     { key: "active_users", label: "周期活跃用户", color: "#13c2c2", current: summary.value.active_users.current, previous: summary.value.active_users.previous, delta: summary.value.active_users.delta, delta_pct: summary.value.active_users.delta_pct },
-    { key: "success_rate", label: "周期成功率", color: "#7c3aed", current: successRateCurrent, previous: successRatePrevious, delta: successRateDelta, delta_pct: successRatePrevious === 0 ? null : Number(((successRateDelta / successRatePrevious) * 100).toFixed(1)), suffix: "%" },
+    { key: "success_rate", label: "周期成功率", color: getSuccessRateColor(successRateCurrent), current: successRateCurrent, previous: successRatePrevious, delta: successRateDelta, delta_pct: successRatePrevious === 0 ? null : Number(((successRateDelta / successRatePrevious) * 100).toFixed(1)), suffix: "%" },
   ];
 });
 
