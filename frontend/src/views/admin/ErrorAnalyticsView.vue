@@ -31,6 +31,7 @@ const modelFilter = ref<string | undefined>(undefined);
 const fallbackOnly = ref(false);
 const trendGranularity = ref<ErrorTrendGranularity>("3hour");
 const selectedErrorCategory = ref<string | undefined>(undefined);
+const selectedTaskErrorCategory = ref<string | undefined>(undefined);
 const selectedBucketLabel = ref<string | undefined>(undefined);
 const drilledDateRange = ref<[Dayjs, Dayjs] | null>(null);
 const taskTableLoading = ref(false);
@@ -80,10 +81,12 @@ const columns = [
   { title: "错误次数", dataIndex: "count", width: 120 },
   { title: "错误类别", dataIndex: "error_category", width: 200 },
   { title: "错误信息", dataIndex: "error_message", width: 720 },
+  { title: "操作", key: "actions", width: 110, fixed: "right" as const },
 ];
 
 const filteredItems = computed(() => analytics.value?.items || []);
-const showTaskTable = computed(() => fallbackOnly.value || Boolean(selectedErrorCategory.value));
+const activeTaskErrorCategory = computed(() => selectedTaskErrorCategory.value || selectedErrorCategory.value);
+const showTaskTable = computed(() => fallbackOnly.value || Boolean(activeTaskErrorCategory.value));
 
 const filteredFailedTaskCount = computed(() => (
   filteredItems.value.reduce((sum, item) => sum + item.count, 0)
@@ -265,6 +268,7 @@ function handlePresetChange(value: DatePreset) {
 function handleDateRangeChange() {
   preset.value = undefined;
   selectedErrorCategory.value = undefined;
+  selectedTaskErrorCategory.value = undefined;
   selectedBucketLabel.value = undefined;
   drilledDateRange.value = null;
   if (dateRange.value?.[0] && dateRange.value?.[1]) {
@@ -278,6 +282,7 @@ function handleReset() {
   fallbackOnly.value = false;
   trendGranularity.value = "3hour";
   selectedErrorCategory.value = undefined;
+  selectedTaskErrorCategory.value = undefined;
   selectedBucketLabel.value = undefined;
   drilledDateRange.value = null;
   load();
@@ -286,6 +291,7 @@ function handleReset() {
 function handleTrendGranularityChange(value: ErrorTrendGranularity) {
   trendGranularity.value = value;
   selectedErrorCategory.value = undefined;
+  selectedTaskErrorCategory.value = undefined;
   selectedBucketLabel.value = undefined;
   drilledDateRange.value = null;
   load();
@@ -293,6 +299,7 @@ function handleTrendGranularityChange(value: ErrorTrendGranularity) {
 
 function handleFallbackFilterChange() {
   selectedErrorCategory.value = undefined;
+  selectedTaskErrorCategory.value = undefined;
   selectedBucketLabel.value = undefined;
   drilledDateRange.value = null;
   load();
@@ -344,7 +351,7 @@ async function load() {
 }
 
 async function loadTaskTable(page = taskTablePage.value) {
-  if (!dateRange.value?.[0] || !dateRange.value?.[1] || (!fallbackOnly.value && !selectedErrorCategory.value)) {
+  if (!dateRange.value?.[0] || !dateRange.value?.[1] || (!fallbackOnly.value && !activeTaskErrorCategory.value)) {
     taskTableItems.value = [];
     taskTableTotal.value = 0;
     taskTablePage.value = 1;
@@ -359,7 +366,7 @@ async function loadTaskTable(page = taskTablePage.value) {
       start_date: queryRange?.start_date,
       end_date: queryRange?.end_date,
       model: modelFilter.value,
-      error_category: selectedErrorCategory.value,
+      error_category: activeTaskErrorCategory.value,
       used_fallback_api: fallbackOnly.value ? true : undefined,
     });
     taskTableItems.value = res.items;
@@ -391,6 +398,7 @@ function handleTrendChartClick(params: { seriesName?: string; dataIndex?: number
     return;
   }
   selectedErrorCategory.value = category;
+  selectedTaskErrorCategory.value = undefined;
   selectedBucketLabel.value = point?.label;
   if (point?.bucket_start && point?.bucket_end) {
     drilledDateRange.value = [dayjs(point.bucket_start), dayjs(point.bucket_end)];
@@ -402,9 +410,20 @@ function handleTrendChartClick(params: { seriesName?: string; dataIndex?: number
 
 function clearErrorCategoryFilter() {
   selectedErrorCategory.value = undefined;
+  selectedTaskErrorCategory.value = undefined;
   selectedBucketLabel.value = undefined;
   drilledDateRange.value = null;
   load();
+}
+
+function openErrorTaskList(record: AdminErrorAnalytics["items"][number]) {
+  selectedTaskErrorCategory.value = record.error_category;
+  void loadTaskTable(1);
+}
+
+function clearTaskCategoryFilter() {
+  selectedTaskErrorCategory.value = undefined;
+  void loadTaskTable(1);
 }
 
 function fmtTime(value?: string | null) {
@@ -624,7 +643,7 @@ onMounted(async () => {
         :loading="loading"
         :pagination="false"
         :row-key="getErrorRowKey"
-        :scroll="{ x: 1040 }"
+        :scroll="{ x: 1160 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'count'">
@@ -636,6 +655,11 @@ onMounted(async () => {
           <template v-else-if="column.dataIndex === 'error_category'">
             <span class="category-badge">{{ record.error_category }}</span>
           </template>
+          <template v-else-if="column.key === 'actions'">
+            <a-button type="link" size="small" class="table-detail-btn" @click="openErrorTaskList(record)">
+              错误任务
+            </a-button>
+          </template>
         </template>
         <template #emptyText>
           <a-empty description="当前时间范围内暂无失败错误记录" />
@@ -646,20 +670,23 @@ onMounted(async () => {
     <div v-if="showTaskTable" class="warm-card warm-table-card motion-card-lift motion-fade-up" style="--motion-delay: 300ms">
       <div class="table-card-head">
         <div>
-          <div class="table-card-title">{{ fallbackOnly ? "备用接口任务情况" : "当天任务情况" }}</div>
+          <div class="table-card-title">{{ fallbackOnly ? "备用接口任务情况" : "错误任务列表" }}</div>
           <div class="table-card-desc">
             {{
               fallbackOnly
                 ? (
-                  selectedErrorCategory
-                    ? (selectedBucketLabel ? `查看“${selectedErrorCategory}”在 ${selectedBucketLabel} 触发备用接口的任务。` : `查看“${selectedErrorCategory}”对应的备用接口任务。`)
+                  activeTaskErrorCategory
+                    ? (selectedBucketLabel ? `查看“${activeTaskErrorCategory}”在 ${selectedBucketLabel} 触发备用接口的任务。` : `查看“${activeTaskErrorCategory}”对应的备用接口任务。`)
                     : "当前直接展示所选时间范围内所有使用过备用接口的任务。"
                 )
-                : (selectedBucketLabel ? `查看“${selectedErrorCategory}”在 ${selectedBucketLabel} 的失败任务明细。` : `查看“${selectedErrorCategory}”对应的失败任务明细。`)
+                : (selectedBucketLabel ? `查看“${activeTaskErrorCategory}”在 ${selectedBucketLabel} 的失败任务明细。` : `查看“${activeTaskErrorCategory}”对应的失败任务明细。`)
             }}
           </div>
         </div>
         <div class="history-summary">
+          <span v-if="activeTaskErrorCategory" class="history-summary-chip">
+            错误类别：{{ activeTaskErrorCategory }}
+          </span>
           <span class="history-summary-chip">
             {{ fallbackOnly ? `触发备用接口 ${analytics?.fallback_task_total ?? 0} 条` : `筛选结果 ${taskTableTotal} 条` }}
           </span>
@@ -669,6 +696,15 @@ onMounted(async () => {
           <span v-if="fallbackOnly" class="history-summary-chip history-summary-chip-danger">
             失败 {{ analytics?.fallback_failed_tasks ?? 0 }}
           </span>
+          <a-button
+            v-if="selectedTaskErrorCategory"
+            type="link"
+            size="small"
+            class="clear-filter-btn"
+            @click="clearTaskCategoryFilter"
+          >
+            清除任务筛选
+          </a-button>
         </div>
       </div>
       <a-table
