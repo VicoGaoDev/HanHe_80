@@ -67,7 +67,16 @@ def _validate_base64_image(value: str, field_name: str) -> str:
 
 
 def _normalize_base64_images(values: list[str] | None) -> list[str]:
-    return [_validate_base64_image(value, f"reference_images[{index}]") for index, value in enumerate(values or [])]
+    normalized_images: list[str] = []
+    for index, value in enumerate(values or []):
+        normalized = _validate_base64_image(value, f"reference_images[{index}]")
+        if normalized:
+            normalized_images.append(normalized)
+    return normalized_images
+
+
+def _model_requires_reference_images(model: str) -> bool:
+    return "edit" in (model or "").strip().lower()
 
 
 def _resolve_api_task_model(model: str, reference_images: list[str]) -> str:
@@ -75,7 +84,7 @@ def _resolve_api_task_model(model: str, reference_images: list[str]) -> str:
     if not task_model:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="model 不能为空")
     is_edit = bool(reference_images)
-    if task_model in API_EDIT_MODELS and not is_edit:
+    if _model_requires_reference_images(task_model) and not is_edit:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="图编辑须传入 reference_images",
