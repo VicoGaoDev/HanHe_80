@@ -122,6 +122,7 @@ export interface HistoryFilter {
   prompt?: string;
   status?: string;
   user_id?: string;
+  include_unsafe_tasks?: boolean;
   start_date?: string;
   end_date?: string;
   used_fallback_api?: boolean;
@@ -813,6 +814,7 @@ export interface AdminAnalyticsQuery {
   model?: string;
   mode?: TaskType;
   status?: string;
+  include_unsafe_tasks?: boolean;
 }
 
 export interface VideoAnalyticsQuery {
@@ -824,6 +826,7 @@ export interface VideoAnalyticsQuery {
   model?: string;
   mode?: VideoTaskModeFilter;
   status?: string;
+  include_unsafe_tasks?: boolean;
 }
 
 export interface AdminAnalyticsMetric {

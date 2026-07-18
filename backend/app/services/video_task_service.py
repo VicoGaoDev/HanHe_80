@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import timedelta
 
 from fastapi import HTTPException, status
@@ -13,6 +14,7 @@ from app.models.user import User
 from app.models.video_result import VideoResult
 from app.models.video_task import VideoTask
 from app.services.business_id_service import user_external_id
+from app.services.content_safety_service import build_exclude_content_safety_failed_task_clause
 from app.services.failure_refund_service import (
     DAILY_FAILURE_REFUND_LIMIT,
     get_today_failure_refund_count,
@@ -35,6 +37,12 @@ VIDEO_TASK_MAX_REFERENCE_IMAGES = 6
 VIDEO_TASK_ENQUEUE_REFUND_PREFIX = "AI视频任务入队失败返还"
 VIDEO_TASK_FAILURE_REFUND_PREFIX = "AI视频任务失败返还"
 VIDEO_TASK_CONSUME_PREFIX = "AI视频生成"
+VIDEO_TASK_SAFETY_ERROR_MESSAGE = "生成的视频存在安全风险（色情、暴力、版权、政治敏感等），请尝试修改提示词或参考图，或换个模型尝试（不同模型审查尺度不同）！"
+VIDEO_TASK_FAILURE_MESSAGE = "生成视频失败，请反馈给我们处理"
+VIDEO_TASK_SAFETY_ERROR_PATTERN = re.compile(
+    r"unsafe|image_unsafe|content blocked|appear to be unsafe|safety|nsfw|敏感|违规|审核拒绝|内容安全",
+    re.IGNORECASE,
+)
 video_task_logger = logging.getLogger("app.video_task")
 
 
@@ -74,17 +82,32 @@ def is_video_task_credit_refunded(db: Session, task: VideoTask) -> bool:
     )
 
 
+def format_video_task_public_error_message(error_message: str | None) -> str:
+    detail = (error_message or "").strip()
+    if not detail:
+        return ""
+    if VIDEO_TASK_SAFETY_ERROR_PATTERN.search(detail):
+        return VIDEO_TASK_SAFETY_ERROR_MESSAGE
+    return VIDEO_TASK_FAILURE_MESSAGE
+
+
 def serialize_video_task(
     task: VideoTask,
     *,
     credit_refunded: bool | None = None,
     failure_refund_remaining_count: int | None = None,
     cos_config=None,
+    public_error_message: bool = False,
 ) -> dict:
     db = Session.object_session(task)
     resolved_credit_refunded = bool(credit_refunded)
     if credit_refunded is None and db is not None and task.status == "failed":
         resolved_credit_refunded = is_video_task_credit_refunded(db, task)
+    resolved_task_error_message = (
+        format_video_task_public_error_message(task.error_message)
+        if public_error_message
+        else (task.error_message or "")
+    )
     return {
         "id": task.business_id,
         "model": task.model or "",
@@ -100,7 +123,7 @@ def serialize_video_task(
         "used_fallback_api": bool(task.used_fallback_api),
         "task_is_deleted": bool(task.is_deleted),
         "status": task.status or "pending",
-        "error_message": task.error_message or "",
+        "error_message": resolved_task_error_message,
         "created_at": task.created_at,
         "enqueued_at": task.enqueued_at,
         "request_started_at": task.request_started_at,
@@ -114,7 +137,11 @@ def serialize_video_task(
                 "video_size_bytes": int(result.video_size_bytes or 0),
                 "duration_seconds": result.duration_seconds,
                 "status": result.status or "pending",
-                "error_message": result.error_message or "",
+                "error_message": (
+                    format_video_task_public_error_message(result.error_message)
+                    if public_error_message
+                    else (result.error_message or "")
+                ),
             }
             for result in task.results
         ],
@@ -512,6 +539,7 @@ def list_admin_video_tasks(
     used_fallback_api: bool | None = None,
     start_date=None,
     end_date=None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     normalized_page = max(int(page or 1), 1)
     normalized_page_size = max(min(int(page_size or 20), 100), 1)
@@ -527,6 +555,8 @@ def list_admin_video_tasks(
         query = query.filter(VideoTask.source == source)
     if model:
         query = query.filter(VideoTask.model == model)
+    if not include_unsafe_tasks:
+        query = query.filter(build_exclude_content_safety_failed_task_clause(VideoTask.status, VideoTask.error_message))
     if mode == "text_to_video":
         query = query.filter((VideoTask.reference_images == "") | (VideoTask.reference_images == "[]"))
     elif mode == "image_to_video":

@@ -1210,7 +1210,7 @@ onBeforeUnmount(() => {
                 </template>
 
                 <template v-else>
-                  <div class="video-result-error">{{ task.error_message || task.videos[0]?.error_message || "视频生成失败" }}</div>
+                  <div class="video-result-error">{{ task.error_message || task.videos[0]?.error_message || "生成视频失败，请反馈给我们处理" }}</div>
                 </template>
               </div>
             </article>

@@ -17,6 +17,11 @@ from app.models.payment_order import PaymentOrder
 from app.models.video_task import VideoTask
 from app.models.user_credit import DEFAULT_USER_CREDIT_STATUS, UserCredit
 from app.services.business_id_service import get_user_by_business_id, task_external_id, user_external_id
+from app.services.content_safety_service import (
+    build_content_safety_error_clause,
+    build_exclude_content_safety_failed_task_clause,
+    is_content_safety_error_text,
+)
 from app.services.prompt_reverse_service import (
     PROMPT_REVERSE_CREDIT_LOG_DESCRIPTION,
     PROMPT_REVERSE_MODE,
@@ -104,6 +109,14 @@ def _get_refunded_task_ids(db: Session, task_ids: list[int]) -> set[int]:
     }
 
 
+def _task_credit_refund_filter():
+    return or_(
+        CreditLog.description.in_(TASK_CREDIT_REFUND_DESCRIPTIONS),
+        CreditLog.description.like(f"{VIDEO_TASK_FAILURE_REFUND_PREFIX} %"),
+        CreditLog.description.like(f"{VIDEO_TASK_ENQUEUE_REFUND_PREFIX} %"),
+    )
+
+
 def _serialize_user(user: User) -> dict:
     db = user._sa_instance_state.session
     return {
@@ -169,9 +182,8 @@ def list_users(db: Session) -> list[dict]:
         )
         .filter(
             CreditLog.user_id.in_(user_ids),
-            CreditLog.task_id.is_not(None),
             CreditLog.type == "allocate",
-            CreditLog.description.in_(TASK_CREDIT_REFUND_DESCRIPTIONS),
+            _task_credit_refund_filter(),
         )
         .group_by(CreditLog.user_id)
         .all()
@@ -997,6 +1009,7 @@ def _task_query(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    include_unsafe_tasks: bool = True,
 ):
     query = db.query(Task).join(User, User.id == Task.user_id).filter(
         Task.created_at >= _to_db_datetime(start_date),
@@ -1012,6 +1025,8 @@ def _task_query(
         query = query.filter(Task.source == source)
     if model:
         query = query.filter(Task.model == model)
+    if not include_unsafe_tasks:
+        query = query.filter(build_exclude_content_safety_failed_task_clause(Task.status, Task.error_message))
     if mode:
         if mode == TASK_TYPE_INPAINT:
             query = query.filter((Task.mode == "inpaint") | (Task.model == "inpaint"))
@@ -1089,6 +1104,7 @@ def _build_analytics_records(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> list[AnalyticsRecord]:
     scene_type_map = get_task_scene_type_map(db)
     tasks = _task_query(
@@ -1100,6 +1116,7 @@ def _build_analytics_records(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     ).all()
     refunded_task_ids = _get_refunded_task_ids(db, [task.id for task in tasks])
     task_records = [
@@ -1214,6 +1231,7 @@ def get_analytics_summary(
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     current_start, current_end = _align_range(granularity, start_date, end_date)
     previous_start, previous_end = _previous_range(current_start, current_end, granularity)
@@ -1227,6 +1245,7 @@ def get_analytics_summary(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
     previous_records = _build_analytics_records(
         db,
@@ -1237,6 +1256,7 @@ def get_analytics_summary(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
     current_metrics = _task_summary_metrics(current_records)
@@ -1270,6 +1290,7 @@ def get_analytics_timeseries(
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     current_start, current_end = _align_range(granularity, start_date, end_date)
     previous_start, previous_end = _previous_range(current_start, current_end, granularity)
@@ -1285,6 +1306,7 @@ def get_analytics_timeseries(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
     previous_records = _build_analytics_records(
         db,
@@ -1295,6 +1317,7 @@ def get_analytics_timeseries(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
     current_users = _user_query(db, start_date=current_start, end_date=current_end, user_id=user_id).all()
     previous_users = _user_query(db, start_date=previous_start, end_date=previous_end, user_id=user_id).all()
@@ -1340,6 +1363,7 @@ def get_analytics_breakdown(
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     current_start, current_end = _align_range(granularity, start_date, end_date)
     records = _build_analytics_records(
@@ -1351,6 +1375,7 @@ def get_analytics_breakdown(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
     relevant_user_ids = {record.user_id for record in records}
@@ -1494,6 +1519,7 @@ def _video_task_query(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    include_unsafe_tasks: bool = True,
 ):
     query = db.query(VideoTask).join(User, User.id == VideoTask.user_id).filter(
         VideoTask.created_at >= _to_db_datetime(start_date),
@@ -1508,6 +1534,8 @@ def _video_task_query(
         query = query.filter(VideoTask.source == source)
     if model:
         query = query.filter(VideoTask.model == model)
+    if not include_unsafe_tasks:
+        query = query.filter(build_exclude_content_safety_failed_task_clause(VideoTask.status, VideoTask.error_message))
     if mode == VIDEO_TASK_TYPE_TEXT_TO_VIDEO:
         query = query.filter((VideoTask.reference_images == "") | (VideoTask.reference_images == "[]"))
     elif mode == VIDEO_TASK_TYPE_IMAGE_TO_VIDEO:
@@ -1525,6 +1553,7 @@ def _build_video_analytics_records(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> list[AnalyticsRecord]:
     tasks = _video_task_query(
         db,
@@ -1535,6 +1564,7 @@ def _build_video_analytics_records(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     ).all()
     refunded_task_ids = _get_refunded_video_task_ids(db, [task.id for task in tasks])
     return [
@@ -1563,6 +1593,7 @@ def get_video_analytics_summary(
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     current_start, current_end = _align_range(granularity, start_date, end_date)
     previous_start, previous_end = _previous_range(current_start, current_end, granularity)
@@ -1575,6 +1606,7 @@ def get_video_analytics_summary(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
     previous_records = _build_video_analytics_records(
         db,
@@ -1585,6 +1617,7 @@ def get_video_analytics_summary(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
     current_metrics = _task_summary_metrics(current_records)
     previous_metrics = _task_summary_metrics(previous_records)
@@ -1620,6 +1653,7 @@ def get_video_analytics_timeseries(
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     current_start, current_end = _align_range(granularity, start_date, end_date)
     previous_start, previous_end = _previous_range(current_start, current_end, granularity)
@@ -1634,6 +1668,7 @@ def get_video_analytics_timeseries(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
     previous_records = _build_video_analytics_records(
         db,
@@ -1644,6 +1679,7 @@ def get_video_analytics_timeseries(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
     return {
         "granularity": granularity,
@@ -1675,6 +1711,7 @@ def get_video_analytics_breakdown(
     model: str | None = None,
     mode: str | None = None,
     status_filter: str | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     current_start, current_end = _align_range(granularity, start_date, end_date)
     records = _build_video_analytics_records(
@@ -1686,6 +1723,7 @@ def get_video_analytics_breakdown(
         source=source,
         model=model,
         mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
     relevant_user_ids = {record.user_id for record in records}
     users_by_id = {
@@ -1962,7 +2000,7 @@ def _extract_upstream_http_status(message: str) -> int | None:
 
 
 def _is_content_safety_error(message: str) -> bool:
-    return bool(CONTENT_SAFETY_ERROR_PATTERN.search(message or ""))
+    return is_content_safety_error_text(message)
 
 
 def _normalize_error_message_for_analytics(error_message: str | None) -> str:
@@ -2223,6 +2261,7 @@ def get_error_analytics(
     model: str | None = None,
     error_category: str | None = None,
     used_fallback_api: bool | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     current_start, current_end = _align_range("day", start_date, end_date)
     fallback_task_total = 0
@@ -2243,6 +2282,8 @@ def get_error_analytics(
                 _non_whitelisted_user_filter(),
             )
         )
+        if not include_unsafe_tasks:
+            query = query.filter(~build_content_safety_error_clause(TaskApiAttempt.error_message))
     else:
         query = (
             db.query(Task.error_message)
@@ -2257,6 +2298,8 @@ def get_error_analytics(
         )
         if used_fallback_api is False:
             query = query.filter(Task.used_fallback_api.is_(False))
+        if not include_unsafe_tasks:
+            query = query.filter(~build_content_safety_error_clause(Task.error_message))
     if source:
         query = query.filter(Task.source == source)
     if model:
@@ -2322,6 +2365,7 @@ def get_error_category_timeseries(
     model: str | None = None,
     used_fallback_api: bool | None = None,
     limit: int = 6,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     current_start, current_end = _align_range(granularity, start_date, end_date)
     bucket_starts = _iter_bucket_starts(current_start, current_end, granularity)
@@ -2340,6 +2384,8 @@ def get_error_category_timeseries(
                 _non_whitelisted_user_filter(),
             )
         )
+        if not include_unsafe_tasks:
+            query = query.filter(~build_content_safety_error_clause(TaskApiAttempt.error_message))
     else:
         query = (
             db.query(Task.created_at, Task.error_message)
@@ -2354,6 +2400,8 @@ def get_error_category_timeseries(
         )
         if used_fallback_api is False:
             query = query.filter(Task.used_fallback_api.is_(False))
+        if not include_unsafe_tasks:
+            query = query.filter(~build_content_safety_error_clause(Task.error_message))
     if source:
         query = query.filter(Task.source == source)
     if model:
@@ -2416,6 +2464,7 @@ def get_error_tasks(
     model: str | None = None,
     error_category: str | None = None,
     used_fallback_api: bool | None = None,
+    include_unsafe_tasks: bool = True,
 ) -> dict:
     if used_fallback_api is True:
         query = (
@@ -2471,10 +2520,14 @@ def get_error_tasks(
             row_error_message = resolved_summary["primary_error_message"] or str(task.error_message or "")
         else:
             row_error_message = str(task.error_message or "")
+            if not include_unsafe_tasks and _is_content_safety_error(row_error_message):
+                continue
             normalized_message = _normalize_error_message_for_analytics(row_error_message)
             row_error_category = _classify_error_message_for_analytics(normalized_message)
             if error_category and row_error_category != error_category:
                 continue
+        if used_fallback_api is True and not include_unsafe_tasks and _is_content_safety_error(row_error_message):
+            continue
         items.append({
             "task_id": task_external_id(task),
             "user_id": user_external_id(user),

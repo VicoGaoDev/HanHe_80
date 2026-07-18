@@ -62,6 +62,7 @@ function buildAnalyticsParams(query: AdminAnalyticsQuery): Record<string, unknow
   if (query.model) params.model = query.model;
   if (query.mode) params.mode = query.mode;
   if (query.status) params.status = query.status;
+  if (typeof query.include_unsafe_tasks === "boolean") params.include_unsafe_tasks = query.include_unsafe_tasks;
   return params;
 }
 
@@ -76,6 +77,7 @@ function buildVideoAnalyticsParams(query: VideoAnalyticsQuery): Record<string, u
   if (query.model) params.model = query.model;
   if (query.mode) params.mode = query.mode;
   if (query.status) params.status = query.status;
+  if (typeof query.include_unsafe_tasks === "boolean") params.include_unsafe_tasks = query.include_unsafe_tasks;
   return params;
 }
 
@@ -207,6 +209,7 @@ export function getAdminHistory(
   if (filter?.source) params.source = filter.source;
   if (filter?.model) params.model = filter.model;
   if (filter?.mode) params.mode = filter.mode;
+  if (typeof filter?.include_unsafe_tasks === "boolean") params.include_unsafe_tasks = filter.include_unsafe_tasks;
   if (filter?.start_date) params.start_date = filter.start_date;
   if (filter?.end_date) params.end_date = filter.end_date;
   return client.get("/admin/history", { params });
@@ -260,6 +263,7 @@ export function getAdminVideoTasks(
     status?: "pending" | "queued" | "processing" | "success" | "failed";
     user_id?: string;
     used_fallback_api?: boolean;
+    include_unsafe_tasks?: boolean;
     start_date?: string;
     end_date?: string;
   } = {},
@@ -275,6 +279,7 @@ export function getAdminVideoTasks(
       status: filters.status,
       user_id: filters.user_id,
       used_fallback_api: filters.used_fallback_api,
+      include_unsafe_tasks: filters.include_unsafe_tasks,
       start_date: filters.start_date,
       end_date: filters.end_date,
     },
@@ -368,6 +373,7 @@ export function getAdminErrorAnalytics(params: {
   model?: string;
   error_category?: string;
   used_fallback_api?: boolean;
+  include_unsafe_tasks?: boolean;
 }): Promise<AdminErrorAnalytics> {
   return client.get("/admin/analytics/errors", { params });
 }
@@ -379,6 +385,7 @@ export function getAdminErrorCategoryTimeseries(query: {
   source?: "web" | "app" | "api";
   model?: string;
   used_fallback_api?: boolean;
+  include_unsafe_tasks?: boolean;
   limit?: number;
 }): Promise<AdminErrorCategoryTimeseries> {
   return client.get("/admin/analytics/errors/timeseries", { params: query });
@@ -393,6 +400,7 @@ export function getAdminErrorTasks(params: {
   model?: string;
   error_category?: string;
   used_fallback_api?: boolean;
+  include_unsafe_tasks?: boolean;
 }): Promise<AdminErrorTaskList> {
   return client.get("/admin/analytics/errors/tasks", { params });
 }

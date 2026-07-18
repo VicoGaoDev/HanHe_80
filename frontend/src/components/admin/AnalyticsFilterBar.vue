@@ -10,6 +10,7 @@ type FilterState = {
   source?: TaskSource;
   model?: string;
   mode?: TaskType;
+  include_unsafe_tasks: boolean;
   dateRange: [Dayjs, Dayjs] | null;
 };
 
@@ -179,6 +180,14 @@ const presetOptions = computed(() => {
         </a-select-option>
       </a-select>
 
+      <a-select
+        v-model:value="filters.include_unsafe_tasks"
+        class="analytics-filter-select analytics-filter-unsafe"
+      >
+        <a-select-option :value="true">包含不合规错误</a-select-option>
+        <a-select-option :value="false">不含不合规错误</a-select-option>
+      </a-select>
+
       <a-range-picker
         v-model:value="filters.dateRange"
         class="analytics-filter-date"
@@ -202,6 +211,10 @@ const presetOptions = computed(() => {
   width: 168px;
 }
 
+.analytics-filter-unsafe {
+  width: 168px;
+}
+
 :deep(.analytics-granularity-group .ant-radio-button-wrapper) {
   padding-inline: 14px;
 }
@@ -221,6 +234,7 @@ const presetOptions = computed(() => {
 @media (max-width: 768px) {
   .analytics-filter-select,
   .analytics-filter-model,
+  .analytics-filter-unsafe,
   .analytics-filter-date {
     width: 100%;
   }

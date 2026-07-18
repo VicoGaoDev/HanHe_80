@@ -99,6 +99,7 @@ def get_video_task(
         task,
         cos_config=get_optional_cos_config(db),
         failure_refund_remaining_count=failure_refund_remaining_count,
+        public_error_message=True,
     )
 
 
@@ -129,6 +130,7 @@ def get_video_tasks(
                 if task.status == "failed" and int(task.credit_cost or 0) > 0
                 else None
             ),
+            public_error_message=True,
         )
         for task in tasks
     ]

@@ -319,7 +319,7 @@ function handleDownload(item: VideoTaskResult) {
                     </template>
                     <template v-else>
                       <div class="detail-result-placeholder is-error">
-                        {{ item.error_message || item.videos[0]?.error_message || "视频生成失败" }}
+                        {{ item.error_message || item.videos[0]?.error_message || "生成视频失败，请反馈给我们处理" }}
                       </div>
                     </template>
                   </div>

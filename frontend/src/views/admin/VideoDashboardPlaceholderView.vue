@@ -54,6 +54,7 @@ const filters = reactive<{
   source: TaskSource | undefined;
   model: string | undefined;
   mode: VideoTaskModeFilter | undefined;
+  include_unsafe_tasks: boolean;
   dateRange: [Dayjs, Dayjs] | null;
 }>({
   status: undefined,
@@ -61,6 +62,7 @@ const filters = reactive<{
   source: undefined,
   model: undefined,
   mode: undefined,
+  include_unsafe_tasks: true,
   dateRange: null,
 });
 
@@ -113,6 +115,7 @@ const activeFilterSummary = computed(() => {
   if (filters.mode) chips.push(`类型：${videoModeLabel(filters.mode)}`);
   if (filters.model) chips.push(`模型：${modelLabel(filters.model)}`);
   if (filters.status) chips.push(`状态：${statusLabel(filters.status)}`);
+  if (!filters.include_unsafe_tasks) chips.push("错误任务：不含不合规");
   if (filters.dateRange) {
     chips.push(`${filters.dateRange[0].format("YYYY-MM-DD")} ~ ${filters.dateRange[1].format("YYYY-MM-DD")}`);
   }
@@ -128,6 +131,7 @@ const filterSignature = computed(() => JSON.stringify({
   source: filters.source || null,
   model: filters.model || null,
   mode: filters.mode || null,
+  include_unsafe_tasks: filters.include_unsafe_tasks,
   start: filters.dateRange?.[0]?.valueOf() || null,
   end: filters.dateRange?.[1]?.valueOf() || null,
 }));
@@ -462,6 +466,7 @@ function buildAnalyticsQuery(): VideoAnalyticsQuery {
     source: filters.source,
     model: filters.model,
     mode: filters.mode,
+    include_unsafe_tasks: filters.include_unsafe_tasks,
     start_date: formatQueryDate(useBucketRange ? filters.dateRange?.[0] : filters.dateRange?.[0].startOf("day")),
     end_date: formatQueryDate(useBucketRange ? filters.dateRange?.[1] : filters.dateRange?.[1].endOf("day")),
   };
@@ -475,6 +480,7 @@ function buildTaskFilters() {
     mode: query.mode,
     status: query.status as "pending" | "queued" | "processing" | "success" | "failed" | undefined,
     user_id: query.user_id,
+    include_unsafe_tasks: query.include_unsafe_tasks,
     start_date: query.start_date,
     end_date: query.end_date,
   };
@@ -544,6 +550,7 @@ function handleReset() {
   filters.source = undefined;
   filters.model = undefined;
   filters.mode = undefined;
+  filters.include_unsafe_tasks = true;
   preset.value = defaultPresetByGranularity(granularity.value);
   applyPresetRange(preset.value);
 }
@@ -786,6 +793,11 @@ watch(filterSignature, async () => {
           <a-select-option v-for="option in modelOptions" :key="option.value" :value="option.value">
             {{ option.label }}
           </a-select-option>
+        </a-select>
+
+        <a-select v-model:value="filters.include_unsafe_tasks" class="analytics-filter-select analytics-filter-unsafe">
+          <a-select-option :value="true">包含不合规错误</a-select-option>
+          <a-select-option :value="false">不含不合规错误</a-select-option>
         </a-select>
 
         <a-range-picker v-model:value="filters.dateRange" class="analytics-filter-date" />
@@ -1081,6 +1093,10 @@ watch(filterSignature, async () => {
 
 .analytics-filter-model {
   width: 180px;
+}
+
+.analytics-filter-unsafe {
+  width: 168px;
 }
 
 .overview-grid,
@@ -1442,6 +1458,7 @@ watch(filterSignature, async () => {
 @media (max-width: 768px) {
   .analytics-filter-select,
   .analytics-filter-model,
+  .analytics-filter-unsafe,
   .analytics-filter-date {
     width: 100%;
   }

@@ -40,6 +40,7 @@ const sourceFilter = ref<TaskSource | undefined>(undefined);
 const modelFilter = ref<string | undefined>(undefined);
 const statusFilter = ref<"pending" | "queued" | "processing" | "success" | "failed" | undefined>(undefined);
 const fallbackFilter = ref<"used" | undefined>(undefined);
+const includeUnsafeTasks = ref(true);
 const userFilter = ref<string | undefined>(undefined);
 const promptFilter = ref("");
 const dateRangeFilter = ref<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
@@ -70,6 +71,7 @@ const activeFilterCount = computed(() => {
   if (modelFilter.value) count += 1;
   if (statusFilter.value) count += 1;
   if (fallbackFilter.value) count += 1;
+  if (!includeUnsafeTasks.value) count += 1;
   if (userFilter.value) count += 1;
   if (promptFilter.value.trim()) count += 1;
   if (dateRangeFilter.value) count += 1;
@@ -115,6 +117,7 @@ function getQuery() {
     status: statusFilter.value,
     user_id: userFilter.value,
     used_fallback_api: fallbackFilter.value === "used" ? true : undefined,
+    include_unsafe_tasks: includeUnsafeTasks.value,
     start_date: dateRangeFilter.value?.[0].startOf("day").toISOString(),
     end_date: dateRangeFilter.value?.[1].endOf("day").toISOString(),
   };
@@ -200,6 +203,7 @@ function resetFilters() {
   modelFilter.value = undefined;
   statusFilter.value = undefined;
   fallbackFilter.value = undefined;
+  includeUnsafeTasks.value = true;
   userFilter.value = undefined;
   promptFilter.value = "";
   dateRangeFilter.value = null;
@@ -394,6 +398,7 @@ watch(
     modelFilter,
     statusFilter,
     fallbackFilter,
+    includeUnsafeTasks,
     userFilter,
     promptFilter,
     dateRangeFilter,
@@ -475,6 +480,13 @@ onBeforeUnmount(() => {
         allow-clear
       >
         <a-select-option value="used">使用了备用接口</a-select-option>
+      </a-select>
+      <a-select
+        v-model:value="includeUnsafeTasks"
+        class="history-filter-control history-filter-select"
+      >
+        <a-select-option :value="true">包含不合规错误</a-select-option>
+        <a-select-option :value="false">不含不合规错误</a-select-option>
       </a-select>
       <a-select
         v-model:value="userFilter"

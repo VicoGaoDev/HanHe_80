@@ -71,6 +71,7 @@ const filters = reactive<{
   source: TaskSource | undefined;
   model: string | undefined;
   mode: TaskType | undefined;
+  include_unsafe_tasks: boolean;
   dateRange: [Dayjs, Dayjs] | null;
 }>({
   status: undefined,
@@ -78,6 +79,7 @@ const filters = reactive<{
   source: undefined,
   model: undefined,
   mode: undefined,
+  include_unsafe_tasks: true,
   dateRange: null,
 });
 
@@ -118,6 +120,7 @@ const activeFilterSummary = computed(() => {
   if (filters.mode) chips.push(`类型：${modeLabel(filters.mode)}`);
   if (filters.model) chips.push(`模型：${modelLabel(filters.model)}`);
   if (filters.status) chips.push(`状态：${statusLabel(filters.status)}`);
+  if (!filters.include_unsafe_tasks) chips.push("错误任务：不含不合规");
   if (filters.dateRange) {
     chips.push(
       `${filters.dateRange[0].format("YYYY-MM-DD")} ~ ${filters.dateRange[1].format("YYYY-MM-DD")}`,
@@ -135,6 +138,7 @@ const filterSignature = computed(() => JSON.stringify({
   source: filters.source || null,
   model: filters.model || null,
   mode: filters.mode || null,
+  include_unsafe_tasks: filters.include_unsafe_tasks,
   start: filters.dateRange?.[0]?.valueOf() || null,
   end: filters.dateRange?.[1]?.valueOf() || null,
 }));
@@ -192,6 +196,7 @@ function buildAnalyticsQuery(): AdminAnalyticsQuery {
     source: filters.source,
     model: filters.model,
     mode: filters.mode,
+    include_unsafe_tasks: filters.include_unsafe_tasks,
     start_date: formatQueryDate(useBucketRange ? filters.dateRange?.[0] : filters.dateRange?.[0].startOf("day")),
     end_date: formatQueryDate(useBucketRange ? filters.dateRange?.[1] : filters.dateRange?.[1].endOf("day")),
   };
@@ -205,6 +210,7 @@ function buildHistoryFilter(): HistoryFilter {
     source: filters.source,
     model: filters.model,
     mode: filters.mode,
+    include_unsafe_tasks: filters.include_unsafe_tasks,
     start_date: formatQueryDate(useBucketRange ? filters.dateRange?.[0] : filters.dateRange?.[0].startOf("day")),
     end_date: formatQueryDate(useBucketRange ? filters.dateRange?.[1] : filters.dateRange?.[1].endOf("day")),
   };
@@ -317,6 +323,7 @@ function handleReset() {
   filters.source = undefined;
   filters.model = undefined;
   filters.mode = undefined;
+  filters.include_unsafe_tasks = true;
   preset.value = defaultPresetByGranularity(granularity.value);
   applyPresetRange(preset.value);
 }

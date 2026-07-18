@@ -328,6 +328,7 @@ def admin_analytics_summary(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_generate|image_edit|inpaint|promptReverse)$"),
     status: Optional[str] = Query(None),
+    include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -342,6 +343,7 @@ def admin_analytics_summary(
         model=model,
         mode=mode,
         status_filter=status,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
 
@@ -355,6 +357,7 @@ def admin_analytics_timeseries(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_generate|image_edit|inpaint|promptReverse)$"),
     status: Optional[str] = Query(None),
+    include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -369,6 +372,7 @@ def admin_analytics_timeseries(
         model=model,
         mode=mode,
         status_filter=status,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
 
@@ -382,6 +386,7 @@ def admin_analytics_breakdown(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_generate|image_edit|inpaint|promptReverse)$"),
     status: Optional[str] = Query(None),
+    include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -396,6 +401,7 @@ def admin_analytics_breakdown(
         model=model,
         mode=mode,
         status_filter=status,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
 
@@ -409,6 +415,7 @@ def admin_video_analytics_summary(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_to_video|image_to_video)$"),
     status: Optional[str] = Query(None, pattern="^(pending|queued|processing|success|failed)$"),
+    include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -423,6 +430,7 @@ def admin_video_analytics_summary(
         model=model,
         mode=mode,
         status_filter=status,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
 
@@ -436,6 +444,7 @@ def admin_video_analytics_timeseries(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_to_video|image_to_video)$"),
     status: Optional[str] = Query(None, pattern="^(pending|queued|processing|success|failed)$"),
+    include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -450,6 +459,7 @@ def admin_video_analytics_timeseries(
         model=model,
         mode=mode,
         status_filter=status,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
 
@@ -463,6 +473,7 @@ def admin_video_analytics_breakdown(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_to_video|image_to_video)$"),
     status: Optional[str] = Query(None, pattern="^(pending|queued|processing|success|failed)$"),
+    include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -477,6 +488,7 @@ def admin_video_analytics_breakdown(
         model=model,
         mode=mode,
         status_filter=status,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
 
@@ -536,6 +548,7 @@ def admin_error_analytics(
     model: Optional[str] = Query(None),
     error_category: Optional[str] = Query(None),
     used_fallback_api: Optional[bool] = Query(None),
+    include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -547,6 +560,7 @@ def admin_error_analytics(
         model=model,
         error_category=error_category,
         used_fallback_api=used_fallback_api,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
 
@@ -558,6 +572,7 @@ def admin_error_category_timeseries(
     source: Optional[str] = Query(None, pattern="^(web|app|api)$"),
     model: Optional[str] = Query(None),
     used_fallback_api: Optional[bool] = Query(None),
+    include_unsafe_tasks: bool = Query(True),
     limit: int = Query(6, ge=1, le=12),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
@@ -570,6 +585,7 @@ def admin_error_category_timeseries(
         source=source,
         model=model,
         used_fallback_api=used_fallback_api,
+        include_unsafe_tasks=include_unsafe_tasks,
         limit=limit,
     )
 
@@ -584,6 +600,7 @@ def admin_error_tasks(
     model: Optional[str] = Query(None),
     error_category: Optional[str] = Query(None),
     used_fallback_api: Optional[bool] = Query(None),
+    include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
@@ -597,6 +614,7 @@ def admin_error_tasks(
         model=model,
         error_category=error_category,
         used_fallback_api=used_fallback_api,
+        include_unsafe_tasks=include_unsafe_tasks,
     )
 
 
@@ -609,6 +627,7 @@ def admin_history(
     source: Optional[str] = Query(None, pattern="^(web|app|api)$"),
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_generate|image_edit|inpaint|promptReverse)$"),
+    include_unsafe_tasks: bool = Query(True),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
     _user: User = Depends(require_admin),
@@ -620,6 +639,7 @@ def admin_history(
         status=status, user_id=resolved_user_id,
         source=source,
         model=model, mode=mode,
+        include_unsafe_tasks=include_unsafe_tasks,
         start_date=start_date, end_date=end_date,
     )
 
@@ -690,6 +710,7 @@ def admin_video_tasks(
     status: Optional[str] = Query(None, pattern="^(pending|queued|processing|success|failed)$"),
     user_id: Optional[str] = Query(None),
     used_fallback_api: Optional[bool] = Query(None),
+    include_unsafe_tasks: bool = Query(True),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
     _user: User = Depends(require_admin),
@@ -707,6 +728,7 @@ def admin_video_tasks(
         prompt=prompt,
         status=status,
         used_fallback_api=used_fallback_api,
+        include_unsafe_tasks=include_unsafe_tasks,
         start_date=start_date,
         end_date=end_date,
     )

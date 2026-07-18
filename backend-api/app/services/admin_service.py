@@ -3,7 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from fastapi import HTTPException, status
 from app.models.user import User
 from app.models.task import Task
@@ -17,6 +17,10 @@ from app.services.prompt_reverse_service import (
     PROMPT_REVERSE_MODEL,
 )
 from app.services.task_service import ENQUEUE_FAILURE_DESCRIPTION, TASK_FAILURE_REFUND_DESCRIPTION
+from app.services.video_task_service import (
+    VIDEO_TASK_ENQUEUE_REFUND_PREFIX,
+    VIDEO_TASK_FAILURE_REFUND_PREFIX,
+)
 from app.services.task_type_service import (
     TASK_TYPE_IMAGE_EDIT,
     TASK_TYPE_INPAINT,
@@ -81,6 +85,14 @@ def _get_refunded_task_ids(db: Session, task_ids: list[int]) -> set[int]:
         )
         if task_id
     }
+
+
+def _task_credit_refund_filter():
+    return or_(
+        CreditLog.description.in_(TASK_CREDIT_REFUND_DESCRIPTIONS),
+        CreditLog.description.like(f"{VIDEO_TASK_FAILURE_REFUND_PREFIX} %"),
+        CreditLog.description.like(f"{VIDEO_TASK_ENQUEUE_REFUND_PREFIX} %"),
+    )
 
 
 def _serialize_user(user: User) -> dict:
@@ -148,9 +160,8 @@ def list_users(db: Session) -> list[dict]:
         )
         .filter(
             CreditLog.user_id.in_(user_ids),
-            CreditLog.task_id.is_not(None),
             CreditLog.type == "allocate",
-            CreditLog.description.in_(TASK_CREDIT_REFUND_DESCRIPTIONS),
+            _task_credit_refund_filter(),
         )
         .group_by(CreditLog.user_id)
         .all()

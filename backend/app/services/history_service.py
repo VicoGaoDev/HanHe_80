@@ -11,6 +11,7 @@ from app.models.prompt_history import PromptHistory
 from app.models.task import Task
 from app.models.task_api_attempt import TaskApiAttempt
 from app.models.user import User
+from app.services.content_safety_service import build_exclude_content_safety_failed_task_clause
 from app.services.prompt_reverse_service import (
     PROMPT_REVERSE_CREDIT_LOG_DESCRIPTION,
     PROMPT_REVERSE_MODE,
@@ -705,6 +706,7 @@ def get_all_history(
     mode: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    include_unsafe_tasks: bool = True,
 ):
     cos_config = get_optional_cos_config(db)
     scene_type_map = get_task_scene_type_map(db)
@@ -739,6 +741,8 @@ def get_all_history(
         task_query = task_query.filter(Task.model == model)
         if model != PROMPT_REVERSE_MODEL:
             reverse_query = reverse_query.filter(CreditLog.id.is_(None))
+    if not include_unsafe_tasks:
+        task_query = task_query.filter(build_exclude_content_safety_failed_task_clause(Task.status, Task.error_message))
     if mode:
         if mode == TASK_TYPE_PROMPT_REVERSE:
             task_query = task_query.filter(Task.id.is_(None))

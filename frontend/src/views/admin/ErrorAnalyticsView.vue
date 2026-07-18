@@ -32,6 +32,7 @@ const errorTrend = ref<AdminErrorCategoryTimeseries | null>(null);
 const sourceFilter = ref<TaskSource | undefined>(undefined);
 const modelFilter = ref<string | undefined>(undefined);
 const fallbackFilter = ref<FallbackFilterValue>("all");
+const includeUnsafeTasks = ref(true);
 const fallbackOnly = computed(() => fallbackFilter.value === "used");
 const trendGranularity = ref<ErrorTrendGranularity>("3hour");
 const selectedErrorCategory = ref<string | undefined>(undefined);
@@ -285,6 +286,7 @@ function handleReset() {
   sourceFilter.value = undefined;
   modelFilter.value = undefined;
   fallbackFilter.value = "all";
+  includeUnsafeTasks.value = true;
   trendGranularity.value = "3hour";
   selectedErrorCategory.value = undefined;
   selectedTaskErrorCategory.value = undefined;
@@ -334,6 +336,7 @@ async function load() {
         model: modelFilter.value,
         error_category: selectedErrorCategory.value,
         used_fallback_api: fallbackFilter.value === "all" ? undefined : fallbackFilter.value === "used",
+        include_unsafe_tasks: includeUnsafeTasks.value,
       }),
       getAdminErrorCategoryTimeseries({
         granularity: trendGranularity.value,
@@ -342,6 +345,7 @@ async function load() {
         source: sourceFilter.value,
         model: modelFilter.value,
         used_fallback_api: fallbackFilter.value === "all" ? undefined : fallbackFilter.value === "used",
+        include_unsafe_tasks: includeUnsafeTasks.value,
         limit: 6,
       }),
     ]);
@@ -376,6 +380,7 @@ async function loadTaskTable(page = taskTablePage.value) {
       model: modelFilter.value,
       error_category: activeTaskErrorCategory.value,
       used_fallback_api: fallbackFilter.value === "all" ? undefined : fallbackFilter.value === "used",
+      include_unsafe_tasks: includeUnsafeTasks.value,
     });
     taskTableItems.value = res.items;
     taskTableTotal.value = res.total;
@@ -573,6 +578,14 @@ onMounted(async () => {
           <a-select-option value="all">备用接口：全部</a-select-option>
           <a-select-option value="used">备用接口：有</a-select-option>
           <a-select-option value="unused">备用接口：无</a-select-option>
+        </a-select>
+        <a-select
+          v-model:value="includeUnsafeTasks"
+          class="analytics-filter-select analytics-unsafe-select"
+          @change="load"
+        >
+          <a-select-option :value="true">包含不合规错误</a-select-option>
+          <a-select-option :value="false">不含不合规错误</a-select-option>
         </a-select>
         <div class="analytics-filter-panel-compact">
           <a-radio-group
@@ -1050,6 +1063,10 @@ onMounted(async () => {
 
 .analytics-fallback-select {
   width: 170px;
+}
+
+.analytics-unsafe-select {
+  width: 178px;
 }
 
 @media (max-width: 768px) {
