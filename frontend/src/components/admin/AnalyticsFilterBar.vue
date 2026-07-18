@@ -10,6 +10,7 @@ type FilterState = {
   source?: TaskSource;
   model?: string;
   mode?: TaskType;
+  canvas_task_filter?: "all" | "canvas" | "non_canvas";
   include_unsafe_tasks: boolean;
   dateRange: [Dayjs, Dayjs] | null;
 };
@@ -181,6 +182,15 @@ const presetOptions = computed(() => {
       </a-select>
 
       <a-select
+        v-model:value="filters.canvas_task_filter"
+        class="analytics-filter-select analytics-filter-canvas"
+      >
+        <a-select-option value="all">全部任务</a-select-option>
+        <a-select-option value="canvas">来自 Canvas</a-select-option>
+        <a-select-option value="non_canvas">非 Canvas</a-select-option>
+      </a-select>
+
+      <a-select
         v-model:value="filters.include_unsafe_tasks"
         class="analytics-filter-select analytics-filter-unsafe"
       >
@@ -215,6 +225,10 @@ const presetOptions = computed(() => {
   width: 168px;
 }
 
+.analytics-filter-canvas {
+  width: 156px;
+}
+
 :deep(.analytics-granularity-group .ant-radio-button-wrapper) {
   padding-inline: 14px;
 }
@@ -234,6 +248,7 @@ const presetOptions = computed(() => {
 @media (max-width: 768px) {
   .analytics-filter-select,
   .analytics-filter-model,
+  .analytics-filter-canvas,
   .analytics-filter-unsafe,
   .analytics-filter-date {
     width: 100%;

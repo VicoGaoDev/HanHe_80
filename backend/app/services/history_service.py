@@ -704,6 +704,7 @@ def get_all_history(
     source: Optional[str] = None,
     model: Optional[str] = None,
     mode: Optional[str] = None,
+    canvas_task_filter: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
     include_unsafe_tasks: bool = True,
@@ -741,6 +742,11 @@ def get_all_history(
         task_query = task_query.filter(Task.model == model)
         if model != PROMPT_REVERSE_MODEL:
             reverse_query = reverse_query.filter(CreditLog.id.is_(None))
+    if canvas_task_filter == "canvas":
+        task_query = task_query.filter(Task.canvas_id.is_not(None))
+        reverse_query = reverse_query.filter(CreditLog.id.is_(None))
+    elif canvas_task_filter == "non_canvas":
+        task_query = task_query.filter(Task.canvas_id.is_(None))
     if not include_unsafe_tasks:
         task_query = task_query.filter(build_exclude_content_safety_failed_task_clause(Task.status, Task.error_message))
     if mode:

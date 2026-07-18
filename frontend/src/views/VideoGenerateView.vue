@@ -47,7 +47,7 @@ interface UploadPreviewItem {
 
 const auth = useAuthStore();
 const DEFAULT_MAX_VIDEO_REFERENCE_IMAGES = 1;
-const DEFAULT_DURATION_SECONDS = "5";
+const DEFAULT_DURATION_SECONDS = "3";
 const DEFAULT_VIDEO_TASK_COUNT = 1;
 const VIDEO_TASK_COUNT_MARKS: Record<number, string> = {
   1: "1",

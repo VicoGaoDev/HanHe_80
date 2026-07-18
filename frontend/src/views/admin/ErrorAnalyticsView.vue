@@ -4,21 +4,26 @@ import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
 import { BugOutlined } from "@ant-design/icons-vue";
-import { getAdminErrorAnalytics, getAdminErrorCategoryTimeseries, getAdminErrorTasks, getAdminHistoryDetail } from "@/api/admin";
+import { getAdminErrorAnalytics, getAdminErrorCategoryTimeseries, getAdminErrorTasks, getAdminHistoryDetail, getAdminVideoTaskDetail } from "@/api/admin";
 import { getGenerationModels, getTaskScenes } from "@/api/config";
+import { getVideoTaskScenes } from "@/api/videoConfig";
 import { isSessionExpiredError } from "@/lib/authError";
 import { VChart } from "@/components/admin/charting";
 import HistoryDetailDialog from "@/components/history/HistoryDetailDialog.vue";
+import VideoTaskDetailDialog from "@/components/video/VideoTaskDetailDialog.vue";
 import { formatGenerationTaskFailureMessage } from "@/lib/generationErrors";
 import type {
   AdminErrorAnalytics,
   AdminErrorCategoryTimeseries,
+  AdminErrorTaskKind,
   AdminErrorTaskItem,
   ErrorTrendGranularity,
   GenerationModelOption,
   TaskSource,
   TaskSceneConfig,
   UserHistoryCard,
+  VideoTaskResult,
+  VideoTaskSceneConfig,
 } from "@/types";
 
 type DatePreset = "today" | "3d" | "7d" | "30d";
@@ -29,6 +34,7 @@ const preset = ref<DatePreset | undefined>("today");
 const dateRange = ref<[Dayjs, Dayjs] | null>(null);
 const analytics = ref<AdminErrorAnalytics | null>(null);
 const errorTrend = ref<AdminErrorCategoryTimeseries | null>(null);
+const taskKindFilter = ref<AdminErrorTaskKind>("image");
 const sourceFilter = ref<TaskSource | undefined>(undefined);
 const modelFilter = ref<string | undefined>(undefined);
 const fallbackFilter = ref<FallbackFilterValue>("all");
@@ -45,9 +51,13 @@ const taskTableTotal = ref(0);
 const taskTablePage = ref(1);
 const generationModels = ref<GenerationModelOption[]>([]);
 const taskScenes = ref<TaskSceneConfig[]>([]);
-const detailOpen = ref(false);
-const detailLoading = ref(false);
-const detailItem = ref<UserHistoryCard | null>(null);
+const videoTaskScenes = ref<VideoTaskSceneConfig[]>([]);
+const imageDetailOpen = ref(false);
+const imageDetailLoading = ref(false);
+const imageDetailItem = ref<UserHistoryCard | null>(null);
+const videoDetailOpen = ref(false);
+const videoDetailLoading = ref(false);
+const videoDetailItem = ref<VideoTaskResult | null>(null);
 let activeDetailRequestKey = "";
 
 const TASK_TABLE_PAGE_SIZE = 10;
@@ -92,6 +102,7 @@ const columns = [
 const filteredItems = computed(() => analytics.value?.items || []);
 const activeTaskErrorCategory = computed(() => selectedTaskErrorCategory.value || selectedErrorCategory.value);
 const showTaskTable = computed(() => fallbackOnly.value || Boolean(activeTaskErrorCategory.value));
+const taskKindLabel = computed(() => taskKindFilter.value === "video" ? "视频任务" : "图片任务");
 
 const filteredFailedTaskCount = computed(() => (
   filteredItems.value.reduce((sum, item) => sum + item.count, 0)
@@ -215,6 +226,12 @@ const trendOption = computed(() => ({
 }));
 
 const modelOptions = computed(() => {
+  if (taskKindFilter.value === "video") {
+    return videoTaskScenes.value.map((item) => ({
+      value: item.scene_key,
+      label: item.display_name || item.scene_label || item.scene_key,
+    }));
+  }
   const optionMap = new Map<string, string>();
   generationModels.value.forEach((item) => {
     optionMap.set(item.model_key, item.model_label);
@@ -227,6 +244,27 @@ const modelOptions = computed(() => {
   optionMap.set("inpaint", "局部重绘");
   return Array.from(optionMap.entries()).map(([value, label]) => ({ value, label }));
 });
+
+const imageModelOptions = computed(() => {
+  const optionMap = new Map<string, string>();
+  generationModels.value.forEach((item) => {
+    optionMap.set(item.model_key, item.model_label);
+  });
+  taskScenes.value
+    .filter((item) => item.scene_type === "image_edit")
+    .forEach((item) => {
+      optionMap.set(item.scene_key, item.display_name || item.scene_label);
+    });
+  optionMap.set("inpaint", "局部重绘");
+  return Array.from(optionMap.entries()).map(([value, label]) => ({ value, label }));
+});
+
+const videoModelOptions = computed(() => (
+  videoTaskScenes.value.map((item) => ({
+    value: item.scene_key,
+    label: item.display_name || item.scene_label || item.scene_key,
+  }))
+));
 
 function formatQueryDate(value?: Dayjs) {
   return value ? value.format("YYYY-MM-DDTHH:mm:ss") : undefined;
@@ -283,6 +321,7 @@ function handleDateRangeChange() {
 
 function handleReset() {
   applyPreset("today");
+  taskKindFilter.value = "image";
   sourceFilter.value = undefined;
   modelFilter.value = undefined;
   fallbackFilter.value = "all";
@@ -312,14 +351,28 @@ function handleFallbackFilterChange() {
   load();
 }
 
+function handleTaskKindChange() {
+  modelFilter.value = undefined;
+  selectedErrorCategory.value = undefined;
+  selectedTaskErrorCategory.value = undefined;
+  selectedBucketLabel.value = undefined;
+  drilledDateRange.value = null;
+  taskTableItems.value = [];
+  taskTableTotal.value = 0;
+  taskTablePage.value = 1;
+  load();
+}
+
 async function loadModelOptions() {
   try {
-    const [models, scenes] = await Promise.all([getGenerationModels(), getTaskScenes()]);
+    const [models, scenes, videoScenes] = await Promise.all([getGenerationModels(), getTaskScenes(), getVideoTaskScenes()]);
     generationModels.value = models;
     taskScenes.value = scenes;
+    videoTaskScenes.value = videoScenes;
   } catch {
     generationModels.value = [];
     taskScenes.value = [];
+    videoTaskScenes.value = [];
   }
 }
 
@@ -330,6 +383,7 @@ async function load() {
     const queryRange = getEffectiveQueryRange();
     const [analyticsResult, trendResult] = await Promise.all([
       getAdminErrorAnalytics({
+        task_kind: taskKindFilter.value,
         start_date: queryRange?.start_date,
         end_date: queryRange?.end_date,
         source: sourceFilter.value,
@@ -339,6 +393,7 @@ async function load() {
         include_unsafe_tasks: includeUnsafeTasks.value,
       }),
       getAdminErrorCategoryTimeseries({
+        task_kind: taskKindFilter.value,
         granularity: trendGranularity.value,
         start_date: formatQueryDate(dateRange.value[0].startOf("day")),
         end_date: formatQueryDate(dateRange.value[1].endOf("day")),
@@ -372,6 +427,7 @@ async function loadTaskTable(page = taskTablePage.value) {
   try {
     const queryRange = getEffectiveQueryRange();
     const res = await getAdminErrorTasks({
+      task_kind: taskKindFilter.value,
       page,
       page_size: TASK_TABLE_PAGE_SIZE,
       start_date: queryRange?.start_date,
@@ -448,6 +504,8 @@ function modeLabel(value: string) {
   if (value === "image_edit") return "图编辑";
   if (value === "inpaint") return "局部重绘";
   if (value === "promptReverse") return "提示词反推";
+  if (value === "text_to_video") return "文生视频";
+  if (value === "image_to_video") return "图生视频";
   return value;
 }
 
@@ -477,6 +535,9 @@ function taskErrorText(record: AdminErrorTaskItem) {
   if (fallbackOnly.value) {
     return record.error_message || "-";
   }
+  if (taskKindFilter.value === "video") {
+    return record.error_message || "-";
+  }
   return formatGenerationTaskFailureMessage(record.error_message, record.credit_refunded);
 }
 
@@ -495,25 +556,42 @@ function fallbackStatusClass(value?: AdminErrorTaskItem["fallback_status"]) {
 }
 
 async function openTaskDetail(record: AdminErrorTaskItem) {
-  detailOpen.value = true;
-  detailLoading.value = true;
-  detailItem.value = null;
+  if (taskKindFilter.value === "video") {
+    videoDetailOpen.value = true;
+    videoDetailLoading.value = true;
+    videoDetailItem.value = null;
+  } else {
+    imageDetailOpen.value = true;
+    imageDetailLoading.value = true;
+    imageDetailItem.value = null;
+  }
   const requestKey = record.task_id;
   activeDetailRequestKey = requestKey;
   try {
-    const detail = await getAdminHistoryDetail({
-      item_type: "task",
-      task_id: record.task_id,
-    });
+    const detail = taskKindFilter.value === "video"
+      ? await getAdminVideoTaskDetail(record.task_id)
+      : await getAdminHistoryDetail({
+          item_type: "task",
+          task_id: record.task_id,
+        });
     if (activeDetailRequestKey !== requestKey) return;
-    detailItem.value = detail;
+    if (taskKindFilter.value === "video") {
+      videoDetailItem.value = detail as VideoTaskResult;
+    } else {
+      imageDetailItem.value = detail as UserHistoryCard;
+    }
   } catch {
     if (activeDetailRequestKey !== requestKey) return;
-    detailOpen.value = false;
+    if (taskKindFilter.value === "video") {
+      videoDetailOpen.value = false;
+    } else {
+      imageDetailOpen.value = false;
+    }
     message.error("获取任务详情失败");
   } finally {
     if (activeDetailRequestKey === requestKey) {
-      detailLoading.value = false;
+      imageDetailLoading.value = false;
+      videoDetailLoading.value = false;
     }
   }
 }
@@ -550,6 +628,14 @@ onMounted(async () => {
           class="analytics-filter-date"
           @change="handleDateRangeChange"
         />
+        <a-select
+          v-model:value="taskKindFilter"
+          class="analytics-filter-select analytics-task-kind-select"
+          @change="handleTaskKindChange"
+        >
+          <a-select-option value="image">图片任务</a-select-option>
+          <a-select-option value="video">视频任务</a-select-option>
+        </a-select>
         <a-select
           v-model:value="sourceFilter"
           allow-clear
@@ -628,8 +714,8 @@ onMounted(async () => {
           <div class="table-card-desc">
             {{
               fallbackOnly
-                ? `按 ${trendGranularityLabel} 展示触发备用接口任务的主接口失败 Top 6 趋势。`
-                : `按 ${trendGranularityLabel} 展示当前范围内 Top 6 错误类别变化趋势。`
+                ? `按 ${trendGranularityLabel} 展示触发备用接口的${taskKindLabel}主接口失败 Top 6 趋势。`
+                : `按 ${trendGranularityLabel} 展示当前范围内 ${taskKindLabel} Top 6 错误类别变化趋势。`
             }}
           </div>
         </div>
@@ -666,10 +752,10 @@ onMounted(async () => {
           <div class="table-card-desc">
             {{
               selectedErrorCategory
-                ? `当前仅展示“${selectedErrorCategory}”在${selectedBucketLabel || "当前范围"}内的明细。`
+                ? `当前仅展示“${selectedErrorCategory}”在${selectedBucketLabel || "当前范围"}内的${taskKindLabel}明细。`
                 : fallbackOnly
-                  ? "按主接口失败类别聚合展示使用过备用接口的任务，并保留每类的示例错误文案。"
-                  : "按错误类别聚合展示，并保留每类的示例错误文案。"
+                  ? `按主接口失败类别聚合展示使用过备用接口的${taskKindLabel}，并保留每类的示例错误文案。`
+                  : `按错误类别聚合展示${taskKindLabel}，并保留每类的示例错误文案。`
             }}
           </div>
         </div>
@@ -699,7 +785,7 @@ onMounted(async () => {
           </template>
         </template>
         <template #emptyText>
-          <a-empty description="当前时间范围内暂无失败错误记录" />
+          <a-empty :description="`当前时间范围内暂无${taskKindLabel}错误记录`" />
         </template>
       </a-table>
     </div>
@@ -713,10 +799,10 @@ onMounted(async () => {
               fallbackOnly
                 ? (
                   activeTaskErrorCategory
-                    ? (selectedBucketLabel ? `查看“${activeTaskErrorCategory}”在 ${selectedBucketLabel} 触发备用接口的任务。` : `查看“${activeTaskErrorCategory}”对应的备用接口任务。`)
-                    : "当前直接展示所选时间范围内所有使用过备用接口的任务。"
+                    ? (selectedBucketLabel ? `查看“${activeTaskErrorCategory}”在 ${selectedBucketLabel} 触发备用接口的${taskKindLabel}。` : `查看“${activeTaskErrorCategory}”对应的备用接口${taskKindLabel}。`)
+                    : `当前直接展示所选时间范围内所有使用过备用接口的${taskKindLabel}。`
                 )
-                : (selectedBucketLabel ? `查看“${activeTaskErrorCategory}”在 ${selectedBucketLabel} 的失败任务明细。` : `查看“${activeTaskErrorCategory}”对应的失败任务明细。`)
+                : (selectedBucketLabel ? `查看“${activeTaskErrorCategory}”在 ${selectedBucketLabel} 的${taskKindLabel}失败明细。` : `查看“${activeTaskErrorCategory}”对应的${taskKindLabel}失败明细。`)
             }}
           </div>
         </div>
@@ -795,7 +881,7 @@ onMounted(async () => {
           </template>
         </template>
         <template #emptyText>
-          <a-empty description="当前筛选条件下暂无失败任务明细" />
+          <a-empty :description="`当前筛选条件下暂无${taskKindLabel}失败明细`" />
         </template>
       </a-table>
       <div v-if="taskTableTotal > TASK_TABLE_PAGE_SIZE" class="warm-pagination">
@@ -810,12 +896,19 @@ onMounted(async () => {
     </div>
   </div>
   <HistoryDetailDialog
-    :open="detailOpen"
-    :item="detailItem"
-    :loading="detailLoading"
-    :model-options="modelOptions"
+    :open="imageDetailOpen"
+    :item="imageDetailItem"
+    :loading="imageDetailLoading"
+    :model-options="imageModelOptions"
     show-error-message
-    @update:open="detailOpen = $event"
+    @update:open="imageDetailOpen = $event"
+  />
+  <VideoTaskDetailDialog
+    :open="videoDetailOpen"
+    :item="videoDetailItem"
+    :loading="videoDetailLoading"
+    :model-options="videoModelOptions"
+    @update:open="videoDetailOpen = $event"
   />
 </template>
 
@@ -1059,6 +1152,10 @@ onMounted(async () => {
 
 .analytics-filter-source {
   width: 140px;
+}
+
+.analytics-task-kind-select {
+  width: 132px;
 }
 
 .analytics-fallback-select {

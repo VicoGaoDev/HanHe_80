@@ -122,6 +122,7 @@ export interface HistoryFilter {
   prompt?: string;
   status?: string;
   user_id?: string;
+  canvas_task_filter?: "all" | "canvas" | "non_canvas";
   include_unsafe_tasks?: boolean;
   start_date?: string;
   end_date?: string;
@@ -814,6 +815,7 @@ export interface AdminAnalyticsQuery {
   model?: string;
   mode?: TaskType;
   status?: string;
+  canvas_task_filter?: "all" | "canvas" | "non_canvas";
   include_unsafe_tasks?: boolean;
 }
 
@@ -961,12 +963,14 @@ export interface AdminErrorCategoryTimeseries {
   points: AdminErrorCategoryTimeseriesPoint[];
 }
 
+export type AdminErrorTaskKind = "image" | "video";
+
 export interface AdminErrorTaskItem {
   task_id: string;
   user_id: string;
   username: string;
   avatar_url: string;
-  task_type: TaskType;
+  task_type: TaskType | "text_to_video" | "image_to_video";
   model: string;
   source: TaskSource;
   mode: TaskMode;

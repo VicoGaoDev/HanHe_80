@@ -95,7 +95,6 @@ const canManagePromoCodes = computed(() => auth.user?.is_whitelisted === true);
 const canAccessCanvasMenu = computed(() => auth.isLoggedIn);
 const suggestionFabWrapRef = ref<HTMLElement | null>(null);
 const suggestionFabPosition = ref<{ x: number; y: number } | null>(null);
-const suggestionFabSuppressClick = ref(false);
 let suggestionFabDragState: {
   pointerId: number;
   startX: number;
@@ -1076,7 +1075,6 @@ function handleSuggestionFabPointerDown(event: PointerEvent) {
   if (event.button !== 0) return;
   syncSuggestionFabPosition();
   const currentPosition = suggestionFabPosition.value || getDefaultSuggestionFabPosition();
-  suggestionFabSuppressClick.value = false;
   suggestionFabDragState = {
     pointerId: event.pointerId,
     startX: event.clientX,
@@ -1105,20 +1103,15 @@ function handleSuggestionFabPointerMove(event: PointerEvent) {
 
 function handleSuggestionFabPointerUp(event: PointerEvent) {
   if (!suggestionFabDragState || suggestionFabDragState.pointerId !== event.pointerId) return;
+  const moved = suggestionFabDragState.moved;
   if (suggestionFabPosition.value) {
     suggestionFabPosition.value = clampSuggestionFabPosition(suggestionFabPosition.value);
     saveSuggestionFabPosition(suggestionFabPosition.value);
   }
-  suggestionFabSuppressClick.value = suggestionFabDragState.moved;
   suggestionFabDragState = null;
-}
-
-function handleSuggestionFabClick() {
-  if (suggestionFabSuppressClick.value) {
-    suggestionFabSuppressClick.value = false;
-    return;
+  if (!moved) {
+    openSuggestionEntry();
   }
-  openSuggestionEntry();
 }
 
 function handleWindowResize() {
@@ -2032,7 +2025,7 @@ watch(
       @pointerdown="handleSuggestionFabPointerDown"
     >
       <a-tooltip title="提交建议" placement="left">
-        <button type="button" class="suggestion-fab" aria-label="提交建议" @click="handleSuggestionFabClick">
+        <button type="button" class="suggestion-fab" aria-label="提交建议">
           <MessageOutlined />
         </button>
       </a-tooltip>

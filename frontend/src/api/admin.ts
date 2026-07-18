@@ -49,6 +49,7 @@ import type {
   AdminVideoTaskListResponse,
   VideoStats,
   VideoAnalyticsQuery,
+  VideoTaskResult,
 } from "@/types";
 
 function buildAnalyticsParams(query: AdminAnalyticsQuery): Record<string, unknown> {
@@ -62,6 +63,7 @@ function buildAnalyticsParams(query: AdminAnalyticsQuery): Record<string, unknow
   if (query.model) params.model = query.model;
   if (query.mode) params.mode = query.mode;
   if (query.status) params.status = query.status;
+  if (query.canvas_task_filter && query.canvas_task_filter !== "all") params.canvas_task_filter = query.canvas_task_filter;
   if (typeof query.include_unsafe_tasks === "boolean") params.include_unsafe_tasks = query.include_unsafe_tasks;
   return params;
 }
@@ -209,6 +211,7 @@ export function getAdminHistory(
   if (filter?.source) params.source = filter.source;
   if (filter?.model) params.model = filter.model;
   if (filter?.mode) params.mode = filter.mode;
+  if (filter?.canvas_task_filter && filter.canvas_task_filter !== "all") params.canvas_task_filter = filter.canvas_task_filter;
   if (typeof filter?.include_unsafe_tasks === "boolean") params.include_unsafe_tasks = filter.include_unsafe_tasks;
   if (filter?.start_date) params.start_date = filter.start_date;
   if (filter?.end_date) params.end_date = filter.end_date;
@@ -284,6 +287,10 @@ export function getAdminVideoTasks(
       end_date: filters.end_date,
     },
   });
+}
+
+export function getAdminVideoTaskDetail(taskId: string): Promise<VideoTaskResult> {
+  return client.get(`/admin/video-tasks/${taskId}`);
 }
 
 export function listAdminFeedbacks(
@@ -367,6 +374,7 @@ export function getAdminAnalyticsOfflineOrderRevenue(query: AdminAnalyticsQuery)
 }
 
 export function getAdminErrorAnalytics(params: {
+  task_kind?: "image" | "video";
   start_date?: string;
   end_date?: string;
   source?: "web" | "app" | "api";
@@ -379,6 +387,7 @@ export function getAdminErrorAnalytics(params: {
 }
 
 export function getAdminErrorCategoryTimeseries(query: {
+  task_kind?: "image" | "video";
   granularity: ErrorTrendGranularity;
   start_date?: string;
   end_date?: string;
@@ -392,6 +401,7 @@ export function getAdminErrorCategoryTimeseries(query: {
 }
 
 export function getAdminErrorTasks(params: {
+  task_kind?: "image" | "video";
   page?: number;
   page_size?: number;
   start_date?: string;

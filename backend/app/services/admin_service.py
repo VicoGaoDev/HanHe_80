@@ -15,6 +15,7 @@ from app.models.credit_redeem_key import CreditRedeemKey
 from app.models.offline_order import OfflineOrder
 from app.models.payment_order import PaymentOrder
 from app.models.video_task import VideoTask
+from app.models.video_task_api_attempt import VideoTaskApiAttempt
 from app.models.user_credit import DEFAULT_USER_CREDIT_STATUS, UserCredit
 from app.services.business_id_service import get_user_by_business_id, task_external_id, user_external_id
 from app.services.content_safety_service import (
@@ -48,6 +49,7 @@ from app.services.user_credit_service import (
 from app.services.video_task_service import (
     VIDEO_TASK_ENQUEUE_REFUND_PREFIX,
     VIDEO_TASK_FAILURE_REFUND_PREFIX,
+    is_video_task_credit_refunded,
 )
 from app.services.wecom_notify_service import send_wecom_markdown
 from app.utils.datetime_utils import LOCAL_TZ, now_local, to_local_naive
@@ -86,6 +88,8 @@ class AnalyticsRecord:
 
 VIDEO_TASK_TYPE_TEXT_TO_VIDEO = "text_to_video"
 VIDEO_TASK_TYPE_IMAGE_TO_VIDEO = "image_to_video"
+ERROR_ANALYTICS_TASK_KIND_IMAGE = "image"
+ERROR_ANALYTICS_TASK_KIND_VIDEO = "video"
 
 
 def _get_refunded_task_ids(db: Session, task_ids: list[int]) -> set[int]:
@@ -1009,6 +1013,7 @@ def _task_query(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    canvas_task_filter: str | None = None,
     include_unsafe_tasks: bool = True,
 ):
     query = db.query(Task).join(User, User.id == Task.user_id).filter(
@@ -1025,6 +1030,10 @@ def _task_query(
         query = query.filter(Task.source == source)
     if model:
         query = query.filter(Task.model == model)
+    if canvas_task_filter == "canvas":
+        query = query.filter(Task.canvas_id.is_not(None))
+    elif canvas_task_filter == "non_canvas":
+        query = query.filter(Task.canvas_id.is_(None))
     if not include_unsafe_tasks:
         query = query.filter(build_exclude_content_safety_failed_task_clause(Task.status, Task.error_message))
     if mode:
@@ -1055,6 +1064,7 @@ def _prompt_reverse_query(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    canvas_task_filter: str | None = None,
 ):
     if status_filter and status_filter != "success":
         return None
@@ -1063,6 +1073,8 @@ def _prompt_reverse_query(
     if model and model != PROMPT_REVERSE_MODEL:
         return None
     if source and source != "web":
+        return None
+    if canvas_task_filter == "canvas":
         return None
 
     query = db.query(CreditLog).join(User, User.id == CreditLog.user_id).filter(
@@ -1104,6 +1116,7 @@ def _build_analytics_records(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    canvas_task_filter: str | None = None,
     include_unsafe_tasks: bool = True,
 ) -> list[AnalyticsRecord]:
     scene_type_map = get_task_scene_type_map(db)
@@ -1116,6 +1129,7 @@ def _build_analytics_records(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         include_unsafe_tasks=include_unsafe_tasks,
     ).all()
     refunded_task_ids = _get_refunded_task_ids(db, [task.id for task in tasks])
@@ -1142,6 +1156,7 @@ def _build_analytics_records(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
     )
     prompt_reverse_records = []
     if prompt_reverse_query is not None:
@@ -1230,6 +1245,7 @@ def get_analytics_summary(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    canvas_task_filter: str | None = None,
     status_filter: str | None = None,
     include_unsafe_tasks: bool = True,
 ) -> dict:
@@ -1245,6 +1261,7 @@ def get_analytics_summary(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         include_unsafe_tasks=include_unsafe_tasks,
     )
     previous_records = _build_analytics_records(
@@ -1256,6 +1273,7 @@ def get_analytics_summary(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         include_unsafe_tasks=include_unsafe_tasks,
     )
 
@@ -1289,6 +1307,7 @@ def get_analytics_timeseries(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    canvas_task_filter: str | None = None,
     status_filter: str | None = None,
     include_unsafe_tasks: bool = True,
 ) -> dict:
@@ -1306,6 +1325,7 @@ def get_analytics_timeseries(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         include_unsafe_tasks=include_unsafe_tasks,
     )
     previous_records = _build_analytics_records(
@@ -1317,6 +1337,7 @@ def get_analytics_timeseries(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         include_unsafe_tasks=include_unsafe_tasks,
     )
     current_users = _user_query(db, start_date=current_start, end_date=current_end, user_id=user_id).all()
@@ -1362,6 +1383,7 @@ def get_analytics_breakdown(
     source: str | None = None,
     model: str | None = None,
     mode: str | None = None,
+    canvas_task_filter: str | None = None,
     status_filter: str | None = None,
     include_unsafe_tasks: bool = True,
 ) -> dict:
@@ -1375,6 +1397,7 @@ def get_analytics_breakdown(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         include_unsafe_tasks=include_unsafe_tasks,
     )
 
@@ -2183,7 +2206,27 @@ def _load_task_attempts_map(db: Session, task_ids: list[int]) -> dict[int, list[
     return dict(attempts_map)
 
 
-def _join_attempt_api_names(attempts: list[TaskApiAttempt]) -> str:
+def _load_video_task_attempts_map(db: Session, task_ids: list[int]) -> dict[int, list[VideoTaskApiAttempt]]:
+    normalized_task_ids = [int(task_id) for task_id in task_ids if task_id]
+    if not normalized_task_ids:
+        return {}
+    rows = (
+        db.query(VideoTaskApiAttempt)
+        .filter(VideoTaskApiAttempt.task_id.in_(normalized_task_ids))
+        .order_by(
+            VideoTaskApiAttempt.task_id.asc(),
+            VideoTaskApiAttempt.attempt_index.asc(),
+            VideoTaskApiAttempt.id.asc(),
+        )
+        .all()
+    )
+    attempts_map: dict[int, list[VideoTaskApiAttempt]] = defaultdict(list)
+    for row in rows:
+        attempts_map[int(row.task_id)].append(row)
+    return dict(attempts_map)
+
+
+def _join_attempt_api_names(attempts) -> str:
     names: list[str] = []
     seen_names: set[str] = set()
     for attempt in attempts:
@@ -2252,9 +2295,67 @@ def _summarize_task_attempts_for_error_row(
     }
 
 
+def _summarize_video_task_attempts_for_error_row(
+    attempts: list[VideoTaskApiAttempt],
+    *,
+    error_category: str | None = None,
+) -> dict | None:
+    primary_failed_attempts = [
+        attempt
+        for attempt in attempts
+        if not attempt.is_fallback and (attempt.status or "failed") == "failed"
+    ]
+    if not primary_failed_attempts:
+        return None
+
+    matched_primary: VideoTaskApiAttempt | None = None
+    for attempt in primary_failed_attempts:
+        row_error_category = _classify_error_message_for_analytics(attempt.error_message)
+        if error_category and row_error_category != error_category:
+            continue
+        matched_primary = attempt
+        break
+    if matched_primary is None:
+        return None
+
+    fallback_attempts = [attempt for attempt in attempts if attempt.is_fallback]
+    fallback_success_attempts = [
+        attempt for attempt in fallback_attempts if (attempt.status or "failed") == "success"
+    ]
+    fallback_failed_attempts = [
+        attempt for attempt in fallback_attempts if (attempt.status or "failed") != "success"
+    ]
+    if not fallback_attempts:
+        fallback_status = "unused"
+    elif fallback_success_attempts and fallback_failed_attempts:
+        fallback_status = "partial"
+    elif fallback_success_attempts:
+        fallback_status = "success"
+    else:
+        fallback_status = "failed"
+
+    fallback_error_message = next(
+        (
+            (attempt.error_message or "").strip()
+            for attempt in fallback_failed_attempts
+            if (attempt.error_message or "").strip()
+        ),
+        "",
+    )
+    return {
+        "primary_api_config_name": (matched_primary.api_config_name or "").strip(),
+        "primary_http_status": matched_primary.http_status,
+        "primary_error_message": (matched_primary.error_message or "").strip(),
+        "fallback_api_config_name": _join_attempt_api_names(fallback_attempts),
+        "fallback_status": fallback_status,
+        "fallback_error_message": fallback_error_message,
+    }
+
+
 def get_error_analytics(
     db: Session,
     *,
+    task_kind: str = ERROR_ANALYTICS_TASK_KIND_IMAGE,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
     source: str | None = None,
@@ -2267,43 +2368,82 @@ def get_error_analytics(
     fallback_task_total = 0
     fallback_success_tasks = 0
     fallback_failed_tasks = 0
-    if used_fallback_api is True:
-        query = (
-            db.query(Task.id, Task.status, TaskApiAttempt.error_message)
-            .join(Task, Task.id == TaskApiAttempt.task_id)
-            .join(User, User.id == Task.user_id)
-            .filter(
-                Task.created_at >= _to_db_datetime(current_start),
-                Task.created_at <= _to_db_datetime(current_end),
-                Task.used_fallback_api.is_(True),
-                TaskApiAttempt.is_fallback.is_(False),
-                TaskApiAttempt.status == "failed",
-                User.role != "superadmin",
-                _non_whitelisted_user_filter(),
+    if task_kind == ERROR_ANALYTICS_TASK_KIND_VIDEO:
+        if used_fallback_api is True:
+            query = (
+                db.query(VideoTask.id, VideoTask.status, VideoTaskApiAttempt.error_message)
+                .join(VideoTask, VideoTask.id == VideoTaskApiAttempt.task_id)
+                .join(User, User.id == VideoTask.user_id)
+                .filter(
+                    VideoTask.created_at >= _to_db_datetime(current_start),
+                    VideoTask.created_at <= _to_db_datetime(current_end),
+                    VideoTask.used_fallback_api.is_(True),
+                    VideoTaskApiAttempt.is_fallback.is_(False),
+                    VideoTaskApiAttempt.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
             )
-        )
-        if not include_unsafe_tasks:
-            query = query.filter(~build_content_safety_error_clause(TaskApiAttempt.error_message))
+            if not include_unsafe_tasks:
+                query = query.filter(~build_content_safety_error_clause(VideoTaskApiAttempt.error_message))
+        else:
+            query = (
+                db.query(VideoTask.error_message)
+                .join(User, User.id == VideoTask.user_id)
+                .filter(
+                    VideoTask.created_at >= _to_db_datetime(current_start),
+                    VideoTask.created_at <= _to_db_datetime(current_end),
+                    VideoTask.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
+            )
+            if used_fallback_api is False:
+                query = query.filter(VideoTask.used_fallback_api.is_(False))
+            if not include_unsafe_tasks:
+                query = query.filter(~build_content_safety_error_clause(VideoTask.error_message))
+        if source:
+            query = query.filter(VideoTask.source == source)
+        if model:
+            query = query.filter(VideoTask.model == model)
     else:
-        query = (
-            db.query(Task.error_message)
-            .join(User, User.id == Task.user_id)
-            .filter(
-                Task.created_at >= _to_db_datetime(current_start),
-                Task.created_at <= _to_db_datetime(current_end),
-                Task.status == "failed",
-                User.role != "superadmin",
-                _non_whitelisted_user_filter(),
+        if used_fallback_api is True:
+            query = (
+                db.query(Task.id, Task.status, TaskApiAttempt.error_message)
+                .join(Task, Task.id == TaskApiAttempt.task_id)
+                .join(User, User.id == Task.user_id)
+                .filter(
+                    Task.created_at >= _to_db_datetime(current_start),
+                    Task.created_at <= _to_db_datetime(current_end),
+                    Task.used_fallback_api.is_(True),
+                    TaskApiAttempt.is_fallback.is_(False),
+                    TaskApiAttempt.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
             )
-        )
-        if used_fallback_api is False:
-            query = query.filter(Task.used_fallback_api.is_(False))
-        if not include_unsafe_tasks:
-            query = query.filter(~build_content_safety_error_clause(Task.error_message))
-    if source:
-        query = query.filter(Task.source == source)
-    if model:
-        query = query.filter(Task.model == model)
+            if not include_unsafe_tasks:
+                query = query.filter(~build_content_safety_error_clause(TaskApiAttempt.error_message))
+        else:
+            query = (
+                db.query(Task.error_message)
+                .join(User, User.id == Task.user_id)
+                .filter(
+                    Task.created_at >= _to_db_datetime(current_start),
+                    Task.created_at <= _to_db_datetime(current_end),
+                    Task.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
+            )
+            if used_fallback_api is False:
+                query = query.filter(Task.used_fallback_api.is_(False))
+            if not include_unsafe_tasks:
+                query = query.filter(~build_content_safety_error_clause(Task.error_message))
+        if source:
+            query = query.filter(Task.source == source)
+        if model:
+            query = query.filter(Task.model == model)
     rows = query.all()
 
     raw_error_count_map: dict[str, int] = defaultdict(int)
@@ -2358,6 +2498,7 @@ def get_error_analytics(
 def get_error_category_timeseries(
     db: Session,
     *,
+    task_kind: str = ERROR_ANALYTICS_TASK_KIND_IMAGE,
     granularity: str = "day",
     start_date: datetime | None = None,
     end_date: datetime | None = None,
@@ -2369,43 +2510,82 @@ def get_error_category_timeseries(
 ) -> dict:
     current_start, current_end = _align_range(granularity, start_date, end_date)
     bucket_starts = _iter_bucket_starts(current_start, current_end, granularity)
-    if used_fallback_api is True:
-        query = (
-            db.query(Task.created_at, TaskApiAttempt.error_message)
-            .join(Task, Task.id == TaskApiAttempt.task_id)
-            .join(User, User.id == Task.user_id)
-            .filter(
-                Task.created_at >= _to_db_datetime(current_start),
-                Task.created_at <= _to_db_datetime(current_end),
-                Task.used_fallback_api.is_(True),
-                TaskApiAttempt.is_fallback.is_(False),
-                TaskApiAttempt.status == "failed",
-                User.role != "superadmin",
-                _non_whitelisted_user_filter(),
+    if task_kind == ERROR_ANALYTICS_TASK_KIND_VIDEO:
+        if used_fallback_api is True:
+            query = (
+                db.query(VideoTask.created_at, VideoTaskApiAttempt.error_message)
+                .join(VideoTask, VideoTask.id == VideoTaskApiAttempt.task_id)
+                .join(User, User.id == VideoTask.user_id)
+                .filter(
+                    VideoTask.created_at >= _to_db_datetime(current_start),
+                    VideoTask.created_at <= _to_db_datetime(current_end),
+                    VideoTask.used_fallback_api.is_(True),
+                    VideoTaskApiAttempt.is_fallback.is_(False),
+                    VideoTaskApiAttempt.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
             )
-        )
-        if not include_unsafe_tasks:
-            query = query.filter(~build_content_safety_error_clause(TaskApiAttempt.error_message))
+            if not include_unsafe_tasks:
+                query = query.filter(~build_content_safety_error_clause(VideoTaskApiAttempt.error_message))
+        else:
+            query = (
+                db.query(VideoTask.created_at, VideoTask.error_message)
+                .join(User, User.id == VideoTask.user_id)
+                .filter(
+                    VideoTask.created_at >= _to_db_datetime(current_start),
+                    VideoTask.created_at <= _to_db_datetime(current_end),
+                    VideoTask.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
+            )
+            if used_fallback_api is False:
+                query = query.filter(VideoTask.used_fallback_api.is_(False))
+            if not include_unsafe_tasks:
+                query = query.filter(~build_content_safety_error_clause(VideoTask.error_message))
+        if source:
+            query = query.filter(VideoTask.source == source)
+        if model:
+            query = query.filter(VideoTask.model == model)
     else:
-        query = (
-            db.query(Task.created_at, Task.error_message)
-            .join(User, User.id == Task.user_id)
-            .filter(
-                Task.created_at >= _to_db_datetime(current_start),
-                Task.created_at <= _to_db_datetime(current_end),
-                Task.status == "failed",
-                User.role != "superadmin",
-                _non_whitelisted_user_filter(),
+        if used_fallback_api is True:
+            query = (
+                db.query(Task.created_at, TaskApiAttempt.error_message)
+                .join(Task, Task.id == TaskApiAttempt.task_id)
+                .join(User, User.id == Task.user_id)
+                .filter(
+                    Task.created_at >= _to_db_datetime(current_start),
+                    Task.created_at <= _to_db_datetime(current_end),
+                    Task.used_fallback_api.is_(True),
+                    TaskApiAttempt.is_fallback.is_(False),
+                    TaskApiAttempt.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
             )
-        )
-        if used_fallback_api is False:
-            query = query.filter(Task.used_fallback_api.is_(False))
-        if not include_unsafe_tasks:
-            query = query.filter(~build_content_safety_error_clause(Task.error_message))
-    if source:
-        query = query.filter(Task.source == source)
-    if model:
-        query = query.filter(Task.model == model)
+            if not include_unsafe_tasks:
+                query = query.filter(~build_content_safety_error_clause(TaskApiAttempt.error_message))
+        else:
+            query = (
+                db.query(Task.created_at, Task.error_message)
+                .join(User, User.id == Task.user_id)
+                .filter(
+                    Task.created_at >= _to_db_datetime(current_start),
+                    Task.created_at <= _to_db_datetime(current_end),
+                    Task.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
+            )
+            if used_fallback_api is False:
+                query = query.filter(Task.used_fallback_api.is_(False))
+            if not include_unsafe_tasks:
+                query = query.filter(~build_content_safety_error_clause(Task.error_message))
+        if source:
+            query = query.filter(Task.source == source)
+        if model:
+            query = query.filter(Task.model == model)
     rows = query.all()
 
     category_totals: dict[str, int] = defaultdict(int)
@@ -2456,6 +2636,7 @@ def get_error_category_timeseries(
 def get_error_tasks(
     db: Session,
     *,
+    task_kind: str = ERROR_ANALYTICS_TASK_KIND_IMAGE,
     page: int = 1,
     page_size: int = 20,
     start_date: datetime | None = None,
@@ -2466,90 +2647,176 @@ def get_error_tasks(
     used_fallback_api: bool | None = None,
     include_unsafe_tasks: bool = True,
 ) -> dict:
-    if used_fallback_api is True:
-        query = (
-            db.query(Task, User)
-            .join(User, User.id == Task.user_id)
-            .filter(
-                Task.used_fallback_api.is_(True),
-                User.role != "superadmin",
-                _non_whitelisted_user_filter(),
-            )
-        )
-    else:
-        query = (
-            db.query(Task, User)
-            .join(User, User.id == Task.user_id)
-            .filter(
-                Task.status == "failed",
-                User.role != "superadmin",
-                _non_whitelisted_user_filter(),
-            )
-        )
-        if used_fallback_api is False:
-            query = query.filter(Task.used_fallback_api.is_(False))
-    if start_date:
-        query = query.filter(Task.created_at >= _to_db_datetime(start_date))
-    if end_date:
-        query = query.filter(Task.created_at <= _to_db_datetime(end_date))
-    if source:
-        query = query.filter(Task.source == source)
-    if model:
-        query = query.filter(Task.model == model)
-
-    rows = query.order_by(Task.created_at.desc(), Task.id.desc()).all()
-    items: list[dict] = []
-    scene_type_map = get_task_scene_type_map(db)
-    attempts_map = _load_task_attempts_map(db, [int(task.id) for task, _user in rows]) if used_fallback_api is True else {}
-    for task, user in rows:
-        attempt_summary = {
-            "primary_api_config_name": "",
-            "primary_http_status": None,
-            "fallback_api_config_name": "",
-            "fallback_status": "unused",
-            "fallback_error_message": "",
-        }
+    if task_kind == ERROR_ANALYTICS_TASK_KIND_VIDEO:
         if used_fallback_api is True:
-            resolved_summary = _summarize_task_attempts_for_error_row(
-                attempts_map.get(int(task.id), []),
-                error_category=error_category,
+            query = (
+                db.query(VideoTask, User)
+                .join(User, User.id == VideoTask.user_id)
+                .filter(
+                    VideoTask.used_fallback_api.is_(True),
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
             )
-            if resolved_summary is None:
-                continue
-            attempt_summary = resolved_summary
-            row_error_message = resolved_summary["primary_error_message"] or str(task.error_message or "")
         else:
-            row_error_message = str(task.error_message or "")
-            if not include_unsafe_tasks and _is_content_safety_error(row_error_message):
+            query = (
+                db.query(VideoTask, User)
+                .join(User, User.id == VideoTask.user_id)
+                .filter(
+                    VideoTask.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
+            )
+            if used_fallback_api is False:
+                query = query.filter(VideoTask.used_fallback_api.is_(False))
+        if start_date:
+            query = query.filter(VideoTask.created_at >= _to_db_datetime(start_date))
+        if end_date:
+            query = query.filter(VideoTask.created_at <= _to_db_datetime(end_date))
+        if source:
+            query = query.filter(VideoTask.source == source)
+        if model:
+            query = query.filter(VideoTask.model == model)
+
+        rows = query.order_by(VideoTask.created_at.desc(), VideoTask.id.desc()).all()
+        items: list[dict] = []
+        attempts_map = _load_video_task_attempts_map(db, [int(task.id) for task, _user in rows]) if used_fallback_api is True else {}
+        for task, user in rows:
+            attempt_summary = {
+                "primary_api_config_name": "",
+                "primary_http_status": None,
+                "fallback_api_config_name": "",
+                "fallback_status": "unused",
+                "fallback_error_message": "",
+            }
+            if used_fallback_api is True:
+                resolved_summary = _summarize_video_task_attempts_for_error_row(
+                    attempts_map.get(int(task.id), []),
+                    error_category=error_category,
+                )
+                if resolved_summary is None:
+                    continue
+                attempt_summary = resolved_summary
+                row_error_message = resolved_summary["primary_error_message"] or str(task.error_message or "")
+            else:
+                row_error_message = str(task.error_message or "")
+                if not include_unsafe_tasks and _is_content_safety_error(row_error_message):
+                    continue
+                normalized_message = _normalize_error_message_for_analytics(row_error_message)
+                row_error_category = _classify_error_message_for_analytics(normalized_message)
+                if error_category and row_error_category != error_category:
+                    continue
+            if used_fallback_api is True and not include_unsafe_tasks and _is_content_safety_error(row_error_message):
                 continue
-            normalized_message = _normalize_error_message_for_analytics(row_error_message)
-            row_error_category = _classify_error_message_for_analytics(normalized_message)
-            if error_category and row_error_category != error_category:
+            task_type = _video_task_type_for_task(task)
+            items.append({
+                "task_id": task.business_id or "",
+                "user_id": user_external_id(user),
+                "username": user.username or "",
+                "avatar_url": user.avatar_url or "",
+                "task_type": task_type,
+                "model": task.model or "",
+                "source": task.source or "web",
+                "mode": task_type,
+                "prompt": task.prompt or "",
+                "status": task.status or "failed",
+                "error_message": row_error_message or task.error_message or "",
+                "credit_cost": int(task.credit_cost or 0),
+                "credit_refunded": bool(is_video_task_credit_refunded(db, task)) if task.id else False,
+                "used_fallback_api": bool(task.used_fallback_api),
+                "primary_api_config_name": attempt_summary["primary_api_config_name"],
+                "primary_http_status": attempt_summary["primary_http_status"],
+                "fallback_api_config_name": attempt_summary["fallback_api_config_name"],
+                "fallback_status": attempt_summary["fallback_status"],
+                "fallback_error_message": attempt_summary["fallback_error_message"],
+                "created_at": task.created_at,
+            })
+    else:
+        if used_fallback_api is True:
+            query = (
+                db.query(Task, User)
+                .join(User, User.id == Task.user_id)
+                .filter(
+                    Task.used_fallback_api.is_(True),
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
+            )
+        else:
+            query = (
+                db.query(Task, User)
+                .join(User, User.id == Task.user_id)
+                .filter(
+                    Task.status == "failed",
+                    User.role != "superadmin",
+                    _non_whitelisted_user_filter(),
+                )
+            )
+            if used_fallback_api is False:
+                query = query.filter(Task.used_fallback_api.is_(False))
+        if start_date:
+            query = query.filter(Task.created_at >= _to_db_datetime(start_date))
+        if end_date:
+            query = query.filter(Task.created_at <= _to_db_datetime(end_date))
+        if source:
+            query = query.filter(Task.source == source)
+        if model:
+            query = query.filter(Task.model == model)
+
+        rows = query.order_by(Task.created_at.desc(), Task.id.desc()).all()
+        items = []
+        scene_type_map = get_task_scene_type_map(db)
+        attempts_map = _load_task_attempts_map(db, [int(task.id) for task, _user in rows]) if used_fallback_api is True else {}
+        for task, user in rows:
+            attempt_summary = {
+                "primary_api_config_name": "",
+                "primary_http_status": None,
+                "fallback_api_config_name": "",
+                "fallback_status": "unused",
+                "fallback_error_message": "",
+            }
+            if used_fallback_api is True:
+                resolved_summary = _summarize_task_attempts_for_error_row(
+                    attempts_map.get(int(task.id), []),
+                    error_category=error_category,
+                )
+                if resolved_summary is None:
+                    continue
+                attempt_summary = resolved_summary
+                row_error_message = resolved_summary["primary_error_message"] or str(task.error_message or "")
+            else:
+                row_error_message = str(task.error_message or "")
+                if not include_unsafe_tasks and _is_content_safety_error(row_error_message):
+                    continue
+                normalized_message = _normalize_error_message_for_analytics(row_error_message)
+                row_error_category = _classify_error_message_for_analytics(normalized_message)
+                if error_category and row_error_category != error_category:
+                    continue
+            if used_fallback_api is True and not include_unsafe_tasks and _is_content_safety_error(row_error_message):
                 continue
-        if used_fallback_api is True and not include_unsafe_tasks and _is_content_safety_error(row_error_message):
-            continue
-        items.append({
-            "task_id": task_external_id(task),
-            "user_id": user_external_id(user),
-            "username": user.username or "",
-            "avatar_url": user.avatar_url or "",
-            "task_type": resolve_task_type_for_task(task, scene_type_map=scene_type_map),
-            "model": task.model or "",
-            "source": task.source or "web",
-            "mode": task.mode or "generate",
-            "prompt": task.prompt or "",
-            "status": task.status or "failed",
-            "error_message": row_error_message or task.error_message or "",
-            "credit_cost": int(task.credit_cost or 0),
-            "credit_refunded": bool(is_task_generation_failure_credit_refunded(db, task.id)) if task.id else False,
-            "used_fallback_api": bool(task.used_fallback_api),
-            "primary_api_config_name": attempt_summary["primary_api_config_name"],
-            "primary_http_status": attempt_summary["primary_http_status"],
-            "fallback_api_config_name": attempt_summary["fallback_api_config_name"],
-            "fallback_status": attempt_summary["fallback_status"],
-            "fallback_error_message": attempt_summary["fallback_error_message"],
-            "created_at": task.created_at,
-        })
+            items.append({
+                "task_id": task_external_id(task),
+                "user_id": user_external_id(user),
+                "username": user.username or "",
+                "avatar_url": user.avatar_url or "",
+                "task_type": resolve_task_type_for_task(task, scene_type_map=scene_type_map),
+                "model": task.model or "",
+                "source": task.source or "web",
+                "mode": task.mode or "generate",
+                "prompt": task.prompt or "",
+                "status": task.status or "failed",
+                "error_message": row_error_message or task.error_message or "",
+                "credit_cost": int(task.credit_cost or 0),
+                "credit_refunded": bool(is_task_generation_failure_credit_refunded(db, task.id)) if task.id else False,
+                "used_fallback_api": bool(task.used_fallback_api),
+                "primary_api_config_name": attempt_summary["primary_api_config_name"],
+                "primary_http_status": attempt_summary["primary_http_status"],
+                "fallback_api_config_name": attempt_summary["fallback_api_config_name"],
+                "fallback_status": attempt_summary["fallback_status"],
+                "fallback_error_message": attempt_summary["fallback_error_message"],
+                "created_at": task.created_at,
+            })
 
     total = len(items)
     start_index = max(page - 1, 0) * page_size

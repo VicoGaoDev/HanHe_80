@@ -23,7 +23,7 @@ from app.schemas.feedback import (
     FeedbackUpdateRequest,
 )
 from app.schemas.history import HistoryResponse, UserHistoryCardItem, UserHistoryResponse
-from app.schemas.video_task import AdminVideoTaskListOut
+from app.schemas.video_task import AdminVideoTaskListOut, VideoTaskOut
 from app.services.business_id_service import get_user_by_business_id
 from app.services.admin_service import (
     create_user, list_users, update_user_status, update_user_role,
@@ -44,7 +44,12 @@ from app.services.feedback_service import (
 from app.services.history_service import get_admin_history_cards, get_admin_history_detail, get_all_history
 from app.services.canvas_service import list_all_canvases
 from app.services.daily_report_service import DailyReportSendResult, send_previous_day_report, send_range_report
-from app.services.video_task_service import expire_stale_video_tasks, list_admin_video_tasks
+from app.services.video_task_service import (
+    expire_stale_video_tasks,
+    get_video_task_detail,
+    list_admin_video_tasks,
+    serialize_video_task,
+)
 
 router = APIRouter(prefix="/api/admin", tags=["管理员"])
 
@@ -328,6 +333,7 @@ def admin_analytics_summary(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_generate|image_edit|inpaint|promptReverse)$"),
     status: Optional[str] = Query(None),
+    canvas_task_filter: Optional[str] = Query(None, pattern="^(canvas|non_canvas)$"),
     include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
@@ -342,6 +348,7 @@ def admin_analytics_summary(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         status_filter=status,
         include_unsafe_tasks=include_unsafe_tasks,
     )
@@ -357,6 +364,7 @@ def admin_analytics_timeseries(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_generate|image_edit|inpaint|promptReverse)$"),
     status: Optional[str] = Query(None),
+    canvas_task_filter: Optional[str] = Query(None, pattern="^(canvas|non_canvas)$"),
     include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
@@ -371,6 +379,7 @@ def admin_analytics_timeseries(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         status_filter=status,
         include_unsafe_tasks=include_unsafe_tasks,
     )
@@ -386,6 +395,7 @@ def admin_analytics_breakdown(
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_generate|image_edit|inpaint|promptReverse)$"),
     status: Optional[str] = Query(None),
+    canvas_task_filter: Optional[str] = Query(None, pattern="^(canvas|non_canvas)$"),
     include_unsafe_tasks: bool = Query(True),
     _user: User = Depends(require_admin),
     db: Session = Depends(get_db),
@@ -400,6 +410,7 @@ def admin_analytics_breakdown(
         source=source,
         model=model,
         mode=mode,
+        canvas_task_filter=canvas_task_filter,
         status_filter=status,
         include_unsafe_tasks=include_unsafe_tasks,
     )
@@ -542,6 +553,7 @@ def admin_analytics_offline_order_revenue(
 
 @router.get("/analytics/errors", response_model=ErrorAnalyticsOut)
 def admin_error_analytics(
+    task_kind: str = Query("image", pattern="^(image|video)$"),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
     source: Optional[str] = Query(None, pattern="^(web|app|api)$"),
@@ -554,6 +566,7 @@ def admin_error_analytics(
 ):
     return get_error_analytics(
         db,
+        task_kind=task_kind,
         start_date=start_date,
         end_date=end_date,
         source=source,
@@ -566,6 +579,7 @@ def admin_error_analytics(
 
 @router.get("/analytics/errors/timeseries", response_model=ErrorCategoryTimeseriesOut)
 def admin_error_category_timeseries(
+    task_kind: str = Query("image", pattern="^(image|video)$"),
     granularity: str = Query("3hour", pattern="^(1hour|3hour|6hour)$"),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
@@ -579,6 +593,7 @@ def admin_error_category_timeseries(
 ):
     return get_error_category_timeseries(
         db,
+        task_kind=task_kind,
         granularity=granularity,
         start_date=start_date,
         end_date=end_date,
@@ -592,6 +607,7 @@ def admin_error_category_timeseries(
 
 @router.get("/analytics/errors/tasks", response_model=ErrorTaskListOut)
 def admin_error_tasks(
+    task_kind: str = Query("image", pattern="^(image|video)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     start_date: Optional[datetime] = Query(None),
@@ -606,6 +622,7 @@ def admin_error_tasks(
 ):
     return get_error_tasks(
         db,
+        task_kind=task_kind,
         page=page,
         page_size=page_size,
         start_date=start_date,
@@ -627,6 +644,7 @@ def admin_history(
     source: Optional[str] = Query(None, pattern="^(web|app|api)$"),
     model: Optional[str] = Query(None),
     mode: Optional[str] = Query(None, pattern="^(text_generate|image_edit|inpaint|promptReverse)$"),
+    canvas_task_filter: Optional[str] = Query(None, pattern="^(canvas|non_canvas)$"),
     include_unsafe_tasks: bool = Query(True),
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
@@ -639,6 +657,7 @@ def admin_history(
         status=status, user_id=resolved_user_id,
         source=source,
         model=model, mode=mode,
+        canvas_task_filter=canvas_task_filter,
         include_unsafe_tasks=include_unsafe_tasks,
         start_date=start_date, end_date=end_date,
     )
@@ -732,6 +751,17 @@ def admin_video_tasks(
         start_date=start_date,
         end_date=end_date,
     )
+
+
+@router.get("/video-tasks/{task_id}", response_model=VideoTaskOut)
+def admin_video_task_detail(
+    task_id: str,
+    _user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    expire_stale_video_tasks(db)
+    task = get_video_task_detail(db, task_id)
+    return serialize_video_task(task)
 
 
 @router.get("/feedback", response_model=FeedbackListResponse)
