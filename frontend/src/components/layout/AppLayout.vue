@@ -2122,6 +2122,12 @@ watch(
         >
           前往支付宝支付
         </a-button>
+        <div class="credits-purchase-contact-tip">
+          定制积分充值请
+          <button type="button" class="credits-purchase-contact-link" @click="openCreditsContact">
+            联系客服
+          </button>
+        </div>
       </div>
     </a-modal>
 
@@ -3533,6 +3539,13 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .warm-dropdown .ant-dropdo
   --credits-purchase-accent-shadow: rgba(124, 58, 237, 0.28);
 }
 
+.credits-purchase-card-mega {
+  --credits-purchase-accent: #d4a017;
+  --credits-purchase-accent-start: #f6d365;
+  --credits-purchase-accent-end: #c68a00;
+  --credits-purchase-accent-shadow: rgba(212, 160, 23, 0.28);
+}
+
 .credits-purchase-price {
   display: inline-flex;
   align-items: flex-end;
@@ -3637,6 +3650,28 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .warm-dropdown .ant-dropdo
 
 .credits-purchase-submit {
   height: 46px !important;
+}
+
+.credits-purchase-contact-tip {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--theme-text-secondary);
+}
+
+.credits-purchase-contact-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--theme-accent-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.credits-purchase-contact-link:hover {
+  color: var(--theme-accent-text-hover);
 }
 
 .credits-purchase-qr-panel {
@@ -4336,6 +4371,10 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .announcement-modal :deep(
 
   .credits-purchase-submit {
     height: 44px !important;
+  }
+
+  .credits-purchase-contact-tip {
+    font-size: 11px;
   }
 
   :deep(.credits-purchase-modal-wrap .ant-modal) {

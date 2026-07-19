@@ -66,10 +66,11 @@ class AlipayTradeQueryResult:
 # 旧的 starter/light key 仍会保留在历史订单里，因此新套餐使用新 key，
 # 避免影响既有订单展示和 starter 的限购逻辑。
 PLAN_CATALOG: tuple[PaymentPlan, ...] = (
-    PaymentPlan(key="intro", title="入门包", amount_fen=680, credits=100, tag="新手推荐"),
-    PaymentPlan(key="plus", title="实用包", amount_fen=3280, credits=500),
-    PaymentPlan(key="value", title="超值囤货包", amount_fen=6280, credits=1000, tag="最受欢迎"),
-    PaymentPlan(key="vip", title="至尊畅玩包", amount_fen=11800, credits=2000, tag="超值加量"),
+    PaymentPlan(key="intro", title="100积分包", amount_fen=680, credits=100, tag="新手推荐"),
+    PaymentPlan(key="plus", title="500积分包", amount_fen=3280, credits=500),
+    PaymentPlan(key="value", title="1000积分包", amount_fen=6280, credits=1000, tag="最受欢迎"),
+    PaymentPlan(key="vip", title="2000积分包", amount_fen=11800, credits=2000, tag="超值加量"),
+    PaymentPlan(key="mega", title="10000积分包", amount_fen=55800, credits=10000, tag="大额特惠"),
 )
 PLAN_CATALOG_MAP = {plan.key: plan for plan in PLAN_CATALOG}
 STARTER_PLAN_KEY = "starter"
