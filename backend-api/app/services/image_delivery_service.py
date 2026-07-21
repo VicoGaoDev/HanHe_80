@@ -26,6 +26,11 @@ _API_ALIAS_PATTERNS = (
         re.I,
     ),
 )
+_PROVIDER_CONTEXT_PARENS_PATTERNS = (
+    re.compile(r"[（(]\s*第三方taskId=[^）)]*轮询地址=[^）)]*[）)]"),
+    re.compile(r"[（(]\s*轮询地址=[^）)]*[）)]"),
+)
+_UPSTREAM_URL_PATTERN = re.compile(r"https?://[^\s）)]+", re.I)
 
 
 def sanitize_api_public_message(text: str | None) -> str:
@@ -35,6 +40,11 @@ def sanitize_api_public_message(text: str | None) -> str:
     sanitized = value.replace(_API_PUBLIC_CDN_HOST, _API_PUBLIC_DISPLAY_HOST)
     for pattern in _API_ALIAS_PATTERNS:
         sanitized = pattern.sub("生图接口", sanitized)
+    for pattern in _PROVIDER_CONTEXT_PARENS_PATTERNS:
+        sanitized = pattern.sub("", sanitized)
+    sanitized = _UPSTREAM_URL_PATTERN.sub("[已隐藏]", sanitized)
+    sanitized = re.sub(r"\s+", " ", sanitized).strip()
+    sanitized = re.sub(r"\s+([,，:：;；。！？])", r"\1", sanitized)
     return sanitized
 
 
@@ -158,7 +168,7 @@ def serialize_image(image: Image, *, cos_config: CosRuntimeConfig | None = None)
         "preview_url": exposed_preview_url,
         "thumb_url": build_thumb_url(image_url, preview_url=preview_url, cos_config=cos_config),
         "status": image.status,
-        "error_message": image.error_message or "",
+        "error_message": sanitize_api_public_message(image.error_message),
         "image_format": image.image_format or "",
         "image_size_bytes": int(image.image_size_bytes or 0),
         "is_deleted": bool(image.is_deleted),
@@ -212,7 +222,7 @@ def serialize_task(
         "credit_cost": task_credit_cost,
         "credit_refunded": resolved_credit_refunded,
         "status": task.status,
-        "error_message": task.error_message or "",
+        "error_message": sanitize_api_public_message(task.error_message),
         "created_at": task.created_at,
         "enqueued_at": task.enqueued_at,
         "request_started_at": task.request_started_at,
