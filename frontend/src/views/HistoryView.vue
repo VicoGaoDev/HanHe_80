@@ -113,6 +113,8 @@ const previewSrc = ref("");
 const feedbackDialogOpen = ref(false);
 const feedbackTarget = ref<UserHistoryCard | null>(null);
 const pinningKeys = ref<string[]>([]);
+const loadedHistoryCardMediaKeys = ref<Set<string>>(new Set());
+const detailPreloadedMediaKeys = ref<string[]>([]);
 const templateDialogOpen = ref(false);
 const templateDialogSaving = ref(false);
 const templateSourceImageId = ref<number | null>(null);
@@ -524,7 +526,34 @@ function getHistoryPreviewSrc(image: Pick<UserHistoryCard, "thumb_url" | "image_
   return getPreviewImageUrl(image);
 }
 
+function getHistoryCardMediaLoadKey(item: UserHistoryCard) {
+  if (item.mode === "promptReverse") {
+    return `history-card:${item.source_image_thumb || item.source_image || item.display_id || item.task_id || item.created_at}`;
+  }
+  return `history-card:${item.image_id || item.display_id || item.task_id || item.created_at}`;
+}
+
+function markHistoryCardMediaLoaded(item: UserHistoryCard) {
+  const key = getHistoryCardMediaLoadKey(item);
+  if (loadedHistoryCardMediaKeys.value.has(key)) return;
+  const next = new Set(loadedHistoryCardMediaKeys.value);
+  next.add(key);
+  loadedHistoryCardMediaKeys.value = next;
+}
+
+function getDetailPreloadedMediaKeys(item: UserHistoryCard) {
+  if (!loadedHistoryCardMediaKeys.value.has(getHistoryCardMediaLoadKey(item))) return [];
+  if (item.mode === "promptReverse") {
+    return [`prompt-reverse-source:${String(item.source_image_thumb || item.source_image || "")}`];
+  }
+  if (typeof item.image_id === "number") {
+    return [`detail-result-base:${String(item.image_id)}`];
+  }
+  return [];
+}
+
 function openDetail(item: UserHistoryCard) {
+  detailPreloadedMediaKeys.value = getDetailPreloadedMediaKeys(item);
   detailItem.value = item;
   detailOpen.value = true;
 }
@@ -1235,6 +1264,7 @@ function handleEditImage(item: UserHistoryCard) {
               :alt="item.mode === 'promptReverse' ? '提示词反推原图' : item.status === 'failed' ? '生成失败' : '历史结果图'"
               :class="{ 'failed-result-image': item.status === 'failed' }"
               loading="lazy"
+              @load="markHistoryCardMediaLoaded(item)"
               @error="handleHistoryImageError"
             />
             <div v-else class="result-card-placeholder">
@@ -1376,6 +1406,7 @@ function handleEditImage(item: UserHistoryCard) {
     <HistoryDetailDialog
       :open="detailOpen"
       :item="detailItem"
+      :preloaded-media-keys="detailPreloadedMediaKeys"
       :model-options="modelOptions"
       :show-error-message="isAdminHistoryView"
       :has-prev="hasDetailPrev"

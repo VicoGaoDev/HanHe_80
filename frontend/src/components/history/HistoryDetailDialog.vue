@@ -26,6 +26,7 @@ const SIDE_NAV_BREAKPOINT = 960;
 const props = withDefaults(defineProps<{
   open: boolean;
   item: UserHistoryCard | null;
+  preloadedMediaKeys?: string[];
   loading?: boolean;
   showActions?: boolean;
   showErrorMessage?: boolean;
@@ -34,6 +35,7 @@ const props = withDefaults(defineProps<{
   modelOptions?: Array<{ label: string; value: string }>;
   title?: string;
 }>(), {
+  preloadedMediaKeys: () => [],
   loading: false,
   showActions: false,
   showErrorMessage: false,
@@ -100,6 +102,10 @@ function closeDialog() {
   emit("update:open", false);
 }
 
+function seedLoadedMediaKeys() {
+  loadedMediaKeys.value = new Set(props.preloadedMediaKeys || []);
+}
+
 function navigatePrev() {
   if (!props.hasPrev) return;
   emit("navigate-prev");
@@ -132,10 +138,18 @@ watch(
   ([open]) => {
     previewVisible.value = false;
     previewSrc.value = "";
-    loadedMediaKeys.value = new Set();
+    seedLoadedMediaKeys();
     if (typeof document === "undefined") return;
     document.body.style.overflow = open ? "hidden" : "";
   },
+);
+
+watch(
+  () => props.preloadedMediaKeys,
+  () => {
+    seedLoadedMediaKeys();
+  },
+  { deep: true },
 );
 
 onMounted(() => {
@@ -266,6 +280,42 @@ function getDetailImageSrc(item: UserHistoryCard, image: Pick<ImageResult, "thum
     return expiredResultAsset;
   }
   return getNestedImageSrc(image);
+}
+
+function getDetailBaseImageSrc(item: UserHistoryCard, image: Pick<ImageResult, "thumb_url" | "image_url" | "preview_url" | "status">) {
+  if (isHistoryItemExpired(item) && image.status === "success") {
+    return expiredResultAsset;
+  }
+  const zoomWebpUrl = getPreviewImageSrc(image.thumb_url || "");
+  if (zoomWebpUrl) return zoomWebpUrl;
+  const fallbackPreviewUrl = getPreviewImageUrl({
+    image_url: image.image_url || "",
+    preview_url: image.preview_url || "",
+    thumb_url: "",
+  });
+  if (fallbackPreviewUrl) return fallbackPreviewUrl;
+  return image.status === "failed" ? failedResultAsset : "";
+}
+
+function getDetailEnhancedImageSrc(item: UserHistoryCard, image: Pick<ImageResult, "thumb_url" | "image_url" | "preview_url" | "status">) {
+  if (isHistoryItemExpired(item) && image.status === "success") {
+    return expiredResultAsset;
+  }
+  const originalWebpUrl = getPreviewImageUrl({
+    image_url: image.image_url || "",
+    preview_url: image.preview_url || "",
+    thumb_url: "",
+  });
+  if (originalWebpUrl) return originalWebpUrl;
+  return getDetailBaseImageSrc(item, image);
+}
+
+function getDetailEnhancedImageLoadKey(image: Pick<ImageResult, "id">) {
+  return getMediaLoadKey("detail-result-enhanced", image.id);
+}
+
+function getDetailBaseImageLoadKey(image: Pick<ImageResult, "id">) {
+  return getMediaLoadKey("detail-result-base", image.id);
 }
 
 function getDetailPreviewSrc(item: UserHistoryCard, image: Pick<ImageResult, "thumb_url" | "image_url" | "preview_url" | "status">) {
@@ -421,31 +471,42 @@ function handleGenerateVideo(item: UserHistoryCard) {
                       class="detail-result-card"
                       :class="{
                         single: item.images.length === 1,
-                        pending: !getDetailImageSrc(item, img) && img.status !== 'failed',
+                        pending: !getDetailBaseImageSrc(item, img) && !getDetailEnhancedImageSrc(item, img) && img.status !== 'failed',
                         failed: img.status === 'failed',
                       }"
                       :style="{ '--detail-pending-bg-image': `url('${generateTaskCardAsset}')` }"
                       @click="getDetailPreviewSrc(item, img) && openPreview(getDetailPreviewSrc(item, img))"
                     >
                       <div
-                        v-if="!isMediaLoaded(getMediaLoadKey('detail-result', img.id))"
+                        v-if="!getDetailBaseImageSrc(item, img) && !isMediaLoaded(getDetailEnhancedImageLoadKey(img))"
                         class="detail-media-loading"
                       >
                         <a-spin :indicator="h(LoadingOutlined, { style: { fontSize: '28px', color: '#7c8db5' } })" />
                       </div>
                       <img
-                        v-if="getDetailImageSrc(item, img) || img.status === 'failed'"
-                        :src="getDetailImageSrc(item, img) || failedResultAsset"
+                        v-if="getDetailBaseImageSrc(item, img) || img.status === 'failed'"
+                        :src="getDetailBaseImageSrc(item, img) || failedResultAsset"
                         :alt="img.status === 'failed' ? '生成失败' : '结果图'"
-                        :class="{ 'failed-result-image': img.status === 'failed', 'detail-media-hidden': !isMediaLoaded(getMediaLoadKey('detail-result', img.id)) }"
+                        class="detail-result-image-base"
+                        :class="{ 'failed-result-image': img.status === 'failed' }"
                         loading="lazy"
-                        @load="markMediaLoaded(getMediaLoadKey('detail-result', img.id))"
-                        @error="(event) => handleDetailImageError(event, getMediaLoadKey('detail-result', img.id))"
+                        @load="markMediaLoaded(getDetailBaseImageLoadKey(img))"
+                        @error="(event) => handleDetailImageError(event)"
+                      />
+                      <img
+                        v-if="getDetailEnhancedImageSrc(item, img) && getDetailEnhancedImageSrc(item, img) !== getDetailBaseImageSrc(item, img)"
+                        :src="getDetailEnhancedImageSrc(item, img)"
+                        :alt="img.status === 'failed' ? '生成失败' : '结果图'"
+                        class="detail-result-image-enhanced"
+                        :class="{ 'failed-result-image': img.status === 'failed', 'detail-media-hidden': !isMediaLoaded(getDetailEnhancedImageLoadKey(img)) }"
+                        loading="lazy"
+                        @load="markMediaLoaded(getDetailEnhancedImageLoadKey(img))"
+                        @error="() => markMediaLoaded(getDetailEnhancedImageLoadKey(img))"
                       />
                       <div v-if="img.status === 'failed'" class="detail-failure-message">
                         {{ getDetailFailureMessage(item, img) }}
                       </div>
-                      <div v-else-if="!getDetailImageSrc(item, img)" class="result-card-placeholder">
+                      <div v-else-if="!getDetailBaseImageSrc(item, img) && !getDetailEnhancedImageSrc(item, img)" class="result-card-placeholder">
                         <a-spin
                           :indicator="h(LoadingOutlined, { style: { fontSize: '28px', color: '#7c8db5' } })"
                         />
@@ -1054,6 +1115,8 @@ function handleGenerateVideo(item: UserHistoryCard) {
   }
 
   img {
+    position: absolute;
+    inset: 0;
     object-fit: contain;
     display: block;
     background: var(--theme-panel-bg);
@@ -1084,6 +1147,15 @@ function handleGenerateVideo(item: UserHistoryCard) {
   &.single {
     height: 100%;
   }
+}
+
+.detail-result-image-base {
+  z-index: 1;
+}
+
+.detail-result-image-enhanced {
+  z-index: 2;
+  transition: opacity var(--motion-duration-base, 0.2s) var(--motion-ease-soft, ease);
 }
 
 .detail-media-loading {

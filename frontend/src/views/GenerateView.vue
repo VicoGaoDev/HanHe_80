@@ -254,6 +254,8 @@ const detailOpen = ref(false);
 const detailItem = ref<UserHistoryCard | null>(null);
 const detailTaskLocalId = ref<string | null>(null);
 const feedbackDialogOpen = ref(false);
+const loadedResultMediaKeys = ref<Set<string>>(new Set());
+const detailPreloadedMediaKeys = ref<string[]>([]);
 const feedbackTarget = ref<{
   taskId: string;
   model?: string;
@@ -1896,6 +1898,7 @@ function openGeneratedTaskDetail(task: GeneratedTaskItem, focusedImage?: ImageRe
     ))
     : 0;
   detailImageIndex.value = focusedIndex >= 0 ? focusedIndex : 0;
+  detailPreloadedMediaKeys.value = getDetailPreloadedMediaKeys(task, focusedImage);
   detailItem.value = convertGeneratedTaskToHistoryCard(task, focusedImage);
   detailOpen.value = true;
 }
@@ -1984,6 +1987,34 @@ function getGeneratedResultDisplayUrl(task: GeneratedTaskItem, img: ImageResult)
   if (img.status !== "success") return getResultDisplayUrl(img);
   if (isGeneratedTaskExpired(task)) return expiredResultAsset;
   return getResultDisplayUrl(img);
+}
+
+function getGeneratedResultMediaLoadKey(task: GeneratedTaskItem, img: ImageResult, index: number) {
+  return `generated-result:${task.localId}:${img.id}:${index}`;
+}
+
+function markGeneratedResultMediaLoaded(task: GeneratedTaskItem, img: ImageResult, index: number) {
+  const key = getGeneratedResultMediaLoadKey(task, img, index);
+  if (loadedResultMediaKeys.value.has(key)) return;
+  const next = new Set(loadedResultMediaKeys.value);
+  next.add(key);
+  loadedResultMediaKeys.value = next;
+}
+
+function getDetailPreloadedMediaKeys(task: GeneratedTaskItem, focusedImage?: ImageResult) {
+  const targetIndex = focusedImage
+    ? task.images.findIndex((image) => (
+      image === focusedImage || (typeof image.id === "number" && image.id > 0 && image.id === focusedImage.id)
+    ))
+    : task.images.findIndex((image) => image.status === "success");
+  const normalizedIndex = targetIndex >= 0 ? targetIndex : 0;
+  const targetImage = focusedImage || task.images[normalizedIndex];
+  if (!targetImage) return [];
+  if (!loadedResultMediaKeys.value.has(getGeneratedResultMediaLoadKey(task, targetImage, normalizedIndex))) return [];
+  if (typeof targetImage.id === "number" && targetImage.id > 0) {
+    return [`detail-result-base:${String(targetImage.id)}`];
+  }
+  return [];
 }
 
 function canEditGeneratedImage(task: GeneratedTaskItem, img: ImageResult) {
@@ -3376,7 +3407,12 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                     @click="openGeneratedTaskDetail(item.task, item.image)"
                   >
                     <template v-if="item.image.status === 'success' && getGeneratedResultDisplayUrl(item.task, item.image)">
-                      <img :src="getGeneratedResultDisplayUrl(item.task, item.image)" alt="生成结果" loading="lazy" />
+                      <img
+                        :src="getGeneratedResultDisplayUrl(item.task, item.image)"
+                        alt="生成结果"
+                        loading="lazy"
+                        @load="markGeneratedResultMediaLoaded(item.task, item.image, item.index)"
+                      />
                       <div class="result-actions">
                         <a-tooltip v-if="canGenerateVideoFromGeneratedImage(item.task, item.image)" title="生成视频">
                           <a-button shape="circle" class="icon-chip" @click.stop="handleGenerateVideoFromGeneratedImage(item.task, item.image)">
@@ -3483,6 +3519,7 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
     <HistoryDetailDialog
       v-model:open="detailOpen"
       :item="detailItem"
+      :preloaded-media-keys="detailPreloadedMediaKeys"
       :model-options="detailModelOptions"
       :has-prev="hasDetailPrev"
       :has-next="hasDetailNext"

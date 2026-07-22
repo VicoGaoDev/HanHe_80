@@ -30,6 +30,7 @@ const emit = defineEmits<{
   "select-asset": [asset: UserAsset];
   "select-assets": [assets: UserAsset[]];
   "insert-asset": [asset: UserAsset];
+  "insert-assets": [assets: UserAsset[]];
 }>();
 
 const {
@@ -479,6 +480,20 @@ function handleInsertAsset(asset: UserAsset) {
   emit("insert-asset", asset);
 }
 
+function handleBatchInsertAssets() {
+  if (!selectedAssetIds.value.length) {
+    message.warning("请先选择素材");
+    return;
+  }
+  const selectedIdSet = new Set(selectedAssetIds.value);
+  const selectedAssets = assets.value.filter((asset) => selectedIdSet.has(asset.id));
+  if (!selectedAssets.length) {
+    message.warning("请先选择素材");
+    return;
+  }
+  emit("insert-assets", selectedAssets);
+}
+
 function openAssetNameDialog(asset: UserAsset) {
   assetNameDialogAsset.value = asset;
   assetNameDialogValue.value = asset.file_name || "";
@@ -717,6 +732,14 @@ function handleAssetDragStart(event: DragEvent, asset: UserAsset) {
               </a-button>
               <a-button size="small" type="primary" :disabled="!selectedCount" @click="handleBatchSelectAssets">
                 添加到参考图
+              </a-button>
+              <a-button
+                v-if="showInsertToCanvas"
+                size="small"
+                :disabled="!selectedCount"
+                @click="handleBatchInsertAssets"
+              >
+                批量添加到画布
               </a-button>
               <a-button size="small" :disabled="!selectedCount" @click="openBatchCategoryDialog">
                 批量修改分类

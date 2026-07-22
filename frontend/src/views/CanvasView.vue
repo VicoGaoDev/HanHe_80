@@ -2455,6 +2455,24 @@ async function handleInsertUserAssetToCanvas(asset: UserAsset) {
   }
 }
 
+async function handleInsertUserAssetsToCanvas(assets: UserAsset[]) {
+  const result = await createImageNodesFromAssets(assets);
+  if (!result.total) {
+    message.warning("请先选择素材");
+    return;
+  }
+  if (result.successCount > 0) {
+    assetPickerOpen.value = false;
+    if (result.failedCount > 0) {
+      message.warning(`已添加 ${result.successCount} 个素材到画布，${result.failedCount} 个添加失败`);
+    } else {
+      message.success(`已添加 ${result.successCount} 个素材到画布`);
+    }
+    return;
+  }
+  message.error("批量添加素材到画布失败");
+}
+
 function replaceCanvasReference(option: CanvasReferenceOption) {
   if (!maxReferenceImages.value) {
     message.warning("当前模型不支持参考图");
@@ -3819,6 +3837,100 @@ async function createImageNodeFromAsset(asset: UserAsset, anchor?: { x: number; 
   nodes.value = [...nodes.value, node];
   canvases.value = canvases.value.map((item) => item.id === selectedCanvasId.value ? { ...item, node_count: item.node_count + 1 } : item);
   focusCanvasNode(node);
+}
+
+function getAssetNodeLayout(assets: UserAsset[], anchor?: { x: number; y: number } | null) {
+  const nodeGap = 34;
+  const center = anchor || getViewportCenter();
+  const items = assets.map((asset) => {
+    const size = getCanvasImageNodeSize(asset.width, asset.height);
+    return {
+      asset,
+      width: size.width,
+      height: size.height,
+    };
+  });
+  const columns = Math.min(4, items.length);
+  const rowHeights = items.reduce<number[]>((rows, item, index) => {
+    const row = Math.floor(index / columns);
+    rows[row] = Math.max(rows[row] || 0, item.height);
+    return rows;
+  }, []);
+  const columnWidths = Array.from({ length: columns }, (_, columnIndex) => (
+    items
+      .filter((_, index) => index % columns === columnIndex)
+      .reduce((maxWidth, item) => Math.max(maxWidth, item.width), 0)
+  ));
+  const totalWidth = columnWidths.reduce((sum, width) => sum + width, 0) + Math.max(0, columns - 1) * nodeGap;
+  const totalHeight = rowHeights.reduce((sum, height) => sum + height, 0) + Math.max(0, rowHeights.length - 1) * nodeGap;
+  const rowTopOffsets = rowHeights.reduce<number[]>((offsets, _height, index) => {
+    offsets[index] = index === 0 ? 0 : offsets[index - 1] + rowHeights[index - 1] + nodeGap;
+    return offsets;
+  }, []);
+  const columnLeftOffsets = columnWidths.reduce<number[]>((offsets, _width, index) => {
+    offsets[index] = index === 0 ? 0 : offsets[index - 1] + columnWidths[index - 1] + nodeGap;
+    return offsets;
+  }, []);
+  const groupPosition = findNonOverlappingNodePosition(
+    { x: center.x - totalWidth / 2, y: center.y - totalHeight / 2 },
+    { width: totalWidth, height: totalHeight },
+  );
+  return items.map((item, index) => {
+    const row = Math.floor(index / columns);
+    const column = index % columns;
+    return {
+      asset: item.asset,
+      width: item.width,
+      height: item.height,
+      x: groupPosition.x + columnLeftOffsets[column] + (columnWidths[column] - item.width) / 2,
+      y: groupPosition.y + rowTopOffsets[row] + (rowHeights[row] - item.height) / 2,
+    };
+  });
+}
+
+async function createImageNodesFromAssets(assets: UserAsset[], anchor?: { x: number; y: number } | null) {
+  if (canvasReadOnly.value) {
+    message.warning("只读模式下不能插入素材节点");
+    return { total: 0, successCount: 0, failedCount: 0 };
+  }
+  const projectId = selectedCanvasProjectId.value;
+  if (!projectId || !selectedCanvasId.value || !assets.length) {
+    return { total: assets.length, successCount: 0, failedCount: assets.length };
+  }
+  const layoutItems = getAssetNodeLayout(assets, anchor);
+  const createdNodes: CanvasNode[] = [];
+  let failedCount = 0;
+  for (const item of layoutItems) {
+    try {
+      const node = await createCanvasNode(projectId, {
+        node_type: "image",
+        image_url: item.asset.image_url,
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+      });
+      createdNodes.push(node);
+    } catch {
+      failedCount += 1;
+    }
+  }
+  if (createdNodes.length) {
+    nodes.value = [...nodes.value, ...createdNodes];
+    canvases.value = canvases.value.map((item) => (
+      item.id === selectedCanvasId.value ? { ...item, node_count: item.node_count + createdNodes.length } : item
+    ));
+    if (createdNodes.length === 1) {
+      focusCanvasNode(createdNodes[0]);
+    } else {
+      focusCanvasNodesAtCurrentZoom(createdNodes);
+    }
+  }
+  return {
+    total: assets.length,
+    successCount: createdNodes.length,
+    failedCount,
+  };
 }
 
 function handleCanvasAssetDragOver(event: DragEvent) {
@@ -5520,6 +5632,7 @@ onBeforeUnmount(() => {
       @select-asset="handlePickUserAsset"
       @select-assets="handlePickUserAssets"
       @insert-asset="handleInsertUserAssetToCanvas"
+      @insert-assets="handleInsertUserAssetsToCanvas"
     />
     <a-modal
       v-model:open="saveToAssetDialogOpen"
