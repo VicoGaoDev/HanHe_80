@@ -12,6 +12,7 @@ import {
   listUsers,
 } from "@/api/admin";
 import { getVideoTaskScenes } from "@/api/videoConfig";
+import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
 import { VChart } from "@/components/admin/charting";
 import VideoTaskDetailDialog from "@/components/video/VideoTaskDetailDialog.vue";
 import { withApiBaseUrl } from "@/lib/assets";
@@ -45,6 +46,8 @@ const preset = ref("today");
 const ready = ref(false);
 const detailOpen = ref(false);
 const detailItem = ref<AdminVideoTaskResult | null>(null);
+const userInfoDialogOpen = ref(false);
+const selectedUserInfo = ref<AdminUser | null>(null);
 const TASK_PAGE_SIZE = 20;
 const TASK_TABLE_SCROLL_X = 1320;
 
@@ -576,6 +579,34 @@ function openTaskDetail(record: AdminVideoTaskResult) {
   detailOpen.value = true;
 }
 
+function findAdminUser(userId?: string | null) {
+  if (!userId) return null;
+  return users.value.find((item) => item.id === userId) || null;
+}
+
+function openUserInfoDialog(record: AdminVideoTaskResult) {
+  if (!record.user_id) return;
+  const matchedUser = findAdminUser(record.user_id);
+  selectedUserInfo.value = matchedUser || {
+    id: record.user_id,
+    username: record.username || "未知用户",
+    email: "",
+    avatar_url: record.avatar_url || "",
+    role: "user",
+    status: "active",
+    is_whitelisted: false,
+    credits: 0,
+    consumed_credits: 0,
+    created_at: "",
+  };
+  userInfoDialogOpen.value = true;
+}
+
+function filterBySelectedUser(user: AdminUser) {
+  filters.user_id = user.id;
+  userInfoDialogOpen.value = false;
+}
+
 const detailItemIndex = computed(() => {
   if (!detailOpen.value || !detailItem.value) return -1;
   return tasks.value.findIndex((item) => item.id === detailItem.value?.id);
@@ -1004,9 +1035,16 @@ watch(filterSignature, async () => {
           <template #bodyCell="{ column, record }">
             <template v-if="column.dataIndex === 'username'">
               <div class="table-user-cell">
-                <a-avatar :size="30" :src="withApiBaseUrl(record.avatar_url) || undefined" class="table-user-avatar">
-                  {{ record.username?.charAt(0)?.toUpperCase() }}
-                </a-avatar>
+                <button
+                  type="button"
+                  class="table-user-avatar-btn"
+                  title="查看用户信息"
+                  @click="openUserInfoDialog(record)"
+                >
+                  <a-avatar :size="30" :src="withApiBaseUrl(record.avatar_url) || undefined" class="table-user-avatar">
+                    {{ record.username?.charAt(0)?.toUpperCase() }}
+                  </a-avatar>
+                </button>
                 <span>{{ record.username || "-" }}</span>
               </div>
             </template>
@@ -1074,6 +1112,12 @@ watch(filterSignature, async () => {
       @update:open="detailOpen = $event"
       @navigate-prev="navigateTaskDetail(-1)"
       @navigate-next="navigateTaskDetail(1)"
+    />
+    <AdminUserInfoDialog
+      v-model:open="userInfoDialogOpen"
+      :user="selectedUserInfo"
+      show-view-data
+      @view-data="filterBySelectedUser"
     />
   </div>
 </template>
@@ -1348,6 +1392,22 @@ watch(filterSignature, async () => {
   background: linear-gradient(180deg, var(--theme-brand-bg-start), var(--theme-brand-bg-end));
   color: var(--theme-accent-contrast);
   font-weight: 700;
+}
+
+.table-user-avatar-btn {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  line-height: 0;
+  cursor: pointer;
+  border-radius: 999px;
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 171, 37, 0.8);
+    outline-offset: 2px;
+  }
 }
 
 .table-detail-btn {

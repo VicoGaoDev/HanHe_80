@@ -5,8 +5,10 @@ import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
 import { AccountBookOutlined, ArrowLeftOutlined, CopyOutlined } from "@ant-design/icons-vue";
-import { listPaymentOrders } from "@/api/admin";
-import type { AdminPaymentOrder } from "@/types";
+import { listPaymentOrders, listUsers } from "@/api/admin";
+import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
+import { withApiBaseUrl } from "@/lib/assets";
+import type { AdminPaymentOrder, AdminUser } from "@/types";
 
 const router = useRouter();
 
@@ -14,9 +16,12 @@ type DateShortcut = "today" | "last7Days" | "last30Days" | "thisWeek" | "thisMon
 
 const loading = ref(false);
 const items = ref<AdminPaymentOrder[]>([]);
+const users = ref<AdminUser[]>([]);
 const dateShortcut = ref<DateShortcut | undefined>("today");
 const detailVisible = ref(false);
 const selectedOrder = ref<AdminPaymentOrder | null>(null);
+const userInfoOpen = ref(false);
+const userInfoTarget = ref<AdminUser | null>(null);
 
 const filters = reactive({
   user: "",
@@ -81,6 +86,28 @@ function openDetail(record: AdminPaymentOrder) {
   detailVisible.value = true;
 }
 
+function findAdminUser(userId?: string | null) {
+  if (!userId) return null;
+  return users.value.find((item) => item.id === userId) || null;
+}
+
+function openUserInfo(record: AdminPaymentOrder) {
+  const matchedUser = findAdminUser(record.user_id);
+  userInfoTarget.value = matchedUser || {
+    id: record.user_id,
+    username: record.username || "未知用户",
+    email: record.user_email || "",
+    avatar_url: "",
+    role: "user",
+    status: "active",
+    is_whitelisted: false,
+    credits: 0,
+    consumed_credits: 0,
+    created_at: "",
+  };
+  userInfoOpen.value = true;
+}
+
 function detailText(value?: string | number | null) {
   if (value === undefined || value === null || value === "") return "-";
   return String(value);
@@ -140,6 +167,14 @@ async function load() {
   }
 }
 
+async function loadUsers() {
+  try {
+    users.value = await listUsers();
+  } catch {
+    users.value = [];
+  }
+}
+
 function handleFilter() {
   pagination.page = 1;
   load();
@@ -196,7 +231,9 @@ async function handleCopy(text?: string, successText = "内容已复制") {
   }
 }
 
-onMounted(load);
+onMounted(async () => {
+  await Promise.all([loadUsers(), load()]);
+});
 </script>
 
 <template>
@@ -288,7 +325,19 @@ onMounted(load);
           </template>
           <template v-else-if="column.dataIndex === 'username'">
             <div class="user-cell">
-              <span class="cell-main-text">{{ record.username || "-" }}</span>
+              <div class="user-main-row">
+                <button
+                  type="button"
+                  class="user-avatar-btn"
+                  title="查看用户信息"
+                  @click="openUserInfo(record)"
+                >
+                  <a-avatar :size="28" :src="withApiBaseUrl(findAdminUser(record.user_id)?.avatar_url) || undefined" class="user-avatar">
+                    {{ record.username?.charAt(0)?.toUpperCase() }}
+                  </a-avatar>
+                </button>
+                <span class="cell-main-text">{{ record.username || "-" }}</span>
+              </div>
               <span v-if="record.user_email" class="muted-line">{{ record.user_email }}</span>
             </div>
           </template>
@@ -384,6 +433,8 @@ onMounted(load);
         </div>
       </template>
     </a-drawer>
+
+    <AdminUserInfoDialog v-model:open="userInfoOpen" :user="userInfoTarget" />
   </div>
 </template>
 
@@ -457,6 +508,39 @@ onMounted(load);
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+}
+
+.user-main-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.user-avatar {
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, var(--theme-brand-bg-start), var(--theme-brand-bg-end));
+  color: var(--theme-accent-contrast);
+  font-weight: 700;
+}
+
+.user-avatar-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  line-height: 0;
+  cursor: pointer;
+  border-radius: 999px;
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 171, 37, 0.8);
+    outline-offset: 2px;
+  }
 }
 
 .sub-id-cell {

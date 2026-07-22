@@ -18,6 +18,7 @@ import {
 import { setStoredAdminUnresolvedFeedbackCount } from "@/lib/adminFeedbackNotice";
 import { withApiBaseUrl } from "@/lib/assets";
 import { isSessionExpiredError } from "@/lib/authError";
+import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
 import AnalyticsFilterBar from "@/components/admin/AnalyticsFilterBar.vue";
 import BreakdownCharts from "@/components/admin/BreakdownCharts.vue";
 import HistoryDetailDialog from "@/components/history/HistoryDetailDialog.vue";
@@ -58,8 +59,8 @@ const ready = ref(false);
 const detailOpen = ref(false);
 const detailLoading = ref(false);
 const detailItem = ref<UserHistoryCard | null>(null);
-const creditDialogOpen = ref(false);
-const creditDialogUser = ref<AdminUser | null>(null);
+const userInfoDialogOpen = ref(false);
+const selectedUserInfo = ref<AdminUser | null>(null);
 let activeDetailRequestKey = "";
 const HISTORY_PAGE_SIZE = 20;
 const HISTORY_TABLE_SCROLL_X = 1400;
@@ -402,20 +403,19 @@ function findHistoryUser(record: HistoryItem) {
   return users.value.find((item) => item.username === record.username) || null;
 }
 
-function openCreditDialog(record: HistoryItem) {
+function openUserInfoDialog(record: HistoryItem) {
   const user = findHistoryUser(record);
   if (!user) {
-    message.warning("未找到该用户的积分信息");
+    message.warning("未找到该用户信息");
     return;
   }
-  creditDialogUser.value = user;
-  creditDialogOpen.value = true;
+  selectedUserInfo.value = user;
+  userInfoDialogOpen.value = true;
 }
 
-function viewUserData() {
-  if (!creditDialogUser.value) return;
-  filters.user_id = creditDialogUser.value.id;
-  creditDialogOpen.value = false;
+function viewUserData(user: AdminUser) {
+  filters.user_id = user.id;
+  userInfoDialogOpen.value = false;
 }
 
 function fmtTime(value: string) {
@@ -582,8 +582,8 @@ watch(filterSignature, async () => {
                 <button
                   type="button"
                   class="table-user-avatar-btn"
-                  title="查看用户积分"
-                  @click="openCreditDialog(record)"
+                  title="查看用户信息"
+                  @click="openUserInfoDialog(record)"
                 >
                   <a-avatar :size="30" :src="withApiBaseUrl(record.avatar_url) || undefined" class="table-user-avatar">
                     {{ record.username?.charAt(0)?.toUpperCase() }}
@@ -653,39 +653,12 @@ watch(filterSignature, async () => {
       show-error-message
       @update:open="detailOpen = $event"
     />
-    <a-modal
-      v-model:open="creditDialogOpen"
-      :title="`用户积分 — ${creditDialogUser?.username || '-'}`"
-      :footer="null"
-      width="420px"
-    >
-      <div v-if="creditDialogUser" class="credit-dialog">
-        <div class="credit-dialog-user">
-          <a-avatar :size="48" :src="withApiBaseUrl(creditDialogUser.avatar_url) || undefined" class="credit-dialog-avatar">
-            {{ creditDialogUser.username?.charAt(0)?.toUpperCase() }}
-          </a-avatar>
-          <div>
-            <div class="credit-dialog-name">{{ creditDialogUser.username }}</div>
-            <div class="credit-dialog-meta">{{ creditDialogUser.email || "未设置邮箱" }}</div>
-          </div>
-        </div>
-        <div class="credit-dialog-stats">
-          <div class="credit-dialog-stat">
-            <span>剩余积分</span>
-            <strong>{{ creditDialogUser.credits }}</strong>
-          </div>
-          <div class="credit-dialog-stat">
-            <span>已使用积分</span>
-            <strong>{{ creditDialogUser.consumed_credits ?? 0 }}</strong>
-          </div>
-        </div>
-        <div class="credit-dialog-actions">
-          <a-button type="primary" class="analytics-action-btn" @click="viewUserData">
-            查看数据
-          </a-button>
-        </div>
-      </div>
-    </a-modal>
+    <AdminUserInfoDialog
+      v-model:open="userInfoDialogOpen"
+      :user="selectedUserInfo"
+      show-view-data
+      @view-data="viewUserData"
+    />
   </div>
 </template>
 
@@ -888,69 +861,6 @@ watch(filterSignature, async () => {
     outline: 2px solid rgba(255, 171, 37, 0.8);
     outline-offset: 2px;
   }
-}
-
-.credit-dialog {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.credit-dialog-user {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.credit-dialog-avatar {
-  background: linear-gradient(180deg, var(--theme-brand-bg-start), var(--theme-brand-bg-end));
-  color: var(--theme-accent-contrast);
-  font-weight: 700;
-}
-
-.credit-dialog-name {
-  color: var(--theme-title);
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.credit-dialog-meta {
-  margin-top: 4px;
-  color: #9a805b;
-  font-size: 12px;
-}
-
-.credit-dialog-stats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.credit-dialog-stat {
-  padding: 14px;
-  border: 1px solid rgba(240, 223, 190, 0.95);
-  border-radius: 16px;
-  background: rgba(255, 253, 248, 0.92);
-
-  span {
-    display: block;
-    color: #8c7458;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  strong {
-    display: block;
-    margin-top: 8px;
-    color: #d48806;
-    font-size: 24px;
-    line-height: 1;
-  }
-}
-
-.credit-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 :deep(.admin-mobile-table .ant-table-tbody > tr > td) {

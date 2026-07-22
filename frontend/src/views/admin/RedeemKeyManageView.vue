@@ -5,16 +5,21 @@ import { message } from "ant-design-vue";
 import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
 import { CopyOutlined, GiftOutlined } from "@ant-design/icons-vue";
-import { createRedeemKeysBatch, listRedeemKeys, updateRedeemKeyStatus } from "@/api/admin";
+import { createRedeemKeysBatch, listRedeemKeys, listUsers, updateRedeemKeyStatus } from "@/api/admin";
+import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
 import { copyText } from "@/lib/clipboard";
-import type { AdminRedeemKey, AdminRedeemKeyBatchResult, RedeemKeyStatus } from "@/types";
+import { withApiBaseUrl } from "@/lib/assets";
+import type { AdminRedeemKey, AdminRedeemKeyBatchResult, AdminUser, RedeemKeyStatus } from "@/types";
 
 const loading = ref(false);
 const generating = ref(false);
 const statusLoadingId = ref<number | null>(null);
 const latestBatch = ref<AdminRedeemKeyBatchResult | null>(null);
 const items = ref<AdminRedeemKey[]>([]);
+const users = ref<AdminUser[]>([]);
 const selectedRowKeys = ref<number[]>([]);
+const userInfoOpen = ref(false);
+const userInfoTarget = ref<AdminUser | null>(null);
 const route = useRoute();
 type DateShortcut = "today" | "last7Days" | "thisWeek";
 const dateShortcut = ref<DateShortcut | undefined>();
@@ -67,6 +72,11 @@ const rowSelection = computed(() => ({
   },
 }));
 
+function findAdminUser(userId?: string | null) {
+  if (!userId) return null;
+  return users.value.find((item) => item.id === userId) || null;
+}
+
 async function load() {
   loading.value = true;
   try {
@@ -89,6 +99,14 @@ async function load() {
     message.error(err.response?.data?.detail || "获取兑换码列表失败");
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadUsers() {
+  try {
+    users.value = await listUsers();
+  } catch {
+    users.value = [];
   }
 }
 
@@ -194,6 +212,24 @@ async function copySelectedKeys() {
   await handleCopy(keys, `已复制 ${selectedItems.value.length} 个兑换码`);
 }
 
+function openUserInfo(item: AdminRedeemKey) {
+  if (!item.used_by_user_id && !item.used_by_username) return;
+  const matchedUser = findAdminUser(item.used_by_user_id);
+  userInfoTarget.value = matchedUser || {
+    id: item.used_by_user_id || "",
+    username: item.used_by_username || "未知用户",
+    email: item.used_by_user_email || "",
+    avatar_url: "",
+    role: "user",
+    status: "active",
+    is_whitelisted: false,
+    credits: 0,
+    consumed_credits: 0,
+    created_at: "",
+  };
+  userInfoOpen.value = true;
+}
+
 async function toggleStatus(item: AdminRedeemKey) {
   if (item.is_used) return;
   const nextStatus: RedeemKeyStatus = item.status === "enabled" ? "disabled" : "enabled";
@@ -247,7 +283,7 @@ function applyRouteQueryFilters() {
 
 onMounted(() => {
   applyRouteQueryFilters();
-  load();
+  void Promise.all([loadUsers(), load()]);
 });
 </script>
 
@@ -401,7 +437,20 @@ onMounted(() => {
           </template>
           <template v-else-if="column.dataIndex === 'used_by_username'">
             <div v-if="record.used_by_username || record.used_by_user_email" class="used-user-cell">
-              <span>{{ record.used_by_username || "-" }}</span>
+              <div class="used-user-main">
+                <button
+                  v-if="record.used_by_user_id || record.used_by_username"
+                  type="button"
+                  class="user-avatar-btn"
+                  title="查看用户信息"
+                  @click="openUserInfo(record)"
+                >
+                  <a-avatar :size="28" :src="withApiBaseUrl(findAdminUser(record.used_by_user_id)?.avatar_url) || undefined" class="user-avatar">
+                    {{ record.used_by_username?.charAt(0)?.toUpperCase() }}
+                  </a-avatar>
+                </button>
+                <span>{{ record.used_by_username || "-" }}</span>
+              </div>
               <span v-if="record.used_by_user_email" class="used-user-email">{{ record.used_by_user_email }}</span>
             </div>
             <span v-else>-</span>
@@ -439,6 +488,8 @@ onMounted(() => {
         @showSizeChange="handlePageChange"
       />
     </div>
+
+    <AdminUserInfoDialog v-model:open="userInfoOpen" :user="userInfoTarget" />
   </div>
 </template>
 
@@ -579,6 +630,39 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.used-user-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.user-avatar {
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, var(--theme-brand-bg-start), var(--theme-brand-bg-end));
+  color: var(--theme-accent-contrast);
+  font-weight: 700;
+}
+
+.user-avatar-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  line-height: 0;
+  cursor: pointer;
+  border-radius: 999px;
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 171, 37, 0.8);
+    outline-offset: 2px;
+  }
 }
 
 .used-user-email {

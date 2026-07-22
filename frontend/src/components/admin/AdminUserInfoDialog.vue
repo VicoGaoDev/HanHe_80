@@ -89,6 +89,7 @@ watch(() => [props.open, props.user?.id], () => {
             </a-avatar>
             <div class="user-info-identity">
               <div class="user-info-name">{{ user.username }}</div>
+              <div class="user-info-email">{{ user.email || "未设置邮箱" }}</div>
               <div class="user-info-id">{{ user.id }}</div>
             </div>
           </div>
@@ -203,6 +204,13 @@ watch(() => [props.open, props.user?.id], () => {
   margin-top: 4px;
   color: var(--theme-text-secondary);
   font-size: 12px;
+  word-break: break-all;
+}
+
+.user-info-email {
+  margin-top: 4px;
+  color: var(--theme-title);
+  font-size: 13px;
   word-break: break-all;
 }
 

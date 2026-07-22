@@ -4,15 +4,20 @@ import { useRouter } from "vue-router";
 import { CopyOutlined, MessageOutlined, SearchOutlined, UndoOutlined } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
 import dayjs from "dayjs";
-import { listAdminFeedbacks } from "@/api/admin";
-import type { FeedbackItem, FeedbackStatus, FeedbackType } from "@/types";
+import { listAdminFeedbacks, listUsers } from "@/api/admin";
+import AdminUserInfoDialog from "@/components/admin/AdminUserInfoDialog.vue";
+import { withApiBaseUrl } from "@/lib/assets";
+import type { AdminUser, FeedbackItem, FeedbackStatus, FeedbackType } from "@/types";
 
 const router = useRouter();
 const loading = ref(false);
 const items = ref<FeedbackItem[]>([]);
+const users = ref<AdminUser[]>([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = ref(20);
+const userInfoOpen = ref(false);
+const userInfoTarget = ref<AdminUser | null>(null);
 
 const filters = reactive<{
   feedback_id: string;
@@ -39,6 +44,11 @@ const columns = [
   { title: "更新时间", dataIndex: "updated_at", width: 180 },
   { title: "操作", key: "action", width: 120, fixed: "right" as const },
 ];
+
+function findAdminUser(userId?: string | null) {
+  if (!userId) return null;
+  return users.value.find((item) => item.id === userId) || null;
+}
 
 function statusLabel(status: FeedbackStatus) {
   return {
@@ -101,6 +111,14 @@ async function load() {
   }
 }
 
+async function loadUsers() {
+  try {
+    users.value = await listUsers();
+  } catch {
+    users.value = [];
+  }
+}
+
 function handleSearch() {
   page.value = 1;
   void load();
@@ -126,7 +144,26 @@ function openDetail(feedbackId: string) {
   router.push(`/admin/feedbacks/${feedbackId}`);
 }
 
-onMounted(load);
+function openUserInfo(record: FeedbackItem) {
+  const matchedUser = findAdminUser(record.user_id);
+  userInfoTarget.value = matchedUser || {
+    id: record.user_id,
+    username: record.username || "未知用户",
+    email: "",
+    avatar_url: "",
+    role: "user",
+    status: "active",
+    is_whitelisted: false,
+    credits: 0,
+    consumed_credits: 0,
+    created_at: "",
+  };
+  userInfoOpen.value = true;
+}
+
+onMounted(async () => {
+  await Promise.all([loadUsers(), load()]);
+});
 </script>
 
 <template>
@@ -221,6 +258,21 @@ onMounted(load);
               </a-button>
             </div>
           </template>
+          <template v-else-if="column.dataIndex === 'username'">
+            <div class="user-cell">
+              <button
+                type="button"
+                class="user-avatar-btn"
+                title="查看用户信息"
+                @click="openUserInfo(record)"
+              >
+                <a-avatar :size="28" :src="withApiBaseUrl(findAdminUser(record.user_id)?.avatar_url) || undefined" class="user-avatar">
+                  {{ record.username?.charAt(0)?.toUpperCase() }}
+                </a-avatar>
+              </button>
+              <span class="user-name">{{ record.username || "-" }}</span>
+            </div>
+          </template>
           <template v-else-if="column.dataIndex === 'content'">
             <div class="content-cell">{{ record.content }}</div>
           </template>
@@ -245,6 +297,8 @@ onMounted(load);
         </template>
       </a-table>
     </div>
+
+    <AdminUserInfoDialog v-model:open="userInfoOpen" :user="userInfoTarget" />
   </div>
 </template>
 
@@ -285,6 +339,46 @@ onMounted(load);
   color: var(--theme-title);
   line-height: 1.7;
   word-break: break-word;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.user-avatar {
+  flex: 0 0 auto;
+  background: linear-gradient(180deg, var(--theme-brand-bg-start), var(--theme-brand-bg-end));
+  color: var(--theme-accent-contrast);
+  font-weight: 700;
+}
+
+.user-avatar-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  line-height: 0;
+  cursor: pointer;
+  border-radius: 999px;
+
+  &:focus-visible {
+    outline: 2px solid rgba(255, 171, 37, 0.8);
+    outline-offset: 2px;
+  }
+}
+
+.user-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .muted-cell {
