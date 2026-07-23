@@ -104,7 +104,7 @@ const router = useRouter();
 const loginModalVisible = inject<Ref<boolean>>("loginModalVisible")!;
 const openPurchaseEntry = inject<() => void>("openPurchaseEntry");
 
-const MAX_BATCH_CARDS = 8;
+const MAX_BATCH_CARDS = 12;
 const DEFAULT_BATCH_CARDS = 3;
 const POLL_INTERVAL_MS = 5000;
 const SUBMISSION_RETRY_DELAY_MS = 5200;
