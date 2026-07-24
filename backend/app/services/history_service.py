@@ -711,19 +711,26 @@ def get_all_history(
 ):
     cos_config = get_optional_cos_config(db)
     scene_type_map = get_task_scene_type_map(db)
+    visible_user_query = db.query(User.id).filter(
+        User.role != "superadmin",
+        User.is_whitelisted.is_(False),
+    )
+    if user_id:
+        visible_user_query = visible_user_query.filter(User.id == user_id)
+    visible_user_ids = [int(row_id) for (row_id,) in visible_user_query.all()]
+    if not visible_user_ids:
+        return {"total": 0, "total_credit_cost": 0, "items": []}
+
     task_query = (
         db.query(Task)
-        .join(User, User.id == Task.user_id)
-        .filter(User.role != "superadmin", User.is_whitelisted.is_(False))
+        .filter(Task.user_id.in_(visible_user_ids))
     )
     reverse_query = (
         db.query(CreditLog)
-        .join(User, User.id == CreditLog.user_id)
         .filter(
             CreditLog.type == "consume",
             CreditLog.description == PROMPT_REVERSE_CREDIT_LOG_DESCRIPTION,
-            User.role != "superadmin",
-            User.is_whitelisted.is_(False),
+            CreditLog.user_id.in_(visible_user_ids),
         )
     )
 
@@ -731,9 +738,6 @@ def get_all_history(
         task_query = task_query.filter(Task.status == status)
         if status != "success":
             reverse_query = reverse_query.filter(CreditLog.id.is_(None))
-    if user_id:
-        task_query = task_query.filter(Task.user_id == user_id)
-        reverse_query = reverse_query.filter(CreditLog.user_id == user_id)
     if source:
         task_query = task_query.filter(Task.source == source)
         if source != "web":
@@ -776,20 +780,63 @@ def get_all_history(
         task_query = task_query.filter(Task.created_at <= end_date)
         reverse_query = reverse_query.filter(CreditLog.created_at <= end_date)
 
-    tasks = task_query.order_by(Task.created_at.desc()).all()
-    reverse_logs = reverse_query.order_by(CreditLog.created_at.desc()).all()
-    refunded_task_ids = _get_refunded_task_ids(db, [task.id for task in tasks])
-    total = len(tasks) + len(reverse_logs)
-    total_credit_cost = (
-        sum(0 if task.id in refunded_task_ids else int(task.credit_cost or 0) for task in tasks)
-        + sum(max(0, int(-(log.amount or 0))) for log in reverse_logs)
-    )
+    task_total = int(task_query.with_entities(func.count(Task.id)).scalar() or 0)
+    reverse_total = int(reverse_query.with_entities(func.count(CreditLog.id)).scalar() or 0)
+    total = task_total + reverse_total
 
+    task_credit_total = int(
+        task_query.with_entities(func.coalesce(func.sum(Task.credit_cost), 0)).scalar() or 0
+    )
+    refunded_task_ids_query = (
+        db.query(CreditLog.task_id.label("task_id"))
+        .filter(
+            CreditLog.task_id.is_not(None),
+            CreditLog.type == "allocate",
+            CreditLog.description.in_(TASK_CREDIT_REFUND_DESCRIPTIONS),
+        )
+        .distinct()
+        .subquery()
+    )
+    refunded_credit_total = int(
+        task_query
+        .join(refunded_task_ids_query, Task.id == refunded_task_ids_query.c.task_id)
+        .filter(Task.status == "failed", Task.credit_cost > 0)
+        .with_entities(func.coalesce(func.sum(Task.credit_cost), 0))
+        .scalar()
+        or 0
+    )
+    reverse_credit_total = int(
+        reverse_query.with_entities(func.coalesce(func.sum(-CreditLog.amount), 0)).scalar() or 0
+    )
+    total_credit_cost = task_credit_total - refunded_credit_total + reverse_credit_total
+
+    start_index = (page - 1) * page_size
+    fetch_limit = start_index + page_size
+    tasks = (
+        task_query
+        .options(selectinload(Task.images), selectinload(Task.user), selectinload(Task.canvas))
+        .order_by(Task.created_at.desc(), Task.id.desc())
+        .limit(fetch_limit)
+        .all()
+    )
+    reverse_logs = (
+        reverse_query
+        .order_by(CreditLog.created_at.desc(), CreditLog.id.desc())
+        .limit(fetch_limit)
+        .all()
+    )
+    refunded_task_ids = _get_refunded_task_ids(db, [task.id for task in tasks])
+
+    page_user_ids = {task.user_id for task in tasks} | {log.user_id for log in reverse_logs}
+    users_by_id = {
+        user.id: user
+        for user in db.query(User).filter(User.id.in_(page_user_ids)).all()
+    } if page_user_ids else {}
     user_cache: dict[int, dict[str, str]] = {}
     items = []
     for task in tasks:
         if task.user_id not in user_cache:
-            u = db.query(User).filter(User.id == task.user_id).first()
+            u = users_by_id.get(task.user_id)
             user_cache[task.user_id] = {
                 "user_id": user_external_id(u),
                 "username": u.username if u else "未知",
@@ -834,7 +881,7 @@ def get_all_history(
 
     for log in reverse_logs:
         if log.user_id not in user_cache:
-            u = db.query(User).filter(User.id == log.user_id).first()
+            u = users_by_id.get(log.user_id)
             user_cache[log.user_id] = {
                 "user_id": user_external_id(u),
                 "username": u.username if u else "未知",
@@ -870,7 +917,6 @@ def get_all_history(
         })
 
     items.sort(key=lambda item: item["created_at"] or datetime.min, reverse=True)
-    start_index = (page - 1) * page_size
     paged_items = items[start_index:start_index + page_size]
 
     return {"total": total, "total_credit_cost": total_credit_cost, "items": paged_items}
@@ -894,35 +940,39 @@ def get_admin_history_cards(
 ):
     cos_config = get_optional_cos_config(db)
     scene_type_map = get_task_scene_type_map(db)
+    visible_user_query = db.query(User.id).filter(
+        User.role != "superadmin",
+        User.is_whitelisted.is_(False),
+    )
+    if user_id is not None:
+        visible_user_query = visible_user_query.filter(User.id == user_id)
+    visible_user_ids = [int(row_id) for (row_id,) in visible_user_query.all()]
+    if not visible_user_ids:
+        return {"total": 0, "items": []}
+
     running_statuses = ["pending", "queued", "processing"]
     image_query = (
         db.query(Image)
         .join(Task, Image.task_id == Task.id)
-        .join(User, User.id == Task.user_id)
         .options(
             selectinload(Image.task).selectinload(Task.images),
             selectinload(Image.task).selectinload(Task.user),
             selectinload(Image.task).selectinload(Task.canvas),
         )
-        .filter(User.role != "superadmin")
-        .filter(User.is_whitelisted.is_(False))
+        .filter(Task.user_id.in_(visible_user_ids))
         .filter(Image.is_deleted.is_(False))
     )
     running_task_query = (
         db.query(Task)
-        .join(User, User.id == Task.user_id)
         .options(selectinload(Task.images), selectinload(Task.user), selectinload(Task.canvas))
-        .filter(User.role != "superadmin")
-        .filter(User.is_whitelisted.is_(False))
+        .filter(Task.user_id.in_(visible_user_ids))
         .filter(Task.is_deleted.is_(False))
         .filter(Task.status.in_(running_statuses))
     )
     task_without_image_query = (
         db.query(Task)
-        .join(User, User.id == Task.user_id)
         .options(selectinload(Task.images), selectinload(Task.user), selectinload(Task.canvas))
-        .filter(User.role != "superadmin")
-        .filter(User.is_whitelisted.is_(False))
+        .filter(Task.user_id.in_(visible_user_ids))
         .filter(~Task.status.in_(running_statuses))
         .filter(~Task.images.any(Image.is_deleted.is_(False)))
     )
@@ -930,18 +980,13 @@ def get_admin_history_cards(
     if include_prompt_reverse:
         prompt_reverse_query = (
             db.query(PromptHistory)
-            .join(User, User.id == PromptHistory.user_id)
             .filter(
                 PromptHistory.mode == PROMPT_REVERSE_MODE,
-                User.role != "superadmin",
-                User.is_whitelisted.is_(False),
+                PromptHistory.user_id.in_(visible_user_ids),
             )
         )
 
     if user_id is not None:
-        image_query = image_query.filter(Task.user_id == user_id)
-        running_task_query = running_task_query.filter(Task.user_id == user_id)
-        task_without_image_query = task_without_image_query.filter(Task.user_id == user_id)
         if prompt_reverse_query is not None:
             prompt_reverse_query = prompt_reverse_query.filter(PromptHistory.user_id == user_id)
     if mode:
