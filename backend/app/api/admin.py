@@ -78,6 +78,7 @@ from app.services.wecom_channel_service import (
     update_wecom_rule,
 )
 from app.services.api_alert_service import ApiAlertRunResult, execute_api_alerts
+from app.services.payment_reconcile_scheduler import get_manual_payment_reconcile_status, trigger_manual_payment_reconcile
 from app.services.video_task_service import (
     expire_stale_video_tasks,
     get_video_task_detail,
@@ -418,6 +419,21 @@ def admin_payment_orders(
         start_date=start_date,
         end_date=end_date,
     )
+
+
+@router.post("/payment-orders/reconcile-scan", response_model=dict)
+def admin_trigger_payment_order_reconcile_scan(
+    _user: User = Depends(require_admin),
+):
+    return trigger_manual_payment_reconcile()
+
+
+@router.get("/payment-orders/reconcile-scan", response_model=dict)
+def admin_get_payment_order_reconcile_scan_status(
+    run_id: int | None = Query(None, ge=1),
+    _user: User = Depends(require_admin),
+):
+    return get_manual_payment_reconcile_status(run_id)
 
 
 @router.post("/offline-orders", response_model=OfflineOrderOut)

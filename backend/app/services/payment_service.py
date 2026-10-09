@@ -327,6 +327,7 @@ def create_payment_order(
     private_key: str,
     sign_type: str,
     result_token_secret: str,
+    reconcile_max_seconds: int,
 ) -> dict:
     missing_config_fields: list[str] = []
     if not (alipay_app_id or "").strip():
@@ -348,6 +349,7 @@ def create_payment_order(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"支付宝支付配置不完整，缺少: {', '.join(missing_config_fields)}",
         )
+    reconcile_seconds = max(int(reconcile_max_seconds or 0), 0)
     plan = get_payment_plan(plan_key)
     if plan.key == STARTER_PLAN_KEY:
         if _has_successful_plan_purchase(db, user_id=user.id, plan_key=plan.key):
@@ -364,6 +366,7 @@ def create_payment_order(
         amount_fen=plan.amount_fen,
         credits=plan.credits,
         status=PAYMENT_STATUS_CREATED,
+        reconcile_until_at=now_local() + timedelta(seconds=reconcile_seconds) if reconcile_seconds else None,
     )
     db.add(order)
     db.flush()

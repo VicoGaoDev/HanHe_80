@@ -25,6 +25,7 @@ from app.services.payment_service import (
     process_alipay_notification,
     record_alipay_return,
 )
+from app.services.payment_reconcile_scheduler import notify_payment_reconcile_scheduler
 
 router = APIRouter(prefix="/api/payment", tags=["支付"])
 
@@ -71,8 +72,10 @@ def create_order(
         private_key=settings.ALIPAY_PRIVATE_KEY,
         sign_type=settings.ALIPAY_SIGN_TYPE,
         result_token_secret=settings.SECRET_KEY,
+        reconcile_max_seconds=settings.ALIPAY_RECONCILE_MAX_SECONDS,
     )
     db.commit()
+    notify_payment_reconcile_scheduler()
     return order
 
 

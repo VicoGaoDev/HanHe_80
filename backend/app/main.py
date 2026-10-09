@@ -121,23 +121,28 @@ def on_startup():
         _seed_default_data()
     from app.services.api_alert_scheduler import start_api_alert_scheduler
     from app.services.daily_report_scheduler import start_daily_report_scheduler
+    from app.services.payment_reconcile_scheduler import start_payment_reconcile_scheduler
 
     start_api_alert_scheduler()
     start_daily_report_scheduler()
+    start_payment_reconcile_scheduler()
 
 
 @app.on_event("shutdown")
 def on_shutdown():
     from app.services.api_alert_scheduler import stop_api_alert_scheduler
     from app.services.daily_report_scheduler import stop_daily_report_scheduler
+    from app.services.payment_reconcile_scheduler import stop_payment_reconcile_scheduler
 
     stop_api_alert_scheduler()
     stop_daily_report_scheduler()
+    stop_payment_reconcile_scheduler()
 
 
 def _run_startup_schema_sync():
     _ensure_user_credit_schema()
     _ensure_payment_order_schema()
+    _ensure_payment_reconcile_scan_run_schema()
     _ensure_offline_order_schema()
     _ensure_credit_redeem_key_schema()
     _ensure_user_api_key_schema()
@@ -1114,6 +1119,7 @@ def _ensure_payment_order_schema():
                         return_payload TEXT NULL,
                         paid_at DATETIME NULL,
                         credited_at DATETIME NULL,
+                        reconcile_until_at DATETIME NULL,
                         closed_at DATETIME NULL,
                         failed_at DATETIME NULL,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -1146,10 +1152,42 @@ def _ensure_payment_order_schema():
             conn.execute(text("ALTER TABLE payment_orders ADD COLUMN paid_at DATETIME NULL AFTER return_payload"))
         if "credited_at" not in payment_columns:
             conn.execute(text("ALTER TABLE payment_orders ADD COLUMN credited_at DATETIME NULL AFTER paid_at"))
+        if "reconcile_until_at" not in payment_columns:
+            conn.execute(text("ALTER TABLE payment_orders ADD COLUMN reconcile_until_at DATETIME NULL AFTER credited_at"))
         if "closed_at" not in payment_columns:
             conn.execute(text("ALTER TABLE payment_orders ADD COLUMN closed_at DATETIME NULL AFTER credited_at"))
         if "failed_at" not in payment_columns:
             conn.execute(text("ALTER TABLE payment_orders ADD COLUMN failed_at DATETIME NULL AFTER closed_at"))
+
+
+def _ensure_payment_reconcile_scan_run_schema():
+    inspector = inspect(engine)
+    table_names = set(inspector.get_table_names())
+    if "payment_reconcile_scan_runs" not in table_names:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE payment_reconcile_scan_runs (
+                        id INTEGER NOT NULL AUTO_INCREMENT,
+                        status VARCHAR(20) NOT NULL DEFAULT 'running',
+                        duration_seconds INTEGER NOT NULL DEFAULT 60,
+                        scanned_count INTEGER NOT NULL DEFAULT 0,
+                        paid_detected_count INTEGER NOT NULL DEFAULT 0,
+                        credited_count INTEGER NOT NULL DEFAULT 0,
+                        event_payload TEXT NULL,
+                        started_at DATETIME NOT NULL,
+                        active_until DATETIME NOT NULL,
+                        finished_at DATETIME NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (id),
+                        INDEX idx_payment_reconcile_scan_runs_status (status, active_until),
+                        INDEX idx_payment_reconcile_scan_runs_created_at (created_at)
+                    )
+                    """
+                )
+            )
 
 
 def _ensure_offline_order_schema():

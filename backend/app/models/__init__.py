@@ -30,6 +30,7 @@ from app.models.credit_log import CreditLog
 from app.models.credit_redeem_key import CreditRedeemKey
 from app.models.offline_order import OfflineOrder
 from app.models.payment_order import PaymentOrder
+from app.models.payment_reconcile_scan_run import PaymentReconcileScanRun
 from app.models.user_credit import UserCredit
 from app.models.user_api_key import UserApiKey
 from app.models.user_promo_code import UserPromoCode
@@ -85,6 +86,7 @@ __all__ = [
     "CreditRedeemKey",
     "OfflineOrder",
     "PaymentOrder",
+    "PaymentReconcileScanRun",
     "UserCredit",
     "UserApiKey",
     "UserPromoCode",
