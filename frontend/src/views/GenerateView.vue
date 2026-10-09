@@ -4625,63 +4625,66 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                             <div class="model-help-tip">
                               <div class="model-help-grid model-help-grid-head">
                                 <div>模型</div>
+                                <div>发行日期</div>
                                 <div>细节与质量</div>
-                                <div>伪影</div>
                                 <div>推荐使用场景</div>
                               </div>
                               <div class="model-help-grid">
-                                <div>G-Image 2.5 Flare</div>
+                                <div>🍌 Nano Banana 2.1</div>
+                                <div>2026-10-06</div>
+                                <div>接近 Pro，细节与稳定性更好</div>
+                                <div>高质量日常生产、复杂构图、文字较多场景</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>⭐️ G-Image 2.5 Flare</div>
+                                <div>2026-09-08</div>
                                 <div>优于 G-Image 2，出图更利落，细节更好</div>
-                                <div>较少</div>
                                 <div>日常首选（社媒、商品图、快速试稿、批量生产）</div>
                               </div>
                               <div class="model-help-grid">
-                                <div>G-Image 2.5 Sunburst</div>
+                                <div>⭐️ G-Image 2.5 Sunburst</div>
+                                <div>2026-09-08</div>
                                 <div>更精细，改图控制更好</div>
-                                <div>最少</div>
                                 <div>成片、复杂编辑、局部精修，需要只改指定位置时使用</div>
                               </div>
                               <div class="model-help-grid">
-                                <div>G-Image 2 · 顶级</div>
-                                <div>最高保真度，锐利边缘、精细纹理、文字表现最佳</div>
-                                <div>最少</div>
-                                <div>最终成品、完美文字、高清精度需求（印刷、专业输出、复杂构图）</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>G-Image 2 · 高质量</div>
-                                <div>平衡，细节较好</div>
-                                <div>较少</div>
-                                <div>大多数日常生产用途（社交媒体、网页素材等）</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>G-Image 2 · 性价比</div>
-                                <div>较粗糙，细节一般</div>
-                                <div>较多</div>
-                                <div>快速迭代、草稿、缩略图、高频批量生成、成本敏感场景</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>Nano Banana Pro</div>
-                                <div>极致细节、复杂构图、干净文字</div>
-                                <div>最少</div>
-                                <div>需要极致细节、复杂构图、文字排版时使用</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>Nano Banana 2</div>
-                                <div>接近 Pro，速度与质量平衡最佳</div>
-                                <div>较少</div>
-                                <div>大多数人日常使用首选（性价比最高）</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>Nano Banana 2 Lite</div>
+                                <div>🍌 Nano Banana 2 Lite</div>
+                                <div>2026-06-30</div>
                                 <div>轻量版，出图更快，细节略弱于 Nano Banana 2</div>
-                                <div>一般</div>
                                 <div>快速出图、日常草稿、成本敏感场景</div>
                               </div>
                               <div class="model-help-grid">
-                                <div>Nano Banana</div>
-                                <div>一般，适合快速草稿验证</div>
-                                <div>较多</div>
-                                <div>现在较少使用，主要用于低成本快速测试</div>
+                                <div>⚡️ G-Image 2 · 顶级</div>
+                                <div>2026-04-21</div>
+                                <div>最高保真度，锐利边缘、精细纹理、文字表现最佳</div>
+                                <div>最终成品、完美文字、高清精度需求（印刷、专业输出、复杂构图）</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>⚡️ G-Image 2 · 高质量</div>
+                                <div>2026-04-21</div>
+                                <div>平衡，细节较好</div>
+                                <div>大多数日常生产用途（社交媒体、网页素材等）</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>⚡️ G-Image 2 · 性价比</div>
+                                <div>2026-04-21</div>
+                                <div>较粗糙，细节一般</div>
+                                <div>快速迭代、草稿、缩略图、高频批量生成、成本敏感场景</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>🍌 Nano Banana 2</div>
+                                <div>2026-02-26</div>
+                                <div>接近 Pro，速度与质量平衡最佳</div>
+                                <div>大多数人日常使用首选（性价比最高）</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>🍌 Nano Banana Pro</div>
+                                <div>2025-11-20</div>
+                                <div>极致细节、复杂构图、干净文字</div>
+                                <div>需要极致细节、复杂构图、文字排版时使用</div>
+                              </div>
+                              <div class="model-help-advantage">
+                                <span class="model-help-advantage-heading">Nano Banana 与 GPT Image 的优势区别：</span><strong>要求多文字排版设计用 GPT Image，要求高质量人像用 Nano Banana</strong>
                               </div>
                             </div>
                           </template>
@@ -5024,63 +5027,66 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
                             <div class="model-help-tip">
                               <div class="model-help-grid model-help-grid-head">
                                 <div>模型</div>
+                                <div>发行日期</div>
                                 <div>细节与质量</div>
-                                <div>伪影</div>
                                 <div>推荐使用场景</div>
                               </div>
                               <div class="model-help-grid">
-                                <div>G-Image 2.5 Flare</div>
+                                <div>🍌 Nano Banana 2.1</div>
+                                <div>2026-10-06</div>
+                                <div>接近 Pro，细节与稳定性更好</div>
+                                <div>高质量日常生产、复杂构图、文字较多场景</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>⭐️ G-Image 2.5 Flare</div>
+                                <div>2026-09-08</div>
                                 <div>优于 G-Image 2，出图更利落，细节更好</div>
-                                <div>较少</div>
                                 <div>日常首选（社媒、商品图、快速试稿、批量生产）</div>
                               </div>
                               <div class="model-help-grid">
-                                <div>G-Image 2.5 Sunburst</div>
+                                <div>⭐️ G-Image 2.5 Sunburst</div>
+                                <div>2026-09-08</div>
                                 <div>更精细，改图控制更好</div>
-                                <div>最少</div>
                                 <div>成片、复杂编辑、局部精修，需要只改指定位置时使用</div>
                               </div>
                               <div class="model-help-grid">
-                                <div>G-Image 2 · 顶级</div>
-                                <div>最高保真度，锐利边缘、精细纹理、文字表现最佳</div>
-                                <div>最少</div>
-                                <div>最终成品、完美文字、高清精度需求（印刷、专业输出、复杂构图）</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>G-Image 2 · 高质量</div>
-                                <div>平衡，细节较好</div>
-                                <div>较少</div>
-                                <div>大多数日常生产用途（社交媒体、网页素材等）</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>G-Image 2 · 性价比</div>
-                                <div>较粗糙，细节一般</div>
-                                <div>较多</div>
-                                <div>快速迭代、草稿、缩略图、高频批量生成、成本敏感场景</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>Nano Banana Pro</div>
-                                <div>极致细节、复杂构图、干净文字</div>
-                                <div>最少</div>
-                                <div>需要极致细节、复杂构图、文字排版时使用</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>Nano Banana 2</div>
-                                <div>接近 Pro，速度与质量平衡最佳</div>
-                                <div>较少</div>
-                                <div>大多数人日常使用首选（性价比最高）</div>
-                              </div>
-                              <div class="model-help-grid">
-                                <div>Nano Banana 2 Lite</div>
+                                <div>🍌 Nano Banana 2 Lite</div>
+                                <div>2026-06-30</div>
                                 <div>轻量版，出图更快，细节略弱于 Nano Banana 2</div>
-                                <div>一般</div>
                                 <div>快速出图、日常草稿、成本敏感场景</div>
                               </div>
                               <div class="model-help-grid">
-                                <div>Nano Banana</div>
-                                <div>一般，适合快速草稿验证</div>
-                                <div>较多</div>
-                                <div>已较少使用，主要用于低成本快速测试</div>
+                                <div>⚡️ G-Image 2 · 顶级</div>
+                                <div>2026-04-21</div>
+                                <div>最高保真度，锐利边缘、精细纹理、文字表现最佳</div>
+                                <div>最终成品、完美文字、高清精度需求（印刷、专业输出、复杂构图）</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>⚡️ G-Image 2 · 高质量</div>
+                                <div>2026-04-21</div>
+                                <div>平衡，细节较好</div>
+                                <div>大多数日常生产用途（社交媒体、网页素材等）</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>⚡️ G-Image 2 · 性价比</div>
+                                <div>2026-04-21</div>
+                                <div>较粗糙，细节一般</div>
+                                <div>快速迭代、草稿、缩略图、高频批量生成、成本敏感场景</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>🍌 Nano Banana 2</div>
+                                <div>2026-02-26</div>
+                                <div>接近 Pro，速度与质量平衡最佳</div>
+                                <div>大多数人日常使用首选（性价比最高）</div>
+                              </div>
+                              <div class="model-help-grid">
+                                <div>🍌 Nano Banana Pro</div>
+                                <div>2025-11-20</div>
+                                <div>极致细节、复杂构图、干净文字</div>
+                                <div>需要极致细节、复杂构图、文字排版时使用</div>
+                              </div>
+                              <div class="model-help-advantage">
+                                <span class="model-help-advantage-heading">Nano Banana 与 GPT Image 的优势区别：</span><strong>要求多文字排版设计用 GPT Image，要求高质量人像用 Nano Banana</strong>
                               </div>
                             </div>
                           </template>
@@ -8309,12 +8315,16 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
 
 .model-help-grid {
   display: grid;
-  grid-template-columns: 1.12fr 12px 1.2fr 20px 0.72fr 6px 1.8fr;
+  grid-template-columns: 1.35fr 12px 0.72fr 14px 1.25fr 20px 1.75fr;
   gap: 0;
   padding: 12px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 13px;
   line-height: 1.55;
+}
+
+.model-help-grid > div:first-child {
+  white-space: nowrap;
 }
 
 .model-help-grid > div:nth-child(2) {
@@ -8343,6 +8353,25 @@ watch(() => auth.isLoggedIn, async (isLoggedIn) => {
   font-size: 13px;
   font-weight: 800;
   line-height: 1.35;
+}
+
+.model-help-advantage {
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.model-help-advantage-heading {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.model-help-advantage strong {
+  color: #ffffff;
+  font-weight: 800;
 }
 
 .generate-config-panel .flat-select {
@@ -11049,7 +11078,7 @@ html:is([data-theme="dark"], [data-theme="midnight"]) .generate-page .result-mor
   }
 
   .model-help-tip {
-    width: min(620px, calc(100vw - 68px));
+    width: min(760px, calc(100vw - 68px));
     color: #f5f5f5;
   }
 
