@@ -965,6 +965,7 @@ const redeemDialogOpen = ref(false);
 const redeemLoading = ref(false);
 const redeemForm = reactive({ key: "" });
 const purchaseDialogOpen = ref(false);
+const DEFAULT_PURCHASE_PLAN_CREDITS = 1000;
 const selectedPurchasePlanKey = ref("");
 const selectedPurchasePlan = computed(() =>
   creditPurchasePlans.value.find((item) => item.key === selectedPurchasePlanKey.value && item.purchasable) || null
@@ -1248,6 +1249,23 @@ async function loadActiveActivity(options?: { autoOpen?: boolean }) {
   }
 }
 
+function pickDefaultPurchasePlan(plans: PaymentPlan[]) {
+  const purchasablePlans = plans.filter((item) => item.purchasable);
+  return (
+    purchasablePlans.find((item) => item.credits === DEFAULT_PURCHASE_PLAN_CREDITS)
+    || purchasablePlans[2]
+    || purchasablePlans[0]
+    || null
+  );
+}
+
+function applyDefaultPurchasePlan() {
+  const plan = pickDefaultPurchasePlan(creditPurchasePlans.value);
+  if (plan) {
+    selectedPurchasePlanKey.value = plan.key;
+  }
+}
+
 async function loadPaymentPlans() {
   if (!auth.isLoggedIn) return;
   purchasePlansLoading.value = true;
@@ -1257,9 +1275,11 @@ async function loadPaymentPlans() {
     if (!res.items.some((item) => item.key === selectedPurchasePlanKey.value && item.purchasable)) {
       selectedPurchasePlanKey.value = "";
     }
-    const firstPurchasablePlan = res.items.find((item) => item.purchasable);
-    if (!selectedPurchasePlanKey.value && firstPurchasablePlan) {
-      selectedPurchasePlanKey.value = firstPurchasablePlan.key;
+    if (!selectedPurchasePlanKey.value) {
+      const defaultPlan = pickDefaultPurchasePlan(res.items);
+      if (defaultPlan) {
+        selectedPurchasePlanKey.value = defaultPlan.key;
+      }
     }
   } catch {
     creditPurchasePlans.value = [];
@@ -1552,6 +1572,8 @@ function openPurchaseEntry() {
   }
   if (!creditPurchasePlans.value.length) {
     void loadPaymentPlans();
+  } else {
+    applyDefaultPurchasePlan();
   }
   resetPurchaseState();
   purchaseDialogOpen.value = true;
