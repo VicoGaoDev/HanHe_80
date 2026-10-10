@@ -1706,6 +1706,8 @@ export interface ExternalApiSceneBinding {
   image_size_options_json: string;
   custom_size_options_json: string;
   resolution_mapping_json: string;
+  badge_text: string;
+  badge_color: string;
 }
 
 export interface ExternalApiSceneBindingCreatePayload {
@@ -1724,6 +1726,8 @@ export interface ExternalApiSceneBindingCreatePayload {
   backup_api_config_id: number | null;
   display_name: string;
   subtitle: string;
+  badge_text: string;
+  badge_color: string;
   credit_cost: number;
   max_reference_images: number;
   aspect_ratio_options_json: string;
@@ -1745,6 +1749,8 @@ export interface ExternalApiSceneBindingMetaPayload {
   custom_size_max: number;
   custom_size_step: number;
   max_reference_images: number;
+  badge_text: string;
+  badge_color: string;
   aspect_ratio_options_json: string;
   image_size_options_json: string;
   custom_size_options_json: string;
@@ -1782,6 +1788,8 @@ export interface GenerationModelOption {
   category_name?: string | null;
   category_description?: string | null;
   category_sort_order?: number | null;
+  badge_text: string;
+  badge_color: string;
 }
 
 export interface TaskSceneConfig {
@@ -1808,6 +1816,8 @@ export interface TaskSceneConfig {
   category_name?: string | null;
   category_description?: string | null;
   category_sort_order?: number | null;
+  badge_text: string;
+  badge_color: string;
 }
 
 export interface VideoExternalApiConfig {

@@ -379,6 +379,8 @@ const generationModelSelectOptions = computed(() => (
     categoryName: "category_name" in model ? model.category_name : null,
     categoryDescription: "category_description" in model ? model.category_description : null,
     categorySortOrder: "category_sort_order" in model ? model.category_sort_order : null,
+    badgeText: "badge_text" in model ? model.badge_text : "",
+    badgeColor: "badge_color" in model ? model.badge_color : "",
   }))
 ));
 const maxReferenceImages = computed(() => {

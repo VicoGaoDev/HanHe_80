@@ -323,6 +323,7 @@
 - `sort_order`: 场景排序。
 - `api_config_id`: 绑定的接口配置。
 - `display_name` / `subtitle`: 前端展示名称与副标题。
+- `badge_text` / `badge_color`: 模型标签文字和 `#RRGGBB` 颜色。文字为空时不显示标签。
 - `credit_cost`: 该场景的默认单任务积分成本。
 - `max_reference_images`: 该场景允许上传的最大参考图数量；图编辑模型常依赖这个值控制前端上传上限。
 - `hide_aspect_ratio` / `hide_resolution` / `hide_custom_size`: 前端是否隐藏相关参数；`hide_custom_size=0` 表示支持用户手动输入自定义分辨率。
@@ -721,6 +722,8 @@ CREATE TABLE external_api_scene_bindings (
   api_config_id INT DEFAULT NULL,
   display_name VARCHAR(100) NOT NULL DEFAULT '',
   subtitle VARCHAR(255) NOT NULL DEFAULT '',
+  badge_text VARCHAR(32) NOT NULL DEFAULT '',
+  badge_color VARCHAR(16) NOT NULL DEFAULT '',
   credit_cost INT NOT NULL DEFAULT 0,
   max_reference_images INT NOT NULL DEFAULT 0,
   aspect_ratio_options_json TEXT NOT NULL,

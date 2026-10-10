@@ -7,6 +7,7 @@ import {
   PlusOutlined,
   SwapOutlined,
 } from "@ant-design/icons-vue";
+import SceneBadgeFields from "@/components/admin/SceneBadgeFields.vue";
 import {
   createExternalApiConfig,
   createExternalApiSceneBinding,
@@ -92,6 +93,8 @@ const copyEditingKey = ref("");
 const copyForm = reactive({
   display_name: "",
   subtitle: "",
+  badge_text: "",
+  badge_color: "",
 });
 const editingId = ref<number | null>(null);
 const sceneEditingKey = ref("");
@@ -169,6 +172,8 @@ const sceneForm = reactive<ExternalApiSceneBindingCreatePayload>({
   backup_api_config_id: null,
   display_name: "",
   subtitle: "",
+  badge_text: "",
+  badge_color: "",
   credit_cost: 4,
   max_reference_images: 0,
   aspect_ratio_options_json: DEFAULT_ASPECT_RATIO_OPTIONS_JSON,
@@ -189,6 +194,8 @@ const sceneMetaForm = reactive<ExternalApiSceneBindingMetaPayload>({
   custom_size_max: 4096,
   custom_size_step: 8,
   max_reference_images: 0,
+  badge_text: "",
+  badge_color: "",
   aspect_ratio_options_json: DEFAULT_ASPECT_RATIO_OPTIONS_JSON,
   image_size_options_json: DEFAULT_IMAGE_SIZE_OPTIONS_JSON,
   custom_size_options_json: DEFAULT_CUSTOM_SIZE_OPTIONS_JSON,
@@ -510,6 +517,8 @@ function resetSceneForm() {
   sceneForm.backup_api_config_id = null;
   sceneForm.display_name = "";
   sceneForm.subtitle = "";
+  sceneForm.badge_text = "";
+  sceneForm.badge_color = "";
   sceneForm.credit_cost = 4;
   sceneForm.max_reference_images = 0;
   sceneForm.aspect_ratio_options_json = DEFAULT_ASPECT_RATIO_OPTIONS_JSON;
@@ -569,6 +578,8 @@ function fillSceneMetaForm(record: ExternalApiSceneBinding) {
   sceneMetaForm.custom_size_max = Number(record.custom_size_max || 4096);
   sceneMetaForm.custom_size_step = Number(record.custom_size_step || 8);
   sceneMetaForm.max_reference_images = Number(record.max_reference_images || 0);
+  sceneMetaForm.badge_text = record.badge_text || "";
+  sceneMetaForm.badge_color = record.badge_color || "";
   sceneMetaForm.aspect_ratio_options_json = record.aspect_ratio_options_json || DEFAULT_ASPECT_RATIO_OPTIONS_JSON;
   sceneMetaForm.image_size_options_json = record.image_size_options_json || DEFAULT_IMAGE_SIZE_OPTIONS_JSON;
   sceneMetaForm.custom_size_options_json = record.custom_size_options_json || DEFAULT_CUSTOM_SIZE_OPTIONS_JSON;
@@ -720,6 +731,8 @@ function openCopyScene(record: ExternalApiSceneBinding) {
   sceneForm.backup_api_config_id = record.backup_api_config_id ?? null;
   sceneForm.display_name = record.display_name || "";
   sceneForm.subtitle = record.subtitle || "";
+  sceneForm.badge_text = record.badge_text || "";
+  sceneForm.badge_color = record.badge_color || "";
   sceneForm.credit_cost = Number(record.credit_cost || 0);
   sceneForm.max_reference_images = Number(record.max_reference_images || 0);
   sceneForm.aspect_ratio_options_json = record.aspect_ratio_options_json || DEFAULT_ASPECT_RATIO_OPTIONS_JSON;
@@ -747,6 +760,8 @@ function openEditCopy(record: ExternalApiSceneBinding) {
   copyEditingKey.value = record.scene_key;
   copyForm.display_name = record.display_name || "";
   copyForm.subtitle = record.subtitle || "";
+  copyForm.badge_text = record.badge_text || "";
+  copyForm.badge_color = record.badge_color || "";
   copyModalOpen.value = true;
 }
 
@@ -756,6 +771,8 @@ async function handleSaveCopy() {
   await handleBindingChange(record.scene_key, buildBindingPayload(record, {
     display_name: copyForm.display_name,
     subtitle: copyForm.subtitle,
+    badge_text: copyForm.badge_text,
+    badge_color: copyForm.badge_color,
   }));
   copyModalOpen.value = false;
 }
@@ -846,6 +863,8 @@ function buildSceneTemplateData(record: ExternalApiSceneBinding): ExternalApiSce
     backup_api_config_id: record.backup_api_config_id ?? null,
     display_name: record.display_name || "",
     subtitle: record.subtitle || "",
+    badge_text: record.badge_text || "",
+    badge_color: record.badge_color || "",
     credit_cost: Number(record.credit_cost || 0),
     max_reference_images: Number(record.max_reference_images || 0),
     aspect_ratio_options_json: record.aspect_ratio_options_json || DEFAULT_ASPECT_RATIO_OPTIONS_JSON,
@@ -946,6 +965,8 @@ function applyImportedSceneData(data: Record<string, unknown>) {
   sceneForm.backup_api_config_id = normalizeNullableNumberValue(data.backup_api_config_id);
   sceneForm.display_name = normalizeStringValue(data.display_name, sceneForm.display_name);
   sceneForm.subtitle = normalizeStringValue(data.subtitle, sceneForm.subtitle);
+  sceneForm.badge_text = normalizeStringValue(data.badge_text, sceneForm.badge_text);
+  sceneForm.badge_color = normalizeStringValue(data.badge_color, sceneForm.badge_color);
   sceneForm.credit_cost = normalizeNumberValue(data.credit_cost, sceneForm.credit_cost);
   sceneForm.max_reference_images = normalizeNumberValue(data.max_reference_images, sceneForm.max_reference_images);
   sceneForm.aspect_ratio_options_json = normalizeJsonFieldValue(data.aspect_ratio_options_json, sceneForm.aspect_ratio_options_json);
@@ -1236,6 +1257,8 @@ async function handleBindingChange(
     resolution_credit_costs_json: string;
     display_name: string;
     subtitle: string;
+    badge_text: string;
+    badge_color: string;
   },
 ) {
   bindingSavingKey.value = sceneKey;
@@ -1274,6 +1297,8 @@ function buildBindingPayload(record: ExternalApiSceneBinding, overrides: Partial
   resolution_credit_costs_json: string;
   display_name: string;
   subtitle: string;
+  badge_text: string;
+  badge_color: string;
 }> = {}) {
   return {
     api_config_id: overrides.api_config_id !== undefined ? overrides.api_config_id : (record.api_config_id ?? null),
@@ -1282,6 +1307,8 @@ function buildBindingPayload(record: ExternalApiSceneBinding, overrides: Partial
     resolution_credit_costs_json: overrides.resolution_credit_costs_json ?? record.resolution_credit_costs_json ?? DEFAULT_RESOLUTION_CREDIT_COSTS_JSON,
     display_name: overrides.display_name ?? record.display_name ?? "",
     subtitle: overrides.subtitle ?? record.subtitle ?? "",
+    badge_text: overrides.badge_text ?? record.badge_text ?? "",
+    badge_color: overrides.badge_color ?? record.badge_color ?? "",
   };
 }
 
@@ -1342,6 +1369,8 @@ async function handleCreateScene() {
       backup_api_config_id: sceneForm.backup_api_config_id ?? null,
       display_name: sceneForm.display_name.trim(),
       subtitle: sceneForm.subtitle.trim(),
+      badge_text: sceneForm.badge_text.trim(),
+      badge_color: sceneForm.badge_color.trim(),
       credit_cost: Number(sceneForm.credit_cost || 0),
       max_reference_images: Number(sceneForm.max_reference_images || 0),
       aspect_ratio_options_json: sceneForm.aspect_ratio_options_json,
@@ -1392,6 +1421,8 @@ async function handleSaveSceneMeta() {
       custom_size_max: Number(sceneMetaForm.custom_size_max),
       custom_size_step: Number(sceneMetaForm.custom_size_step),
       max_reference_images: Number(sceneMetaForm.max_reference_images || 0),
+      badge_text: sceneMetaForm.badge_text.trim(),
+      badge_color: sceneMetaForm.badge_color.trim(),
       aspect_ratio_options_json: sceneMetaForm.aspect_ratio_options_json,
       image_size_options_json: sceneMetaForm.image_size_options_json,
       custom_size_options_json: sceneMetaForm.custom_size_options_json,
@@ -1661,7 +1692,14 @@ function handleDeleteScene(record: ExternalApiSceneBinding) {
               >
                 <template #bodyCell="{ column, record }">
                   <template v-if="column.key === 'scene'">
-                    <div class="scene-title">{{ record.scene_label }}</div>
+                    <div class="scene-title">
+                      {{ record.scene_label }}
+                      <span
+                        v-if="record.badge_text"
+                        class="scene-badge-preview"
+                        :style="{ background: record.badge_color || '#FF7A00' }"
+                      >{{ record.badge_text }}</span>
+                    </div>
                     <div v-if="record.display_name" class="scene-desc">展示名：{{ record.display_name }}</div>
                     <div v-else-if="record.scene_description" class="scene-desc">{{ record.scene_description }}</div>
                     <a-space size="small" style="margin-top: 6px">
@@ -1996,6 +2034,10 @@ function handleDeleteScene(record: ExternalApiSceneBinding) {
           <a-input v-model:value="sceneForm.scene_description" class="warm-input" placeholder="例如：高质量增强版" />
         </a-form-item>
 
+        <a-form-item label="模型标签">
+          <SceneBadgeFields v-model:text="sceneForm.badge_text" v-model:color="sceneForm.badge_color" />
+        </a-form-item>
+
         <a-form-item label="默认绑定接口">
           <a-select
             v-model:value="sceneForm.api_config_id"
@@ -2210,6 +2252,10 @@ function handleDeleteScene(record: ExternalApiSceneBinding) {
           <a-input v-model:value="sceneMetaForm.scene_description" class="warm-input" />
         </a-form-item>
 
+        <a-form-item label="模型标签">
+          <SceneBadgeFields v-model:text="sceneMetaForm.badge_text" v-model:color="sceneMetaForm.badge_color" />
+        </a-form-item>
+
         <a-row :gutter="16">
           <a-col :span="8">
             <a-form-item label="隐藏宽高比">
@@ -2335,6 +2381,9 @@ function handleDeleteScene(record: ExternalApiSceneBinding) {
         </a-form-item>
         <a-form-item label="副标题">
           <a-input v-model:value="copyForm.subtitle" class="warm-input" placeholder="为空则使用场景描述" />
+        </a-form-item>
+        <a-form-item label="模型标签">
+          <SceneBadgeFields v-model:text="copyForm.badge_text" v-model:color="copyForm.badge_color" />
         </a-form-item>
       </a-form>
       <template #footer>
@@ -2965,8 +3014,21 @@ button.api-config-group-title.is-expanded .api-config-group-arrow {
 }
 
 .scene-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: #5d4526;
   font-weight: 600;
+}
+
+.scene-badge-preview {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
 }
 
 .scene-binding-group .scene-title,

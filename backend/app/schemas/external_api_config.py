@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime
 from typing import Any, Literal
 
@@ -11,6 +12,19 @@ CallModeType = Literal["sync", "async"]
 HttpMethodType = Literal["GET", "POST"]
 SceneTypeType = Literal["generate", "image_edit", "prompt_reverse", "prompt_optimize", "inpaint", "smart_cutout"]
 SceneKeyType = str
+_BADGE_COLOR_PATTERN = re.compile(r"^#(?:[0-9A-Fa-f]{6})$")
+
+
+def _normalize_badge(text: str, color: str) -> tuple[str, str]:
+    cleaned_text = (text or "").strip()[:16]
+    cleaned_color = (color or "").strip().upper()
+    if not cleaned_text:
+        return "", ""
+    if not cleaned_color:
+        return cleaned_text, "#FF7A00"
+    if not _BADGE_COLOR_PATTERN.fullmatch(cleaned_color):
+        raise ValueError("标签颜色需为 #RRGGBB 十六进制色值")
+    return cleaned_text, cleaned_color
 
 
 def _validate_json_text(value: str, field_name: str, *, expect_object: bool) -> str:
@@ -397,6 +411,8 @@ class GenerationModelOptionOut(BaseModel):
     category_name: str | None = None
     category_description: str | None = None
     category_sort_order: int | None = None
+    badge_text: str = ""
+    badge_color: str = ""
 
 
 class SceneOptionItem(BaseModel):
@@ -419,6 +435,8 @@ class ExternalApiSceneBindingCreate(BaseModel):
     backup_api_config_id: int | None = None
     display_name: str = ""
     subtitle: str = ""
+    badge_text: str = ""
+    badge_color: str = ""
     credit_cost: int
     max_reference_images: int = 0
     scene_type: SceneTypeType = "generate"
@@ -473,6 +491,7 @@ class ExternalApiSceneBindingCreate(BaseModel):
             raise ValueError("自定义分辨率最大值不能小于最小值")
         if self.custom_size_step <= 0:
             raise ValueError("自定义分辨率步长必须大于 0")
+        self.badge_text, self.badge_color = _normalize_badge(self.badge_text, self.badge_color)
         return self
 
     @field_validator("status")
@@ -514,6 +533,8 @@ class ExternalApiSceneBindingUpdate(BaseModel):
     backup_api_config_id: int | None = None
     display_name: str = ""
     subtitle: str = ""
+    badge_text: str = ""
+    badge_color: str = ""
     credit_cost: int
     resolution_credit_costs_json: str = "{}"
 
@@ -521,6 +542,11 @@ class ExternalApiSceneBindingUpdate(BaseModel):
     @classmethod
     def validate_scene_text(cls, value: str) -> str:
         return value.strip()
+
+    @model_validator(mode="after")
+    def validate_badge(self):
+        self.badge_text, self.badge_color = _normalize_badge(self.badge_text, self.badge_color)
+        return self
 
     @field_validator("credit_cost")
     @classmethod
@@ -547,6 +573,8 @@ class ExternalApiSceneBindingMetaUpdate(BaseModel):
     custom_size_max: int = 4096
     custom_size_step: int = 8
     max_reference_images: int = 0
+    badge_text: str = ""
+    badge_color: str = ""
     aspect_ratio_options_json: str = "[]"
     image_size_options_json: str = "[]"
     custom_size_options_json: str = "[]"
@@ -593,6 +621,7 @@ class ExternalApiSceneBindingMetaUpdate(BaseModel):
             raise ValueError("自定义分辨率最大值不能小于最小值")
         if self.custom_size_step <= 0:
             raise ValueError("自定义分辨率步长必须大于 0")
+        self.badge_text, self.badge_color = _normalize_badge(self.badge_text, self.badge_color)
         return self
 
     @field_validator("aspect_ratio_options_json")
@@ -664,6 +693,8 @@ class ExternalApiSceneBindingOut(BaseModel):
     custom_size_options_json: str
     resolution_mapping_json: str
     resolution_credit_costs_json: str
+    badge_text: str = ""
+    badge_color: str = ""
 
 
 class TaskSceneConfigOut(BaseModel):
@@ -690,6 +721,8 @@ class TaskSceneConfigOut(BaseModel):
     category_name: str | None = None
     category_description: str | None = None
     category_sort_order: int | None = None
+    badge_text: str = ""
+    badge_color: str = ""
 
 
 class ExternalApiConfigTestResult(BaseModel):

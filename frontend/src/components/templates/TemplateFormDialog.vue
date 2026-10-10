@@ -77,6 +77,8 @@ const generationModelSelectOptions = computed(() => (
     categoryName: model.category_name,
     categoryDescription: model.category_description,
     categorySortOrder: model.category_sort_order,
+    badgeText: model.badge_text,
+    badgeColor: model.badge_color,
   }))
 ));
 const customSizeOptions = computed(() => selectedModelOption.value?.custom_size_options || []);

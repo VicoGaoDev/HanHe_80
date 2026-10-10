@@ -598,6 +598,8 @@ function toGenerationModelOption(scene: TaskSceneConfig): GenerationModelOption 
     category_name: scene.category_name ?? null,
     category_description: scene.category_description ?? null,
     category_sort_order: scene.category_sort_order ?? null,
+    badge_text: scene.badge_text || "",
+    badge_color: scene.badge_color || "",
   };
 }
 
@@ -655,6 +657,8 @@ const generationModelSelectOptions = computed(() => (
     categoryName: model.category_name,
     categoryDescription: model.category_description,
     categorySortOrder: model.category_sort_order,
+    badgeText: model.badge_text,
+    badgeColor: model.badge_color,
   }))
 ));
 const detailModelOptions = computed(() => (

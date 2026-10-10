@@ -603,6 +603,8 @@ def _serialize_scene_binding(
         custom_size_options_json=custom_size_options_json,
         resolution_mapping_json=_get_resolution_mapping_json(binding.resolution_mapping_json),
         resolution_credit_costs_json=_get_resolution_credit_costs_json(binding.resolution_credit_costs_json),
+        badge_text=(binding.badge_text or "").strip(),
+        badge_color=(binding.badge_color or "").strip(),
     )
 
 
@@ -655,6 +657,8 @@ def list_generation_models(db: Session) -> list[GenerationModelOptionOut]:
             category_name=category["name"] if category else None,
             category_description=category["description"] if category else None,
             category_sort_order=category["sort_order"] if category else None,
+            badge_text=(binding.badge_text or "").strip(),
+            badge_color=(binding.badge_color or "").strip(),
         ))
     return items
 
@@ -816,6 +820,8 @@ def list_public_task_scene_configs(db: Session) -> list[TaskSceneConfigOut]:
             category_name=category["name"] if category else None,
             category_description=category["description"] if category else None,
             category_sort_order=category["sort_order"] if category else None,
+            badge_text=(item.badge_text or "").strip(),
+            badge_color=(item.badge_color or "").strip(),
         ))
     return items
 
@@ -855,6 +861,8 @@ def create_scene_binding(
         backup_api_config_id=body.backup_api_config_id,
         display_name=body.display_name,
         subtitle=body.subtitle,
+        badge_text=body.badge_text,
+        badge_color=body.badge_color,
         credit_cost=body.credit_cost,
         max_reference_images=body.max_reference_images,
         aspect_ratio_options_json=body.aspect_ratio_options_json,
@@ -912,6 +920,8 @@ def set_scene_binding(
     binding.backup_api_config_id = body.backup_api_config_id
     binding.display_name = body.display_name
     binding.subtitle = body.subtitle
+    binding.badge_text = body.badge_text
+    binding.badge_color = body.badge_color
     binding.credit_cost = body.credit_cost
     binding.resolution_credit_costs_json = body.resolution_credit_costs_json
     db.commit()
@@ -946,6 +956,8 @@ def update_scene_binding_meta(
     binding.custom_size_max = body.custom_size_max
     binding.custom_size_step = body.custom_size_step
     binding.max_reference_images = body.max_reference_images
+    binding.badge_text = body.badge_text
+    binding.badge_color = body.badge_color
     binding.aspect_ratio_options_json = body.aspect_ratio_options_json
     binding.image_size_options_json = body.image_size_options_json
     binding.custom_size_options_json = body.custom_size_options_json

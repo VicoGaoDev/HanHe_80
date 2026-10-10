@@ -11,6 +11,8 @@ export interface ModelCategorySelectOption {
   categoryName?: string | null;
   categoryDescription?: string | null;
   categorySortOrder?: number | null;
+  badgeText?: string;
+  badgeColor?: string;
 }
 
 const props = withDefaults(defineProps<{
@@ -82,10 +84,14 @@ const groupedCategories = computed(() => {
   return Array.from(groups.values())
     .filter((item) => item.options.length > 0)
     .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id)
-    .map((item) => ({
-      ...item,
-      options: [...item.options].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
-    }));
+    .map((item) => {
+      const options = [...item.options].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      return {
+        ...item,
+        options,
+        badges: categoryBadges(options),
+      };
+    });
 });
 
 const uncategorizedOptions = computed(() => (
@@ -160,6 +166,37 @@ const ITEM_ESTIMATE = 48;
 function selectOption(value: string) {
   emit("update:modelValue", value);
   closeMenu();
+}
+
+function categoryBadges(options: ModelCategorySelectOption[]) {
+  const seen = new Set<string>();
+  const badges: ModelCategorySelectOption[] = [];
+  for (const option of options) {
+    const text = (option.badgeText || "").trim();
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    badges.push({ ...option, badgeText: text });
+    if (badges.length >= 2) break;
+  }
+  return badges;
+}
+
+function badgeStyle(option: ModelCategorySelectOption) {
+  const background = option.badgeColor || "#FF7A00";
+  return {
+    background,
+    color: badgeForeground(background),
+  };
+}
+
+function badgeForeground(color: string) {
+  const hex = color.replace("#", "");
+  if (!/^[0-9A-Fa-f]{6}$/.test(hex)) return "#ffffff";
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  const luminance = (red * 299 + green * 587 + blue * 114) / 1000;
+  return luminance > 180 ? "#1f1f1f" : "#ffffff";
 }
 
 function estimatePanelHeight(count: number) {
@@ -326,6 +363,11 @@ onBeforeUnmount(() => {
     >
       <span v-if="selectedOption" class="model-category-select-value">
         <span class="model-category-select-label">{{ selectedOption.label }}</span>
+        <span
+          v-if="selectedOption.badgeText"
+          class="model-category-select-badge"
+          :style="badgeStyle(selectedOption)"
+        >{{ selectedOption.badgeText }}</span>
       </span>
       <span v-else class="model-category-select-placeholder">{{ loading ? "加载中..." : placeholder }}</span>
       <span v-if="modelCount > 0" class="model-category-select-count">共 {{ modelCount }} 个模型</span>
@@ -363,6 +405,14 @@ onBeforeUnmount(() => {
               <span class="model-category-select-item-label">{{ category.name }}</span>
               <span v-if="category.description" class="model-category-select-item-desc">{{ category.description }}</span>
             </span>
+            <span v-if="category.badges.length" class="model-category-select-category-badges">
+              <span
+                v-for="badge in category.badges"
+                :key="badge.badgeText"
+                class="model-category-select-badge"
+                :style="badgeStyle(badge)"
+              >{{ badge.badgeText }}</span>
+            </span>
             <DownOutlined
               v-if="isMobile"
               class="model-category-select-item-arrow is-toggle"
@@ -382,7 +432,10 @@ onBeforeUnmount(() => {
               @click="selectOption(option.value)"
             >
               <span class="model-category-select-item-main">
-                <span class="model-category-select-item-label">{{ option.label }}</span>
+                <span class="model-category-select-item-title">
+                  <span class="model-category-select-item-label">{{ option.label }}</span>
+                  <span v-if="option.badgeText" class="model-category-select-badge" :style="badgeStyle(option)">{{ option.badgeText }}</span>
+                </span>
                 <span v-if="option.description" class="model-category-select-item-desc">{{ option.description }}</span>
               </span>
             </button>
@@ -400,7 +453,10 @@ onBeforeUnmount(() => {
           @click="selectOption(option.value)"
         >
           <span class="model-category-select-item-main">
-            <span class="model-category-select-item-label">{{ option.label }}</span>
+            <span class="model-category-select-item-title">
+              <span class="model-category-select-item-label">{{ option.label }}</span>
+              <span v-if="option.badgeText" class="model-category-select-badge" :style="badgeStyle(option)">{{ option.badgeText }}</span>
+            </span>
             <span v-if="option.description" class="model-category-select-item-desc">{{ option.description }}</span>
           </span>
         </button>
@@ -426,7 +482,10 @@ onBeforeUnmount(() => {
           @click="selectOption(option.value)"
         >
           <span class="model-category-select-item-main">
-            <span class="model-category-select-item-label">{{ option.label }}</span>
+            <span class="model-category-select-item-title">
+              <span class="model-category-select-item-label">{{ option.label }}</span>
+              <span v-if="option.badgeText" class="model-category-select-badge" :style="badgeStyle(option)">{{ option.badgeText }}</span>
+            </span>
             <span v-if="option.description" class="model-category-select-item-desc">{{ option.description }}</span>
           </span>
         </button>
@@ -477,10 +536,12 @@ onBeforeUnmount(() => {
 .model-category-select-value {
   display: flex;
   align-items: center;
+  gap: 6px;
 }
 
 .model-category-select-label,
 .model-category-select-placeholder {
+  min-width: 0;
   overflow: hidden;
   font-size: 14px;
   font-weight: 700;
@@ -582,6 +643,13 @@ onBeforeUnmount(() => {
   gap: 2px;
 }
 
+.model-category-select-item-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
 .model-category-select-item-label {
   overflow: hidden;
   color: var(--theme-title);
@@ -591,6 +659,22 @@ onBeforeUnmount(() => {
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.model-category-select-category-badges {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.model-category-select-badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
 }
 
 .model-category-select-item-desc {

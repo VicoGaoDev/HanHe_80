@@ -840,6 +840,8 @@ export function updateExternalApiSceneBinding(
     resolution_credit_costs_json: string;
     display_name: string;
     subtitle: string;
+    badge_text: string;
+    badge_color: string;
   },
 ): Promise<ExternalApiSceneBinding> {
   return client.put(`/admin/external-api-scene-bindings/${sceneKey}`, payload);

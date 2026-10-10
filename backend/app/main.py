@@ -506,6 +506,10 @@ def _ensure_schema_compat():
                 conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN display_name VARCHAR(100) DEFAULT ''"))
             if "subtitle" not in scene_binding_columns:
                 conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN subtitle VARCHAR(255) DEFAULT ''"))
+            if "badge_text" not in scene_binding_columns:
+                conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN badge_text VARCHAR(32) DEFAULT ''"))
+            if "badge_color" not in scene_binding_columns:
+                conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN badge_color VARCHAR(16) DEFAULT ''"))
             if "credit_cost" not in scene_binding_columns:
                 conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN credit_cost INTEGER DEFAULT 0"))
                 credit_cost_added = True
@@ -1849,6 +1853,10 @@ def _ensure_scene_binding_required_columns():
             conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN resolution_credit_costs_json TEXT"))
         if "backup_api_config_id" not in scene_binding_columns:
             conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN backup_api_config_id INTEGER"))
+        if "badge_text" not in scene_binding_columns:
+            conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN badge_text VARCHAR(32) NOT NULL DEFAULT ''"))
+        if "badge_color" not in scene_binding_columns:
+            conn.execute(text("ALTER TABLE external_api_scene_bindings ADD COLUMN badge_color VARCHAR(16) NOT NULL DEFAULT ''"))
         conn.execute(
             text(
                 """

@@ -24,6 +24,8 @@ class ExternalApiSceneBinding(Base):
     backup_api_config_id = Column(Integer, ForeignKey("external_api_configs.id"), nullable=True)
     display_name = Column(String(100), nullable=False, default="", server_default="")
     subtitle = Column(String(255), nullable=False, default="", server_default="")
+    badge_text = Column(String(32), nullable=False, default="", server_default="")
+    badge_color = Column(String(16), nullable=False, default="", server_default="")
     credit_cost = Column(Integer, nullable=False, default=0, server_default="0")
     max_reference_images = Column(Integer, nullable=False, default=0, server_default="0")
     aspect_ratio_options_json = Column(Text, nullable=False, default="[]", server_default="[]")

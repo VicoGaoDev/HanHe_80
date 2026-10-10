@@ -73,6 +73,8 @@ const modelPickerOptions = computed(() => (
     categoryName: item.category_name,
     categoryDescription: item.category_description,
     categorySortOrder: item.category_sort_order,
+    badgeText: item.badge_text,
+    badgeColor: item.badge_color,
   }))
 ));
 const selectedScene = computed(() => (
@@ -586,7 +588,7 @@ onBeforeUnmount(() => {
       </button>
     </div>
     <div v-if="canEdit" class="chat-generate-fields">
-      <label>
+      <label class="chat-generate-model">
         <span>模型</span>
         <ModelCategorySelect
           v-model="selectedModel"
@@ -949,6 +951,10 @@ onBeforeUnmount(() => {
   min-width: 0;
   color: var(--theme-text-secondary, #8b7457);
   font-size: 12px;
+}
+
+.chat-generate-model {
+  grid-column: 1 / -1;
 }
 
 .chat-generate-fields :deep(.option-grid-trigger) {
